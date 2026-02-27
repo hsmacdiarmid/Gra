@@ -1,0 +1,3470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gra</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#c9697a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gra">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+<link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rose: #c9697a; --rose-dark: #b85068; --rose-light: #fde8ec;
+  --cream: #fdf6f0; --ink: #2a1f1f; --muted: #b09090;
+  --border: #f0ddd8; --white: #ffffff;
+}
+
+/* ── DARK MODE ── */
+.dark-mode {
+  --cream: #1a1420;
+  --ink: #f0e8e0;
+  --muted: #907880;
+  --border: #3a2a34;
+  --white: #241a28;
+  --rose-light: #3a1828;
+}
+.dark-mode body { background: #0d0810; }
+.dark-mode .app-screen { background: var(--cream); }
+.dark-mode .slide-panel { background: var(--cream); }
+.dark-mode .counter-card,
+.dark-mode .reminder-item,
+.dark-mode .window-chip,
+.dark-mode .date-chip,
+.dark-mode .gift-card,
+.dark-mode .person-card,
+.dark-mode .settings-row,
+.dark-mode .option-card,
+.dark-mode .settings-person-chip,
+.dark-mode .nudge-toggle,
+.dark-mode .stat-tile,
+.dark-mode .date-type-btn,
+.dark-mode .suggestion,
+.dark-mode .love-note,
+.dark-mode .plan-row,
+.dark-mode .windows-row { background: var(--white); border-color: var(--border); }
+.dark-mode .profile-pill { background: var(--white); border-color: var(--border); }
+.dark-mode .summary-pill { background: #2a1828; border-color: #4a2838; }
+.dark-mode .quote-card { background: #2a1828; border-color: #4a2838; }
+.dark-mode .reset-note { background: #2a1828; border-color: #4a2838; }
+.dark-mode .plan-card { background: #2a1828; border-color: #5a2838; }
+.dark-mode .info-note { background: #1a1830; border-color: #3a3060; }
+.dark-mode .date-modal-sheet { background: #1f1525; }
+.dark-mode .bottom-nav,
+.dark-mode #shared-nav { background: var(--cream); border-top-color: var(--border); }
+.dark-mode .nudge-toggle-btn { color: var(--muted); }
+.dark-mode .person-tag { background: #2a1e40; color: #b090e0; }
+.dark-mode .dates-intro { background: #2a1820; border-color: #5a2838; }
+.dark-mode .stat-tile { background: var(--white); }
+.dark-mode .weekly-summary-card { background: #2a1828 !important; border-color: #5a2838 !important; }
+.dark-mode .pause-banner { background: #2a1a10 !important; border-color: #604020 !important; }
+.dark-mode .reminder-item.paused { background: #241820 !important; }
+
+/* ── WEEKLY SUMMARY CARD ── */
+.weekly-summary-card {
+  background: linear-gradient(135deg, #fff8f0, #fdf0f5);
+  border: 1.5px solid #f0c8d0; border-radius: 18px;
+  padding: 14px 16px; margin-bottom: 12px; flex-shrink: 0;
+}
+.weekly-summary-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.weekly-summary-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ink); font-style: italic; }
+.weekly-summary-title em { color: var(--rose); }
+.weekly-summary-close { font-size: 0.8rem; color: var(--muted); cursor: pointer; padding: 2px 6px; border-radius: 50%; background: var(--border); line-height: 1; }
+.weekly-summary-close:hover { background: var(--rose-light); color: var(--rose); }
+.weekly-person-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.weekly-person-row:last-child { border-bottom: none; padding-bottom: 0; }
+.weekly-person-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+.weekly-person-name { font-size: 0.72rem; font-weight: 600; color: var(--ink); flex: 1; }
+.weekly-score-bar { flex: 2; height: 6px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.weekly-score-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--rose), #e08090); transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+.weekly-score-label { font-size: 0.65rem; font-weight: 600; color: var(--rose); flex-shrink: 0; min-width: 32px; text-align: right; }
+.weekly-rating { font-size: 1.1rem; flex-shrink: 0; }
+.weekly-footer { margin-top: 10px; font-size: 0.62rem; color: var(--muted); text-align: center; font-style: italic; }
+
+/* ── PAUSE MODE ── */
+.pause-banner {
+  background: linear-gradient(135deg, #fff8e8, #fdf4e0);
+  border: 1.5px solid #f0d890; border-radius: 13px;
+  padding: 9px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.pause-banner-text { flex: 1; font-size: 0.66rem; color: #7a6020; line-height: 1.5; }
+.pause-banner-text strong { display: block; font-size: 0.72rem; color: #5a4010; margin-bottom: 1px; }
+.pause-resume-btn { padding: 6px 12px; background: #f0c830; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600; color: #3a2800; cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+.pause-resume-btn:hover { background: #e0b820; }
+.reminder-item.paused { opacity: 0.4; pointer-events: none; }
+.person-card.paused-person .person-name::after { content: ' ⏸'; font-size: 0.8em; }
+.pause-toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--white); border: 1.5px solid var(--border); border-radius: 13px; padding: 10px 14px; margin-bottom: 5px; }
+.pause-toggle-label { font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.pause-toggle-sub { font-size: 0.6rem; color: var(--muted); margin-top: 1px; }
+.toggle-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: #e0d0d0; border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.toggle-switch input:checked + .toggle-slider { background: var(--rose); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #1a1014; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px 60px; gap: 28px;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, #3a1a2a 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, #1a1a3a 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ── PROTO CHROME ── */
+.proto-header { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.proto-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: rgba(255,255,255,0.5); font-style: italic; }
+.proto-title em { color: var(--rose); font-style: normal; }
+.screen-dots { display: flex; gap: 8px; align-items: center; }
+.screen-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+.screen-dot.active { background: var(--rose); width: 20px; border-radius: 4px; border-color: var(--rose); }
+.screen-dot:hover:not(.active) { background: rgba(255,255,255,0.3); }
+.screen-label { font-size: 0.65rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.proto-footer { display: flex; gap: 12px; align-items: center; position: relative; z-index: 1; }
+.proto-nav-btn { display: flex; align-items: center; gap: 6px; padding: 9px 18px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 50px; color: rgba(255,255,255,0.5); font-family: 'DM Sans', sans-serif; font-size: 0.75rem; cursor: pointer; transition: all 0.18s; user-select: none; }
+.proto-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.22); }
+.proto-nav-btn:disabled { opacity: 0.25; cursor: default; }
+.proto-nav-btn.primary { background: var(--rose); border-color: var(--rose); color: white; }
+.proto-nav-btn.primary:hover { background: var(--rose-dark); }
+.proto-screen-name { font-size: 0.68rem; color: rgba(255,255,255,0.3); min-width: 160px; text-align: center; letter-spacing: 0.05em; }
+
+/* ── PHONE ── */
+.phone {
+  width: 320px; height: 693px; background: #0d0d0d;
+  border-radius: 48px; position: relative; overflow: hidden; flex-shrink: 0; z-index: 1;
+  box-shadow: 0 0 0 1px #333, 0 0 0 8px #1a1a1a, 0 0 0 9px #333, 0 40px 80px rgba(0,0,0,0.8), inset 0 0 0 1px #222;
+}
+.phone::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background: #0d0d0d; border-radius: 0 0 20px 20px; z-index: 100; }
+.screen-wrap { position: absolute; inset: 0; border-radius: 46px; overflow: hidden; }
+
+/* ── SCREENS ── */
+.app-screen {
+  position: absolute; inset: 0; background: var(--cream);
+  display: flex; flex-direction: column; transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform; border-radius: 46px; overflow: hidden;
+}
+.app-screen.active { transform: translateX(0); }
+
+/* ── SHARED COMPONENTS ── */
+.status-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 0; font-size: 0.65rem; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+.status-bar .time { font-size: 0.75rem; font-weight: 600; }
+.status-icons { display: flex; gap: 5px; }
+.s-sig, .s-wif, .s-bat { width: 14px; height: 8px; background: var(--ink); border-radius: 2px; opacity: 0.5; }
+.progress-bar { display: flex; gap: 5px; padding: 10px 26px 0; flex-shrink: 0; }
+.progress-bar .seg { height: 3px; border-radius: 3px; flex: 1; background: var(--border); }
+.progress-bar .seg.done { background: var(--rose); }
+.progress-bar .seg.active { background: #c9697a88; }
+.app-content { padding: 16px 22px 22px; display: flex; flex-direction: column; flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.app-content::-webkit-scrollbar { display: none; }
+.nav-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+.back-btn { width: 30px; height: 30px; border-radius: 50%; background: white; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--rose); cursor: pointer; flex-shrink: 0; transition: background 0.15s, border-color 0.15s; user-select: none; }
+.back-btn:hover { background: var(--rose-light); border-color: var(--rose); }
+.nav-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--ink); }
+.nav-title em { font-style: italic; color: var(--rose); }
+.step-subtitle { font-size: 0.68rem; color: var(--muted); margin-bottom: 14px; line-height: 1.5; flex-shrink: 0; }
+.form-group { margin-bottom: 14px; flex-shrink: 0; }
+.form-label { font-size: 0.65rem; font-weight: 500; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--rose); }
+.form-input.filled { border-color: #e8c8c4; color: #5a3a3a; }
+.cta-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: white; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px rgba(201,105,122,0.35); transition: transform 0.15s, box-shadow 0.15s; flex-shrink: 0; position: relative; overflow: hidden; }
+.cta-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent); pointer-events: none; }
+.cta-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,105,122,0.45); }
+.cta-btn:active { transform: scale(0.98); }
+.cta-btn.secondary { background: white; color: var(--rose); border: 1.5px solid var(--border); box-shadow: none; }
+.cta-btn.secondary:hover { border-color: var(--rose); background: var(--rose-light); box-shadow: none; }
+
+/* ── SCREEN 1: WELCOME ── */
+.s1-content { padding: 16px 26px 28px; display: flex; flex-direction: column; flex: 1; }
+.hero { text-align: center; padding: 12px 0 20px; border-bottom: 1px solid #f0e0d8; margin-bottom: 20px; flex-shrink: 0; }
+.heart-icon { font-size: 2.6rem; display: block; margin-bottom: 6px; animation: pulse 2.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.app-title { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; color: var(--ink); line-height: 1.1; }
+.app-title em { font-style: italic; color: var(--rose); }
+.app-subtitle { font-size: 0.72rem; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.pin-row { display: flex; gap: 10px; justify-content: center; }
+.pin-dot { width: 44px; height: 50px; background: white; border: 1.5px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--rose); font-weight: 600; }
+.pin-dot.filled { border-color: #e0c0bc; }
+.pin-dot.active { border-color: var(--rose); box-shadow: 0 0 0 3px #c9697a22; }
+.privacy-note { text-align: center; font-size: 0.62rem; color: #cbb0b0; margin-top: 10px; line-height: 1.5; flex-shrink: 0; }
+
+/* ── SCREEN 1b: RELATIONSHIP TYPE ── */
+.rel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; flex-shrink: 0; }
+.rel-card { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: all 0.18s; user-select: none; }
+.rel-card:hover { border-color: #e0c0bc; }
+.rel-card.active { border-color: var(--rose); background: var(--rose-light); }
+.rel-card .rel-emoji { font-size: 1.6rem; }
+.rel-card .rel-name { font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+.rel-card .rel-desc { font-size: 0.58rem; color: var(--muted); text-align: center; line-height: 1.4; }
+.rel-card.active .rel-desc { color: var(--rose); }
+
+/* ── SCREEN 2: FREQUENCY ── */
+.counter-card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 16px 18px; margin-bottom: 12px; flex-shrink: 0; }
+.counter-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.counter-icon { font-size: 1.3rem; }
+.counter-label { flex: 1; }
+.counter-label h4 { font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+.counter-label p  { font-size: 0.66rem; color: var(--muted); margin-top: 2px; }
+.stepper { display: flex; align-items: center; background: var(--cream); border: 1.5px solid var(--border); border-radius: 50px; overflow: hidden; width: 120px; }
+.stepper button { width: 38px; height: 38px; border: none; background: none; font-size: 1.2rem; color: var(--rose); cursor: pointer; font-weight: 300; display: flex; align-items: center; justify-content: center; transition: background 0.15s; font-family: 'DM Sans', sans-serif; flex-shrink: 0; }
+.stepper button:hover { background: var(--rose-light); }
+.stepper button:disabled { color: #ddd; cursor: default; }
+.stepper button:disabled:hover { background: none; }
+.stepper .val { flex: 1; text-align: center; font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.dot-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.nudge-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all 0.2s; cursor: pointer; user-select: none; }
+.nudge-dot:hover { transform: scale(1.18); }
+.nudge-dot:active { transform: scale(0.92); }
+.nudge-dot.text-dot.active   { background: var(--rose-light); border: 1.5px solid var(--rose); opacity: 1; }
+.nudge-dot.text-dot.inactive { background: #f5f0ee; border: 1.5px solid #e8ddd8; opacity: 0.35; }
+.nudge-dot.call-dot.active   { background: #e8f0fd; border: 1.5px solid #6a8ac9; opacity: 1; }
+.nudge-dot.call-dot.inactive { background: #f0f2f5; border: 1.5px solid #d8dde8; opacity: 0.35; }
+.summary-pill { background: linear-gradient(135deg, var(--rose-light), var(--cream)); border: 1.5px solid #f0c8c4; border-radius: 14px; padding: 12px 16px; text-align: center; margin-bottom: 16px; flex-shrink: 0; }
+.summary-pill .summary-text { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; color: #5a3a3a; line-height: 1.5; }
+.summary-pill .summary-text strong { color: var(--rose); font-style: normal; }
+
+/* ── SCREEN 3: WINDOWS ── */
+.day-row { display: flex; gap: 5px; margin-bottom: 12px; flex-shrink: 0; }
+.day-pill { flex: 1; height: 34px; border-radius: 9px; border: 1.5px solid var(--border); background: white; font-size: 0.6rem; font-weight: 600; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s; user-select: none; }
+.day-pill.active { background: var(--rose); border-color: var(--rose); color: white; box-shadow: 0 2px 8px rgba(201,105,122,0.3); }
+.time-label { font-size: 0.6rem; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 7px; flex-shrink: 0; }
+.time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 12px; flex-shrink: 0; }
+.time-slot { height: 32px; border-radius: 9px; border: 1.5px solid var(--border); background: white; font-size: 0.58rem; font-weight: 500; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s; user-select: none; }
+.time-slot.active { background: var(--rose-light); border-color: var(--rose); color: var(--rose); font-weight: 600; }
+.windows-label { font-size: 0.6rem; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; flex-shrink: 0; }
+.windows-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; flex-shrink: 0; }
+.window-chip { background: white; border: 1.5px solid var(--border); border-radius: 11px; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.window-chip .chip-info { display: flex; flex-direction: column; gap: 1px; }
+.window-chip .chip-days { font-size: 0.68rem; font-weight: 600; color: var(--ink); }
+.window-chip .chip-time { font-size: 0.6rem; color: var(--muted); }
+.window-chip .chip-tag  { font-size: 0.56rem; background: var(--rose-light); color: var(--rose); border-radius: 20px; padding: 3px 8px; font-weight: 600; }
+.window-chip .chip-remove { font-size: 0.68rem; color: #ddd; cursor: pointer; padding: 2px 5px; transition: color 0.15s; }
+.window-chip .chip-remove:hover { color: var(--rose); }
+.add-window-btn { width: 100%; padding: 9px; background: none; border: 1.5px dashed #e0c8c4; border-radius: 11px; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: var(--rose); cursor: pointer; transition: border-color 0.15s, background 0.15s; margin-bottom: 10px; flex-shrink: 0; }
+.add-window-btn:hover { border-color: var(--rose); background: var(--rose-light); }
+
+/* ── SCREEN 4: CONFIRM ── */
+.plan-card { background: linear-gradient(145deg, #fff5f2, #fdf0ee); border: 1.5px solid #f0c8c0; border-radius: 20px; padding: 16px 18px; margin-bottom: 11px; flex-shrink: 0; position: relative; overflow: hidden; }
+.plan-card::before { content: '♡'; position: absolute; right: 14px; top: 12px; font-size: 1.5rem; color: #f0c8c0; opacity: 0.5; pointer-events: none; }
+.plan-for { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--rose); font-weight: 600; margin-bottom: 2px; }
+.plan-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ink); font-style: italic; margin-bottom: 11px; }
+.plan-rows { display: flex; flex-direction: column; gap: 6px; }
+.plan-row { display: flex; align-items: center; gap: 9px; background: white; border-radius: 11px; padding: 8px 11px; border: 1px solid #f5e0dc; }
+.plan-row .row-icon { font-size: 0.95rem; flex-shrink: 0; }
+.plan-row .row-text { flex: 1; }
+.plan-row .row-text strong { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.plan-row .row-text span { font-size: 0.61rem; color: var(--muted); }
+.row-edit-link { font-size: 0.61rem; color: var(--rose); text-decoration: underline; text-decoration-color: #f0c0c0; cursor: pointer; flex-shrink: 0; }
+.windows-row { background: white; border: 1.5px solid var(--border); border-radius: 11px; overflow: hidden; cursor: pointer; transition: border-color 0.2s; }
+.windows-row:hover { border-color: #e0c0bc; }
+.windows-row.open  { border-color: #c9697a55; }
+.windows-header { display: flex; align-items: center; gap: 9px; padding: 8px 11px; user-select: none; }
+.windows-header .row-icon { font-size: 0.95rem; flex-shrink: 0; }
+.windows-header .row-text { flex: 1; }
+.windows-header .row-text strong { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.windows-header .row-text span { font-size: 0.61rem; color: var(--muted); }
+.win-header-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.chevron { font-size: 0.62rem; color: var(--rose); transition: transform 0.28s cubic-bezier(0.34,1.3,0.64,1); display: inline-block; }
+.windows-row.open .chevron { transform: rotate(180deg); }
+.heatmap-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.32s cubic-bezier(0.4,0,0.2,1); }
+.windows-row.open .heatmap-wrap { grid-template-rows: 1fr; }
+.heatmap-clip { overflow: hidden; }
+.heatmap-inner { border-top: 1px solid #f0e8e4; padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(-4px); transition: opacity 0.2s ease 0.08s, transform 0.2s ease 0.08s; }
+.windows-row.open .heatmap-inner { opacity: 1; transform: translateY(0); }
+.hm-time-axis { display: flex; padding-left: 20px; margin-bottom: 2px; }
+.hm-time-axis span { flex: 1; text-align: center; font-size: 0.46rem; color: #c0a8a0; font-weight: 500; }
+.hm-row { display: flex; align-items: center; gap: 2px; }
+.hm-day { width: 18px; font-size: 0.5rem; font-weight: 600; color: var(--muted); flex-shrink: 0; text-align: right; padding-right: 2px; }
+.hm-cells { display: flex; flex: 1; gap: 2px; }
+.hm-cell { flex: 1; height: 11px; border-radius: 2px; background: #f0e8e4; }
+.hm-cell.on { background: var(--rose); }
+.hm-cell.partial { background: #dfa0aa; }
+.hm-legend { display: flex; align-items: center; gap: 8px; padding-left: 20px; margin-top: 4px; }
+.hm-legend-item { display: flex; align-items: center; gap: 3px; font-size: 0.48rem; color: var(--muted); }
+.hm-swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.hm-total { font-size: 0.56rem; color: var(--muted); padding-left: 20px; margin-top: 2px; }
+.hm-total strong { color: #5a3a3a; }
+.love-note { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 11px 14px; margin-bottom: 11px; flex-shrink: 0; }
+.love-note .note-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 500; margin-bottom: 5px; }
+.love-note .note-text { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; font-style: italic; color: #5a3a3a; line-height: 1.5; text-align: center; }
+.love-note .note-text strong { color: var(--rose); font-style: normal; }
+.activated-state { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; gap: 12px; padding: 0 20px; }
+.activated-state.show { display: flex; }
+.big-heart { font-size: 3.2rem; animation: heartbeat 1.2s ease-in-out 3; }
+@keyframes heartbeat { 0%,100% { transform: scale(1); } 30% { transform: scale(1.2); } 60% { transform: scale(1.06); } }
+.activated-state h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--ink); font-style: italic; }
+.activated-state p { font-size: 0.73rem; color: var(--muted); line-height: 1.6; max-width: 200px; }
+.first-nudge { background: var(--rose-light); border: 1px solid #f0c8c4; border-radius: 11px; padding: 9px 14px; font-size: 0.7rem; color: #5a3a3a; line-height: 1.5; }
+.first-nudge strong { color: var(--rose); }
+
+/* ── SCREEN 5: REMINDER ── */
+#s5-lock { background: linear-gradient(160deg, #1a0a18 0%, #0d0820 50%, #1a0a18 100%); display: flex; flex-direction: column; align-items: center; padding: 44px 20px 30px; border-radius: 46px; }
+.lock-time { font-size: 3rem; font-weight: 200; color: white; margin-top: 8px; letter-spacing: -2px; }
+.lock-date { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-bottom: 24px; }
+.notif-banner { width: 100%; background: rgba(255,255,255,0.12); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); border-radius: 18px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; animation: slideDown 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; cursor: pointer; }
+@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.notif-app-icon { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, var(--rose), var(--rose-dark)); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.notif-body { flex: 1; }
+.notif-app-name { font-size: 0.6rem; color: rgba(255,255,255,0.45); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.notif-title { font-size: 0.8rem; font-weight: 600; color: white; margin-bottom: 1px; }
+.notif-subtitle { font-size: 0.68rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
+.notif-time { font-size: 0.6rem; color: rgba(255,255,255,0.35); flex-shrink: 0; }
+.lock-hint { margin-top: auto; font-size: 0.62rem; color: rgba(255,255,255,0.2); text-align: center; letter-spacing: 0.05em; }
+.tap-hint { margin-top: 14px; font-size: 0.62rem; color: rgba(255,255,255,0.25); text-align: center; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+.nudge-hero { background: linear-gradient(145deg, var(--rose-light), #fdf0f5); border: 1.5px solid #f0c0c8; border-radius: 18px; padding: 18px; text-align: center; margin-bottom: 12px; flex-shrink: 0; position: relative; overflow: hidden; }
+.nudge-hero::before { content: ''; position: absolute; bottom: -20px; right: -20px; width: 70px; height: 70px; background: radial-gradient(circle, #f0c0c8 0%, transparent 70%); opacity: 0.4; }
+.nudge-emoji { font-size: 2rem; margin-bottom: 5px; animation: bounce 2s ease-in-out infinite; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.nudge-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--ink); margin-bottom: 3px; }
+.nudge-title em { font-style: italic; color: var(--rose); }
+.nudge-sub { font-size: 0.68rem; color: var(--muted); line-height: 1.5; }
+.suggestions-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 500; margin-bottom: 7px; flex-shrink: 0; }
+.suggestions { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+.suggestion { background: white; border: 1.5px solid var(--border); border-radius: 13px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.18s; gap: 8px; }
+.suggestion:hover { border-color: var(--rose); box-shadow: 0 2px 10px rgba(201,105,122,0.1); }
+.suggestion.copied { border-color: var(--rose); background: var(--rose-light); }
+.suggestion .msg-text { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; font-style: italic; color: #5a3a3a; flex: 1; line-height: 1.4; }
+.suggestion .copy-icon { font-size: 0.68rem; color: var(--rose); padding: 3px 7px; background: var(--rose-light); border-radius: 7px; font-family: 'DM Sans', sans-serif; font-weight: 500; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; }
+.suggestion.copied .copy-icon { background: var(--rose); color: white; }
+.action-row { display: flex; gap: 7px; flex-shrink: 0; }
+.done-btn { flex: 1; padding: 11px; background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: white; border: none; border-radius: 13px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(201,105,122,0.35); }
+.skip-btn { padding: 11px 14px; background: white; border: 1.5px solid var(--border); border-radius: 13px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
+
+/* ── SCREEN 6: DASHBOARD ── */
+.top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+.greeting { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--ink); }
+.greeting em { font-style: italic; color: var(--rose); }
+.greeting-sub { font-size: 0.63rem; color: var(--muted); margin-top: 1px; }
+/* profile switcher pill in top-row */
+.profile-pill { display: flex; align-items: center; gap: 5px; background: white; border: 1.5px solid var(--border); border-radius: 20px; padding: 4px 10px 4px 6px; cursor: pointer; transition: all 0.18s; flex-shrink: 0; }
+.profile-pill:hover { border-color: var(--rose); background: var(--rose-light); }
+.profile-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+.profile-pill-name { font-size: 0.65rem; font-weight: 600; color: var(--ink); }
+.profile-pill-arrow { font-size: 0.5rem; color: var(--muted); }
+.streak-card { background: linear-gradient(135deg, var(--rose), #a04560); border-radius: 18px; padding: 16px 18px; position: relative; overflow: hidden; flex-shrink: 0; margin-bottom: 12px; }
+.streak-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 110px; height: 110px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+.streak-card::after  { content: ''; position: absolute; bottom: -40px; right: 20px; width: 90px; height: 90px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+.streak-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.streak-num { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 600; color: white; line-height: 1; }
+.streak-label { font-size: 0.68rem; color: rgba(255,255,255,0.7); margin-top: 4px; line-height: 1.4; }
+.streak-flame { font-size: 1.8rem; position: relative; z-index: 1; }
+.streak-dots { display: flex; gap: 4px; }
+.streak-dot { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.25); }
+.streak-dot.done { background: rgba(255,255,255,0.85); }
+.streak-dot.partial { background: rgba(255,255,255,0.5); }
+.streak-week-label { display: flex; justify-content: space-between; margin-top: 4px; }
+.streak-week-label span { flex: 1; text-align: center; font-size: 0.5rem; color: rgba(255,255,255,0.45); }
+.section-title { font-size: 0.6rem; font-weight: 500; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 7px; flex-shrink: 0; }
+.reminder-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+.reminder-item { background: white; border: 1.5px solid var(--border); border-radius: 13px; padding: 9px 12px; display: flex; align-items: center; gap: 9px; }
+.reminder-item.done { opacity: 0.55; background: #f8f4f2; }
+.reminder-item.done .reminder-icon { filter: grayscale(1); }
+.reminder-icon { font-size: 1rem; flex-shrink: 0; }
+.reminder-info { flex: 1; }
+.reminder-info strong { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.reminder-info span { font-size: 0.61rem; color: var(--muted); }
+.reminder-badge { font-size: 0.58rem; font-weight: 600; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
+.reminder-badge.sent     { background: #e8f5e8; color: #4a9a4a; }
+.reminder-badge.upcoming { background: var(--rose-light); color: var(--rose); }
+.reminder-badge.skipped  { background: #f5f0ee; color: var(--muted); }
+.stats-row { display: flex; gap: 7px; margin-bottom: 12px; flex-shrink: 0; }
+.stat-tile { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 13px; padding: 11px 8px; text-align: center; }
+.stat-tile .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; color: var(--rose); line-height: 1; margin-bottom: 3px; }
+.stat-tile .stat-label { font-size: 0.58rem; color: var(--muted); line-height: 1.3; }
+.reset-note { display: flex; align-items: flex-start; gap: 8px; background: #fff8f5; border: 1px solid #f0e0d8; border-radius: 12px; padding: 9px 12px; margin-bottom: 12px; flex-shrink: 0; }
+.reset-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+.reset-text { font-size: 0.64rem; color: var(--muted); line-height: 1.55; }
+.reset-text strong { color: var(--ink); }
+.reset-change { display: inline-block; margin-left: 4px; color: var(--rose); text-decoration: underline; text-decoration-color: #f0c0c0; cursor: pointer; font-size: 0.62rem; }
+.quote-card { background: linear-gradient(145deg, #2a1f2a, #1a1525); border: 1px solid #c9697a22; border-radius: 14px; padding: 14px 16px; flex-shrink: 0; }
+.quote-card .quote-text { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; font-style: italic; color: #f0d8d0; line-height: 1.6; margin-bottom: 5px; }
+.quote-card .quote-attr { font-size: 0.6rem; color: #7a6060; letter-spacing: 0.05em; }
+
+/* ── GIFTS TAB ── */
+.gift-header { text-align: center; padding: 6px 0 14px; flex-shrink: 0; }
+.gift-header-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ink); }
+.gift-header-title em { font-style: italic; color: var(--rose); }
+.gift-header-sub { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+.region-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-shrink: 0; flex-wrap: wrap; }
+.region-label { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.region-pills { display: flex; gap: 5px; }
+.region-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.62rem; font-weight: 500; background: white; border: 1.5px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+.region-pill.active { background: var(--rose-light); border-color: var(--rose); color: var(--rose); font-weight: 600; }
+.gift-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+.gift-card { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 11px 13px; display: flex; align-items: center; gap: 11px; transition: border-color 0.18s, box-shadow 0.18s; }
+.gift-card:hover { border-color: #e0c0bc; box-shadow: 0 3px 14px rgba(201,105,122,0.08); }
+.gift-emoji { font-size: 1.5rem; flex-shrink: 0; }
+.gift-info { flex: 1; min-width: 0; }
+.gift-name { font-size: 0.76rem; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.gift-desc { font-size: 0.6rem; color: var(--muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gift-price { font-size: 0.64rem; color: var(--rose); font-weight: 600; margin-top: 3px; }
+.gift-btn { flex-shrink: 0; padding: 6px 11px; background: var(--rose-light); border: 1.5px solid #f0c0c8; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600; color: var(--rose); cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap; }
+.gift-btn:hover { background: #fcd0d8; border-color: var(--rose); }
+.affiliate-note { font-size: 0.56rem; color: #c0a8a0; text-align: center; padding: 4px 0 8px; flex-shrink: 0; }
+.coffee-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; background: #ffdd00; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; color: #1a1a1a; text-decoration: none; cursor: pointer; margin-top: 2px; margin-bottom: 8px; flex-shrink: 0; transition: background 0.15s, transform 0.12s; }
+.coffee-btn:hover { background: #ffd000; transform: translateY(-1px); }
+
+/* ── NUDGE FILTER TOGGLE ── */
+.nudge-toggle { display: flex; background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
+.nudge-toggle-btn { flex: 1; padding: 6px 8px; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; transition: all 0.18s; text-align: center; letter-spacing: 0.04em; }
+.nudge-toggle-btn.active { background: var(--rose); color: white; border-radius: 18px; margin: 2px; }
+
+/* ── NUDGE ACTION BUTTONS (post-notification) ── */
+.nudge-actions { display: flex; gap: 5px; margin-top: 8px; }
+.nudge-act-btn { flex: 1; padding: 6px 3px; font-family: 'DM Sans', sans-serif; font-size: 0.58rem; font-weight: 600; border-radius: 9px; border: 1.5px solid; cursor: pointer; text-align: center; transition: all 0.15s; white-space: nowrap; }
+.nudge-act-btn.sent-yes  { background: #e8f5e8; border-color: #4a9a4a; color: #2a7a2a; }
+.nudge-act-btn.sent-yes:hover  { background: #d0ecd0; }
+.nudge-act-btn.sent-no   { background: #fff0f0; border-color: #e09090; color: #a04040; }
+.nudge-act-btn.sent-no:hover   { background: #fce0e0; }
+.nudge-act-btn.snooze    { background: #fff8e8; border-color: #e0b840; color: #8a6a00; }
+.nudge-act-btn.snooze:hover    { background: #fceec8; }
+.reminder-item.notified  { border-color: var(--rose); background: #fff8fa; }
+.reminder-item.notified .reminder-badge { background: var(--rose); color: white; }
+.person-tag { font-size: 0.54rem; background: #f0e8ff; color: #7050c0; border-radius: 10px; padding: 2px 6px; font-weight: 600; margin-left: 5px; vertical-align: middle; }
+
+/* ── CONFETTI OVERLAY ── */
+#confetti-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; border-radius: 46px; }
+.confetti-piece { position: absolute; top: -10px; animation: confettiFall linear forwards; }
+@keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(800px) rotate(720deg); opacity: 0; } }
+#milestone-toast { position: absolute; top: 70px; left: 50%; transform: translateX(-50%) scale(0.7); background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: white; padding: 12px 20px; border-radius: 18px; font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; text-align: center; white-space: nowrap; opacity: 0; z-index: 301; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; box-shadow: 0 8px 24px rgba(201,105,122,0.5); }
+#milestone-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+#milestone-toast strong { display: block; font-size: 1.5rem; font-style: normal; margin-bottom: 2px; }
+
+/* ── SETTINGS PERSON SELECTOR ── */
+.settings-person-selector { display: flex; gap: 8px; flex-wrap: wrap; padding: 4px 0 8px; }
+.settings-person-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500; color: var(--ink); transition: all 0.15s; }
+.settings-person-chip.active { background: var(--rose); border-color: var(--rose); color: white; }
+.settings-person-chip .chip-emoji { font-size: 1rem; }
+.freq-person-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav { display: flex; border-top: 1px solid #f0e0d8; padding: 8px 0 14px; flex-shrink: 0; background: var(--cream); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 3px 0; }
+.nav-item .nav-icon  { font-size: 1rem; }
+.nav-item .nav-label { font-size: 0.52rem; font-weight: 500; color: #c0a8a0; letter-spacing: 0.05em; }
+.nav-item.active .nav-label { color: var(--rose); }
+
+/* shared nav - sits at phone level */
+#shared-nav { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 0 0 46px 46px; z-index: 40; background: var(--cream); border-top: 1px solid #f0e0d8; display: none; }
+/* app screens need bottom padding to clear the nav */
+#screen-3 .app-content,
+#screen-4 .app-content,
+#screen-5 #s5-inapp .app-content,
+#screen-6 .app-content { padding-bottom: 70px; }
+
+/* ── MOBILE PWA — fill screen, hide prototype chrome ── */
+@media (max-width: 500px) {
+  body { padding: 0; justify-content: flex-start; }
+  .proto-header, .proto-footer { display: none !important; }
+  .phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .screen-wrap { border-radius: 0; }
+  .app-screen, .slide-panel { border-radius: 0 !important; }
+  #shared-nav { border-radius: 0 !important; }
+}
+
+/* ── TOAST ── */
+.toast { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--ink); color: white; font-size: 0.68rem; padding: 7px 14px; border-radius: 20px; white-space: nowrap; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 200; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SLIDE PANELS (settings, region, reset, profiles) ── */
+.slide-panel {
+  position: absolute; inset: 0; border-radius: 46px; overflow: hidden;
+  background: var(--cream); display: none; flex-direction: column;
+  z-index: 50; transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+
+.panel-header { display: flex; align-items: center; gap: 10px; padding: 48px 22px 0; flex-shrink: 0; }
+.panel-header .panel-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--ink); }
+.panel-header .panel-title em { font-style: italic; color: var(--rose); }
+.panel-sub { font-size: 0.68rem; color: var(--muted); margin: 5px 22px 14px; line-height: 1.5; flex-shrink: 0; }
+
+/* settings rows */
+.settings-section { margin-bottom: 14px; flex-shrink: 0; }
+.settings-section-label { font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #c0a0a0; margin-bottom: 5px; padding-left: 2px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; background: white; border: 1.5px solid var(--border); border-radius: 13px; padding: 10px 12px; margin-bottom: 5px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.settings-row:hover { border-color: #e0c0bc; background: #fff8f6; }
+.settings-row-info { cursor: default; }
+.settings-row-info:hover { border-color: var(--border); background: white; }
+.settings-row-left { display: flex; align-items: center; gap: 10px; }
+.settings-row-icon { font-size: 1rem; flex-shrink: 0; }
+.settings-row-text strong { display: block; font-size: 0.75rem; font-weight: 600; color: var(--ink); margin-bottom: 1px; }
+.settings-row-text span { font-size: 0.62rem; color: var(--muted); }
+.settings-chevron { font-size: 1rem; color: #d0b8b8; line-height: 1; }
+
+/* option rows (for region + reset mode selects) */
+.option-card { background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 13px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: all 0.18s; flex-shrink: 0; }
+.option-card:hover { border-color: #e0c0bc; }
+.option-card.active { border-color: var(--rose); background: var(--rose-light); }
+.option-card .opt-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
+.option-card .opt-body { flex: 1; }
+.option-card .opt-name { font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.option-card .opt-desc { font-size: 0.62rem; color: var(--muted); line-height: 1.5; }
+.option-card.active .opt-desc { color: #c9697a; }
+.option-card .opt-check { font-size: 0.9rem; color: var(--rose); opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
+.option-card.active .opt-check { opacity: 1; }
+
+/* profile switcher panel */
+.people-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; flex-shrink: 0; }
+.person-card { background: white; border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; transition: all 0.18s; }
+.person-card:hover { border-color: #e0c0bc; }
+.person-card.active-person { border-color: var(--rose); background: var(--rose-light); }
+.person-card-top { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.person-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.person-info { flex: 1; }
+.person-name { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+.person-rel  { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+.person-nudges { font-size: 0.58rem; color: var(--rose); font-weight: 500; margin-top: 2px; }
+.person-card.active-person .person-nudges { color: var(--rose-dark); }
+.active-badge { font-size: 0.55rem; background: var(--rose); color: white; border-radius: 10px; padding: 2px 7px; font-weight: 600; flex-shrink: 0; }
+.person-card-actions { display: flex; border-top: 1px solid var(--border); }
+.person-card.active-person .person-card-actions { border-top-color: #f0c8c4; }
+.person-action-btn { flex: 1; padding: 9px 0; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500; border: none; background: none; cursor: pointer; transition: background 0.15s; }
+.person-action-btn.switch { color: var(--rose); }
+.person-action-btn.switch:hover { background: var(--rose-light); }
+.person-action-btn.remove { color: #c0a0a0; border-left: 1px solid var(--border); }
+.person-action-btn.remove:hover { background: #fff0f0; color: #c05060; }
+.person-card.active-person .person-action-btn.remove { border-left-color: #f0c8c4; }
+.add-person-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: none; border: 1.5px dashed #e0c8c4; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 0.76rem; color: var(--rose); cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.add-person-btn:hover { border-color: var(--rose); background: var(--rose-light); }
+.msg-preview { background: linear-gradient(145deg, #2a1f2a, #1a1525); border-radius: 14px; padding: 13px 16px; flex-shrink: 0; margin-bottom: 8px; }
+.msg-preview-label { font-size: 0.58rem; color: rgba(255,255,255,0.35); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 7px; }
+.msg-preview-bubble { background: rgba(255,255,255,0.08); border-radius: 12px 12px 12px 3px; padding: 8px 11px; font-size: 0.75rem; color: rgba(255,255,255,0.75); line-height: 1.5; font-style: italic; }
+
+/* info note box */
+.info-note { background: #f5f0ff; border: 1.5px solid #d8c8f0; border-radius: 12px; padding: 11px 13px; margin-bottom: 12px; flex-shrink: 0; }
+.info-note p { font-size: 0.65rem; color: #7060a0; line-height: 1.6; }
+.info-note strong { color: #5040a0; }
+.region-footer-btn { width: 100%; padding: 10px; background: white; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 500; color: var(--ink); cursor: pointer; text-align: center; transition: all 0.15s; margin-bottom: 8px; flex-shrink: 0; }
+.region-footer-btn:hover { border-color: var(--rose); background: var(--rose-light); color: var(--rose); }
+
+/* ── ABOUT PANEL ── */
+.about-hero { text-align: center; padding: 10px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; flex-shrink: 0; }
+.about-heart { font-size: 2.4rem; margin-bottom: 8px; animation: pulse 2.5s ease-in-out infinite; }
+.about-tagline { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--ink); line-height: 1.3; font-style: italic; }
+.about-story { margin-bottom: 20px; }
+.about-story p { font-size: 0.72rem; color: #5a3a3a; line-height: 1.7; margin-bottom: 10px; }
+.about-story p em { font-style: italic; color: var(--rose); }
+.about-section-label { font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: #c0a0a0; margin-bottom: 10px; }
+.about-science { margin-bottom: 20px; }
+.about-science-card { background: white; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; }
+.science-item { display: flex; gap: 11px; align-items: flex-start; padding: 12px 14px; }
+.science-item + .science-item { border-top: 1px solid var(--border); }
+.science-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.science-text { font-size: 0.66rem; color: #6a4a4a; line-height: 1.6; }
+.science-text strong { display: block; font-weight: 600; color: var(--ink); margin-bottom: 2px; font-size: 0.68rem; }
+.about-version { text-align: center; font-size: 0.6rem; color: #c0b0b0; margin-bottom: 14px; letter-spacing: 0.06em; }
+
+/* ── SPECIAL DATES ── */
+.dates-intro { background: linear-gradient(135deg, #fff8f0, #fdf0f5); border: 1.5px solid #f0d8d0; border-radius: 14px; padding: 11px 14px; margin-bottom: 10px; flex-shrink: 0; }
+.dates-intro p { font-size: 0.65rem; color: #7a5050; line-height: 1.6; }
+.dates-intro p strong { color: var(--rose); }
+.dates-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; flex-shrink: 0; }
+.date-chip { background: white; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+.date-chip-top { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.date-chip-icon { font-size: 1.1rem; flex-shrink: 0; }
+.date-chip-info { flex: 1; }
+.date-chip-label { font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.date-chip-date  { font-size: 0.6rem; color: var(--muted); margin-top: 1px; }
+.date-chip-countdown { font-size: 0.58rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+.date-chip-countdown.far   { background: #f0f8e8; color: #6a9a50; }
+.date-chip-countdown.soon  { background: #fff0e0; color: #c08030; }
+.date-chip-countdown.close { background: #fde8ec; color: var(--rose); }
+.date-chip-actions { display: flex; border-top: 1px solid var(--border); }
+.date-chip-remove { flex: 1; padding: 7px 0; font-family: 'DM Sans', sans-serif; font-size: 0.66rem; color: #c0a0a0; border: none; background: none; cursor: pointer; transition: background 0.15s; }
+.date-chip-remove:hover { background: #fff0f0; color: #c05060; }
+.add-date-btn { width: 100%; padding: 9px; background: none; border: 1.5px dashed #f0c8e0; border-radius: 11px; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: var(--rose); cursor: pointer; transition: border-color 0.15s, background 0.15s; margin-bottom: 10px; flex-shrink: 0; }
+.add-date-btn:hover { border-color: var(--rose); background: var(--rose-light); }
+
+/* date modal overlay */
+.date-modal-overlay { display: none; position: absolute; inset: 0; background: rgba(30,10,20,0.55); backdrop-filter: blur(4px); z-index: 250; border-radius: 46px; align-items: flex-end; justify-content: center; }
+.date-modal-overlay.open { display: flex; }
+.date-modal-sheet { background: var(--cream); border-radius: 26px 26px 46px 46px; width: 100%; padding: 20px 20px 32px; animation: slideUp 0.3s cubic-bezier(0.34,1.2,0.64,1) forwards; }
+@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.date-modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--ink); margin-bottom: 4px; }
+.date-modal-title em { color: var(--rose); font-style: italic; }
+.date-modal-sub { font-size: 0.62rem; color: var(--muted); margin-bottom: 14px; }
+.date-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.date-type-btn { background: white; border: 1.5px solid var(--border); border-radius: 11px; padding: 9px 8px; display: flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; color: var(--ink); font-weight: 500; }
+.date-type-btn:hover { border-color: #e0c0bc; }
+.date-type-btn.active { border-color: var(--rose); background: var(--rose-light); color: var(--rose-dark); }
+.date-type-btn .dt-icon { font-size: 1rem; flex-shrink: 0; }
+.date-input-row { margin-bottom: 12px; }
+.date-input-label { font-size: 0.6rem; font-weight: 500; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px; display: block; }
+.date-input { width: 100%; background: white; border: 1.5px solid var(--border); border-radius: 11px; padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+.date-input:focus { border-color: var(--rose); }
+.date-modal-actions { display: flex; gap: 8px; align-items: stretch; }
+
+/* dashboard date reminders */
+.date-reminder-item { background: linear-gradient(135deg, #fff5f8, #fdf0f5); border: 1.5px solid #f0c8d8; border-radius: 13px; padding: 10px 13px; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+.date-reminder-icon { font-size: 1.2rem; flex-shrink: 0; }
+.date-reminder-info { flex: 1; }
+.date-reminder-info strong { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ink); }
+.date-reminder-info span { font-size: 0.62rem; color: var(--muted); }
+.date-reminder-badge { font-size: 0.56rem; font-weight: 600; padding: 3px 8px; border-radius: 20px; background: var(--rose); color: white; flex-shrink: 0; }
+
+</style>
+</head>
+<body>
+
+<!-- ─── PROTO HEADER ─── -->
+<div class="proto-header">
+  <div class="proto-title">Love<em>Nudge</em> — Interactive Prototype v5</div>
+  <div class="screen-dots">
+    <div class="screen-dot active" onclick="goTo(1)" title="Welcome"></div>
+    <div class="screen-dot" onclick="goTo(1.5)" title="Relationship type"></div>
+    <div class="screen-dot" onclick="goTo(2)" title="Frequency"></div>
+    <div class="screen-dot" onclick="goTo(3)" title="Windows"></div>
+    <div class="screen-dot" onclick="goTo(4)" title="Confirm"></div>
+    <div class="screen-dot" onclick="goTo(5)" title="Reminder"></div>
+    <div class="screen-dot" onclick="goTo(6)" title="Dashboard"></div>
+  </div>
+  <div class="screen-label" id="screen-label">Onboarding 1 · Welcome & Setup</div>
+</div>
+
+<!-- ─── PHONE ─── -->
+<div class="phone">
+  <div class="screen-wrap">
+
+  <!-- ════ SCREEN 1: WELCOME ════ -->
+  <div class="app-screen active" id="screen-1">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="s1-content">
+      <div class="hero">
+        <span class="heart-icon">💛</span>
+        <div class="app-title">Gr<em>à</em></div>
+        <div class="app-subtitle">Small reminders. Big love.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Who are you nudging for?</label>
+        <input class="form-input" id="partner-name" type="text" placeholder="e.g. Sarah" onkeydown="if(event.key==='Enter'){event.preventDefault();startOnboarding();}" />
+      </div>
+      <button class="cta-btn" style="margin-top:auto;" onclick="startOnboarding()">Get started →</button>
+      <div class="privacy-note">🔒 This app never contacts anyone directly.<br>Your reminders are yours alone.</div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 1.5: RELATIONSHIP TYPE ════ -->
+  <div class="app-screen" id="screen-1.5">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="progress-bar"><div class="seg done"></div><div class="seg active"></div><div class="seg"></div><div class="seg"></div></div>
+    <div class="app-content">
+      <div class="nav-row">
+        <div class="back-btn" onclick="goTo(1)">←</div>
+        <div class="nav-title">Who are you <em>nudging?</em></div>
+      </div>
+      <div class="step-subtitle">This shapes the tone of your reminder messages — you can change it later.</div>
+
+      <div class="rel-grid" id="rel-grid">
+        <div class="rel-card active" data-rel="partner" onclick="selectRel(this)">
+          <div class="rel-emoji">💑</div>
+          <div class="rel-name">Partner</div>
+          <div class="rel-desc">Romantic, warm &amp; affectionate messages</div>
+        </div>
+        <div class="rel-card" data-rel="spouse" onclick="selectRel(this)">
+          <div class="rel-emoji">💍</div>
+          <div class="rel-name">Spouse</div>
+          <div class="rel-desc">Loving, everyday connection nudges</div>
+        </div>
+        <div class="rel-card" data-rel="family" onclick="selectRel(this)">
+          <div class="rel-emoji">👨‍👩‍👧</div>
+          <div class="rel-name">Family</div>
+          <div class="rel-desc">Caring check-ins for kids, parents &amp; siblings</div>
+        </div>
+        <div class="rel-card" data-rel="friend" onclick="selectRel(this)">
+          <div class="rel-emoji">🤝</div>
+          <div class="rel-name">Friend</div>
+          <div class="rel-desc">Casual, fun catch-up reminders</div>
+        </div>
+      </div>
+
+      <!-- message preview based on relationship -->
+      <div class="msg-preview">
+        <div class="msg-preview-label">Example reminder message</div>
+        <div class="msg-preview-bubble" id="msg-preview-bubble">"Just thinking about you ♡"</div>
+      </div>
+
+      <button class="cta-btn" onclick="goTo(2)">Next — Set frequency →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 2: FREQUENCY ════ -->
+  <div class="app-screen" id="screen-2">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div><div class="seg"></div></div>
+    <div class="app-content">
+      <div class="nav-row">
+        <div class="back-btn" id="s2-back" onclick="s2Back()">←</div>
+        <div class="nav-title">How often will you <em>nudge?</em></div>
+      </div>
+      <div class="step-subtitle">Choose how many text and call reminders each week.</div>
+      <div class="counter-card">
+        <div class="counter-top">
+          <div class="counter-icon">💬</div>
+          <div class="counter-label"><h4>Text reminders</h4><p>per week</p></div>
+          <div class="stepper"><button onclick="change('text',-1)">−</button><div class="val" id="text-val">3</div><button onclick="change('text',1)">+</button></div>
+        </div>
+        <div class="dot-row" id="text-dots"></div>
+      </div>
+      <div class="counter-card">
+        <div class="counter-top">
+          <div class="counter-icon">📞</div>
+          <div class="counter-label"><h4>Call reminders</h4><p>per week</p></div>
+          <div class="stepper"><button onclick="change('call',-1)">−</button><div class="val" id="call-val">1</div><button onclick="change('call',1)">+</button></div>
+        </div>
+        <div class="dot-row" id="call-dots"></div>
+      </div>
+      <div class="summary-pill"><div class="summary-text" id="summary-text"></div></div>
+      <button class="cta-btn" id="s2-cta" onclick="s2Next()">Next — Set your windows →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3: WINDOWS ════ -->
+  <div class="app-screen" id="screen-3">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+    <div class="app-content">
+      <div class="nav-row">
+        <div class="back-btn" id="s3-back" onclick="s3Back()" style="visibility:hidden;">←</div>
+        <div class="nav-title">When are you <em>apart?</em></div>
+      </div>
+      <div class="step-subtitle">Select the days and times you're away from them.</div>
+      <div class="day-row" id="day-row">
+        <div class="day-pill active" data-day="Mo" onclick="toggleDay(this)">Mo</div>
+        <div class="day-pill active" data-day="Tu" onclick="toggleDay(this)">Tu</div>
+        <div class="day-pill active" data-day="We" onclick="toggleDay(this)">We</div>
+        <div class="day-pill active" data-day="Th" onclick="toggleDay(this)">Th</div>
+        <div class="day-pill active" data-day="Fr" onclick="toggleDay(this)">Fr</div>
+        <div class="day-pill" data-day="Sa" onclick="toggleDay(this)">Sa</div>
+        <div class="day-pill" data-day="Su" onclick="toggleDay(this)">Su</div>
+      </div>
+      <div class="time-label">Select time slots</div>
+      <div class="time-grid" id="time-grid">
+        <div class="time-slot" onclick="toggleTime(this)">6–7am</div>
+        <div class="time-slot" onclick="toggleTime(this)">7–8am</div>
+        <div class="time-slot" onclick="toggleTime(this)">8–9am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">9–10am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">10–11am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">11am–12</div>
+        <div class="time-slot active" onclick="toggleTime(this)">12–1pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">1–2pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">2–3pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">3–4pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">4–5pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">5–6pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">6–7pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">7–8pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">8–9pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">9–10pm</div>
+      </div>
+      <div class="windows-label">Your windows</div>
+      <div class="windows-list" id="windows-list">
+        <div class="window-chip">
+          <div class="chip-info"><div class="chip-days">Mon – Fri</div><div class="chip-time">9:00am – 5:00pm</div></div>
+          <div class="chip-tag">Work hours</div>
+          <div class="chip-remove" onclick="removeChip(this)">✕</div>
+        </div>
+      </div>
+      <button class="add-window-btn" onclick="addWindow()">+ Add another window</button>
+
+      <div style="height:1px;background:var(--border);margin:4px 0 12px;flex-shrink:0;"></div>
+      <div class="windows-label">Special dates 🗓</div>
+      <div class="dates-intro">
+        <p><strong>Never miss a moment that matters.</strong> Add birthdays, anniversaries and big days — Gra will remind you <strong>1 month, 1 week, the day before</strong> and <strong>on the day</strong> itself.</p>
+      </div>
+      <div class="dates-list" id="dates-list"></div>
+      <button class="add-date-btn" onclick="openDateModal()">🗓 &nbsp;Add a special date</button>
+
+      <button class="cta-btn" id="s3-cta" onclick="finishSchedule()">Save windows →</button>
+    </div>
+    <div class="toast" id="toast-s3">Window saved ♡</div>
+  </div>
+
+  <!-- ════ SCREEN 4: CONFIRM ════ -->
+  <div class="app-screen" id="screen-4">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg active"></div></div>
+    <div class="app-content">
+      <div id="s4-confirm">
+        <div class="nav-row">
+          <div class="back-btn" onclick="goTo(3)">←</div>
+          <div class="nav-title">Your <em>love plan</em></div>
+        </div>
+        <div class="step-subtitle">Everything look right? Tap activate to begin ♡</div>
+        <div class="plan-card">
+          <div class="plan-for">Reminders for</div>
+          <div class="plan-name" id="confirm-name">Sarah</div>
+          <div class="plan-rows">
+            <div class="plan-row"><div class="row-icon">💬</div><div class="row-text"><strong id="confirm-text-row">3 text reminders / week</strong><span>Spread randomly across your windows</span></div><span class="row-edit-link" onclick="goTo(2)">Edit</span></div>
+            <div class="plan-row"><div class="row-icon">📞</div><div class="row-text"><strong id="confirm-call-row">1 call reminder / week</strong><span>At least 4 hours from any text nudge</span></div><span class="row-edit-link" onclick="goTo(2)">Edit</span></div>
+            <div class="windows-row" id="s4-windows-row">
+              <div class="windows-header" onclick="toggleWindows()">
+                <div class="row-icon">📅</div>
+                <div class="row-text"><strong id="confirm-windows-summary">Your time windows</strong><span id="confirm-windows-sub">tap to see</span></div>
+                <div class="win-header-right"><span class="row-edit-link" onclick="event.stopPropagation(); goTo(3)">Edit</span><span class="chevron">▾</span></div>
+              </div>
+              <div class="heatmap-wrap"><div class="heatmap-clip"><div class="heatmap-inner">
+                <div class="hm-time-axis"><span>6am</span><span>9am</span><span>12pm</span><span>3pm</span><span>6pm</span><span>9pm</span></div>
+                <div class="hm-row"><div class="hm-day">Mo</div><div class="hm-cells"><div class="hm-cell partial"></div><div class="hm-cell on"></div><div class="hm-cell on"></div><div class="hm-cell partial"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">Tu</div><div class="hm-cells"><div class="hm-cell"></div><div class="hm-cell on"></div><div class="hm-cell partial"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">We</div><div class="hm-cells"><div class="hm-cell partial"></div><div class="hm-cell"></div><div class="hm-cell partial"></div><div class="hm-cell on"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">Th</div><div class="hm-cells"><div class="hm-cell"></div><div class="hm-cell on"></div><div class="hm-cell on"></div><div class="hm-cell on"></div><div class="hm-cell partial"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">Fr</div><div class="hm-cells"><div class="hm-cell"></div><div class="hm-cell partial"></div><div class="hm-cell partial"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">Sa</div><div class="hm-cells"><div class="hm-cell"></div><div class="hm-cell on"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-row"><div class="hm-day">Su</div><div class="hm-cells"><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div><div class="hm-cell"></div></div></div>
+                <div class="hm-legend"><div class="hm-legend-item"><div class="hm-swatch" style="background:#c9697a;"></div>Active</div><div class="hm-legend-item"><div class="hm-swatch" style="background:#dfa0aa;"></div>Partial</div><div class="hm-legend-item"><div class="hm-swatch" style="background:#f0e8e4; border:1px solid #e8d8d4;"></div>Off</div></div>
+                <div class="hm-total"><strong>38 hours</strong> available this week</div>
+              </div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="love-note"><div class="note-label">Your first reminder will look like this</div><div class="note-text">💛 Time to text <strong id="confirm-name2">Sarah</strong><br><span style="font-size:0.8rem;color:#b09090;">Just a little love goes a long way</span></div></div>
+        <button class="cta-btn" onclick="activate()">♡ &nbsp;Activate my love plan</button>
+      </div>
+      <div class="activated-state" id="s4-activated">
+        <div class="big-heart">💛</div>
+        <h2>You're all set!</h2>
+        <p>Your first nudge will arrive during your window this week.</p>
+        <div class="first-nudge">Next reminder: <strong>Tomorrow, around 10am</strong><br>Resets every Monday with fresh timing ♡</div>
+        <button class="cta-btn" onclick="goTo(6)" style="margin-top:8px;">Go to my dashboard →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 4.5: NOTIFICATION PERMISSION ════ -->
+  <div class="app-screen" id="screen-4.5">
+    <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+    <div class="app-content" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px 24px;">
+      <div style="font-size:3rem;margin-bottom:16px;">🔔</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:var(--ink);margin:0 0 10px;">One last thing</h2>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;margin:0 0 24px;max-width:260px;">Gra needs permission to send you reminders. We'll only notify you during the windows you set &mdash; nothing else, ever.</p>
+      <div style="width:100%;background:#1c1c1e;border-radius:16px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:8px;text-align:left;">
+        <div style="width:36px;height:36px;background:var(--rose);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">💛</div>
+        <div style="flex:1;">
+          <div style="font-size:0.72rem;font-weight:600;color:white;margin-bottom:2px;">Gra</div>
+          <div id="perm-notif-preview" style="font-size:0.78rem;color:rgba(255,255,255,0.9);font-weight:500;">Time to text Sarah 💛</div>
+          <div style="font-size:0.68rem;color:rgba(255,255,255,0.45);margin-top:2px;">Just a little love goes a long way</div>
+        </div>
+        <div style="font-size:0.62rem;color:rgba(255,255,255,0.4);flex-shrink:0;">now</div>
+      </div>
+      <p style="font-size:0.68rem;color:var(--muted);margin:0 0 24px;">Your reminders will look like this &#x2661;</p>
+      <button class="cta-btn" style="width:100%;margin-bottom:10px;" onclick="grantPermissionAndActivate()">🔔&nbsp; Allow notifications</button>
+      <button onclick="skipPermissionAndActivate()" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:8px;">Not now &mdash; I'll enable later</button>
+      <p style="font-size:0.65rem;color:var(--muted);margin-top:20px;line-height:1.5;max-width:240px;">🔒 No spam. No marketing.<br>Just your reminders, at your times.</p>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 5: REMINDER ════ -->
+  <div class="app-screen" id="screen-5">
+    <!-- lock -->
+    <div id="s5-lock" style="background:linear-gradient(160deg,#1a0a18,#0d0820,#1a0a18);display:flex;flex-direction:column;align-items:center;padding:44px 20px 30px;border-radius:46px;position:absolute;inset:0;">
+      <div class="lock-time">10:24</div>
+      <div class="lock-date">Wednesday, 19 February</div>
+      <div class="notif-banner" onclick="openReminder()">
+        <div class="notif-app-icon">💛</div>
+        <div class="notif-body">
+          <div class="notif-app-name">Gra</div>
+          <div class="notif-title">Time to text Sarah 💛</div>
+          <div class="notif-subtitle">Just a little love goes a long way</div>
+        </div>
+        <div class="notif-time">now</div>
+      </div>
+      <div class="tap-hint">tap the notification to open ↑</div>
+      <div style="margin-top:14px;width:100%;"><button class="cta-btn" onclick="goTo(6)" style="font-size:0.78rem;padding:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);box-shadow:none;">Skip to dashboard →</button></div>
+      <div class="lock-hint">Swipe up to unlock</div>
+    </div>
+    <!-- in-app -->
+    <div id="s5-inapp" style="display:none;flex-direction:column;flex:1;background:var(--cream);border-radius:46px;position:absolute;inset:0;overflow:hidden;">
+      <div class="status-bar"><span class="time">10:24</span><div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div></div>
+      <div class="app-content">
+        <div class="nudge-hero">
+          <div class="nudge-emoji">💛</div>
+          <div class="nudge-title">Time to text <em>Sarah</em></div>
+          <div class="nudge-sub">A tiny message means the world ♡</div>
+        </div>
+        <div class="suggestions-label">Send one of these</div>
+        <div class="suggestions" id="s5-suggestions">
+          <div class="suggestion" onclick="copyMsg(this)"><div class="msg-text">"Just thinking about you ♡"</div><div class="copy-icon">Copy</div></div>
+          <div class="suggestion" onclick="copyMsg(this)"><div class="msg-text">"Can't wait to see you tonight"</div><div class="copy-icon">Copy</div></div>
+          <div class="suggestion" onclick="copyMsg(this)"><div class="msg-text">"Hope your day's going well 🌿"</div><div class="copy-icon">Copy</div></div>
+          <div class="suggestion" onclick="copyMsg(this)"><div class="msg-text">"Missing you already"</div><div class="copy-icon">Copy</div></div>
+        </div>
+        <div class="action-row">
+          <button class="done-btn" onclick="nudgedIt()">✓ &nbsp;Nudged!</button>
+          <button class="skip-btn" onclick="goTo(6)">Skip →</button>
+        </div>
+      </div>
+      <div class="toast" id="toast-s5">Copied to clipboard ♡</div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 6: DASHBOARD ════ -->
+  <div class="app-screen" id="screen-6">
+    <!-- HOME TAB -->
+    <div class="app-content" id="s6-home">
+      <div class="top-row">
+        <div>
+          <div class="greeting" id="greeting-main">Good morning <em>♡</em></div>
+          <div class="greeting-sub" id="greeting-sub">Let's spread some love</div>
+        </div>
+        <div class="profile-pill" onclick="openPanel('profiles')">
+          <div class="profile-avatar" id="active-avatar" style="background:#fde8ec;">💑</div>
+          <div class="profile-pill-name" id="active-profile-name">Everyone</div>
+          <div class="profile-pill-arrow">▾</div>
+        </div>
+      </div>
+      <!-- Weekly summary card — shown on Mondays -->
+      <div class="weekly-summary-card" id="weekly-summary" style="display:none;">
+        <div class="weekly-summary-header">
+          <div class="weekly-summary-title">Last week's <em>nudges</em> ♡</div>
+          <div class="weekly-summary-close" onclick="dismissWeeklySummary()">✕</div>
+        </div>
+        <div id="weekly-summary-rows"></div>
+        <div class="weekly-footer" id="weekly-summary-footer"></div>
+      </div>
+      <!-- Pause banner — shown when all people are paused -->
+      <div class="pause-banner" id="pause-banner" style="display:none;">
+        <div>⏸️</div>
+        <div class="pause-banner-text">
+          <strong>Reminders paused</strong>
+          <span id="pause-banner-text">Your nudges are currently paused.</span>
+        </div>
+        <button class="pause-resume-btn" onclick="resumeActivePerson()">Resume</button>
+      </div>
+      <div class="section-title" id="nudges-title">This week's nudges</div>
+      <div class="nudge-toggle" id="nudge-filter-toggle">
+        <button class="nudge-toggle-btn active" id="toggle-all" onclick="setNudgeFilter('all')">All people</button>
+        <button class="nudge-toggle-btn" id="toggle-person" onclick="setNudgeFilter('person')">Selected person</button>
+      </div>
+      <div class="reminder-list" id="reminder-list"></div>
+      <div id="upcoming-dates-section" style="display:none;">
+        <div class="section-title">Upcoming dates 🗓</div>
+        <div id="upcoming-dates-list"></div>
+      </div>
+      <div class="reset-note"><div class="reset-icon">🔄</div><div class="reset-text">Schedule auto-resets every <strong>Monday</strong> with fresh random timing. <span class="reset-change" onclick="navTo('schedule')">Change</span></div></div>
+      <div class="section-title">All time</div>
+      <div class="stats-row">
+        <div class="stat-tile"><div class="stat-num" id="stat-texts">0</div><div class="stat-label">texts nudged</div></div>
+        <div class="stat-tile"><div class="stat-num" id="stat-calls">0</div><div class="stat-label">calls nudged</div></div>
+      </div>
+      <div class="quote-card"><div class="quote-text">"Small gestures, repeated with love, build something unbreakable."</div><div class="quote-attr">— Gra</div></div>
+    </div>
+    <div style="text-align:center;padding:4px 0 8px;">
+      <button onclick="sendTestPush()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:0.66rem;color:var(--muted);cursor:pointer;">🔔 Test notification</button>
+    </div>
+    <div class="toast" id="toast-dash"></div>
+    <!-- GIFTS TAB -->
+    <div class="app-content" id="s6-gifts" style="display:none;">
+      <div class="gift-header">
+        <div class="gift-header-title">Surprise <em id="gift-name">them</em> 🎁</div>
+        <div class="gift-header-sub">Curated ideas she'll actually love</div>
+      </div>
+      <div class="gift-list" id="gift-list"></div>
+      <div class="affiliate-note">✦ Curated with care · We may earn a small commission at no cost to you</div>
+      <button class="region-footer-btn" onclick="openPanel('region')" id="gift-region-btn">🌍 Region: 🇬🇧 UK</button>
+      <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">☕ &nbsp;Buy the creator a coffee</a>
+    </div>
+  </div>
+
+  </div><!-- /screen-wrap -->
+
+  <!-- ═══ CUSTOM CONFIRM MODAL ═══ -->
+  <div id="confirm-modal" style="display:none;position:absolute;inset:0;background:rgba(30,10,20,0.55);backdrop-filter:blur(4px);z-index:200;border-radius:46px;align-items:center;justify-content:center;padding:24px;">
+    <div style="background:white;border-radius:20px;padding:22px 20px 16px;width:100%;max-width:260px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div id="confirm-modal-title" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:#2a1f1f;margin-bottom:8px;"></div>
+      <div id="confirm-modal-body" style="font-size:0.72rem;color:#b09090;line-height:1.6;margin-bottom:18px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button id="confirm-modal-cancel" style="flex:1;padding:10px;background:white;border:1.5px solid #f0ddd8;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:#b09090;cursor:pointer;" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirm-modal-ok" style="flex:1;padding:10px;background:linear-gradient(135deg,#c9697a,#b85068);border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:600;color:white;cursor:pointer;"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DATE ENTRY MODAL ═══ -->
+  <div class="date-modal-overlay" id="date-modal">
+    <div class="date-modal-sheet">
+      <div class="date-modal-title">Add a <em>special date</em></div>
+      <div class="date-modal-sub">We'll remind you well in advance so you can make it count.</div>
+      <div class="date-type-grid" id="date-type-grid"></div>
+      <div class="date-input-row" id="other-label-row" style="display:none;">
+        <label class="date-input-label">What's the occasion?</label>
+        <input class="date-input" id="other-label-input" type="text" placeholder="e.g. Surgery, Big presentation…" maxlength="40" />
+      </div>
+      <div class="date-input-row">
+        <label class="date-input-label">Date</label>
+        <input class="date-input" id="date-picker" type="date" />
+      </div>
+      <div class="date-modal-actions">
+        <button class="cta-btn secondary" style="padding:11px;flex:1;" onclick="closeDateModal()">Cancel</button>
+        <button class="cta-btn" style="padding:11px;flex:2;" onclick="saveSpecialDate()">Save date ♡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONFETTI & MILESTONE ═══ -->
+  <div id="confetti-overlay"></div>
+  <div id="milestone-toast"></div>
+  <!-- ═══ SHARED BOTTOM NAV ═══ -->
+  <div class="bottom-nav" id="shared-nav" style="display:none;">
+    <div class="nav-item" id="nav-home"     onclick="navTo('home')">   <div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+    <div class="nav-item" id="nav-schedule" onclick="navTo('schedule')"><div class="nav-icon">📅</div><div class="nav-label">Schedule</div></div>
+    <div class="nav-item" id="nav-gifts"    onclick="navTo('gifts')">   <div class="nav-icon">🎁</div><div class="nav-label">Gifts</div></div>
+    <div class="nav-item" id="nav-settings" onclick="openPanel('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+  </div>
+
+  <!-- ═══ SCHEDULE PANEL (app nav — existing users) ═══ -->
+  <div class="slide-panel" id="panel-schedule">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('schedule')">←</div>
+      <div class="panel-title">Your <em>schedule</em></div>
+    </div>
+    <div class="panel-sub">When are you apart? Nudges fire during these windows.</div>
+    <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
+      <div class="time-label">Days</div>
+      <div class="day-row" id="app-day-row" style="margin-bottom:14px;">
+        <div class="day-pill active" data-day="Mo" onclick="toggleDay(this)">Mo</div>
+        <div class="day-pill active" data-day="Tu" onclick="toggleDay(this)">Tu</div>
+        <div class="day-pill active" data-day="We" onclick="toggleDay(this)">We</div>
+        <div class="day-pill active" data-day="Th" onclick="toggleDay(this)">Th</div>
+        <div class="day-pill active" data-day="Fr" onclick="toggleDay(this)">Fr</div>
+        <div class="day-pill" data-day="Sa" onclick="toggleDay(this)">Sa</div>
+        <div class="day-pill" data-day="Su" onclick="toggleDay(this)">Su</div>
+      </div>
+      <div class="time-label">Time slots</div>
+      <div class="time-grid" id="app-time-grid" style="margin-bottom:14px;">
+        <div class="time-slot" onclick="toggleTime(this)">6–7am</div>
+        <div class="time-slot" onclick="toggleTime(this)">7–8am</div>
+        <div class="time-slot" onclick="toggleTime(this)">8–9am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">9–10am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">10–11am</div>
+        <div class="time-slot active" onclick="toggleTime(this)">11am–12</div>
+        <div class="time-slot active" onclick="toggleTime(this)">12–1pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">1–2pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">2–3pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">3–4pm</div>
+        <div class="time-slot active" onclick="toggleTime(this)">4–5pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">5–6pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">6–7pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">7–8pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">8–9pm</div>
+        <div class="time-slot" onclick="toggleTime(this)">9–10pm</div>
+      </div>
+      <div class="windows-label">Your windows</div>
+      <div class="windows-list" id="app-windows-list" style="margin-bottom:6px;">
+        <div class="window-chip">
+          <div class="chip-info"><div class="chip-days">Mon – Fri</div><div class="chip-time">9:00am – 5:00pm</div></div>
+          <div class="chip-tag">Work hours</div>
+          <div class="chip-remove" onclick="removeChip(this)">✕</div>
+        </div>
+      </div>
+      <button class="add-window-btn" onclick="addWindowApp()">+ Add another window</button>
+      <div style="height:1px;background:var(--border);margin:10px 0 12px;flex-shrink:0;"></div>
+      <div class="windows-label">Special dates 🗓</div>
+      <div class="dates-intro" style="margin-bottom:8px;">
+        <p>Add birthdays, anniversaries and big days — Gra will remind you <strong>1 month, 1 week, the day before</strong> and <strong>on the day</strong>.</p>
+      </div>
+      <div class="dates-list" id="app-dates-list"></div>
+      <button class="add-date-btn" onclick="openDateModal()">🗓 &nbsp;Add a special date</button>
+      <button class="cta-btn" style="margin-top:14px;" onclick="saveSchedulePanel()">Save schedule ♡</button>
+      <div class="toast" id="toast-app-schedule" style="bottom:90px;">Saved ♡</div>
+    </div>
+  </div>
+
+  <!-- ═══ FREQUENCY PANEL (app — existing users) ═══ -->
+  <div class="slide-panel" id="panel-frequency">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('frequency');openPanel('settings');">←</div>
+      <div class="panel-title">Reminder <em>frequency</em></div>
+    </div>
+    <div class="panel-sub" id="freq-panel-sub">How often do you want to nudge?</div>
+    <div class="app-content" style="padding-top:8px;padding-bottom:80px;">
+      <!-- Person selector -->
+      <div class="freq-person-row" id="freq-person-row"></div>
+      <div class="counter-card">
+        <div class="counter-top">
+          <div class="counter-icon">💬</div>
+          <div class="counter-label"><h4>Text reminders</h4><p>per week</p></div>
+          <div class="stepper"><button onclick="changeFreqPanel('text',-1)">−</button><div class="val" id="fp-text-val">3</div><button onclick="changeFreqPanel('text',1)">+</button></div>
+        </div>
+        <div class="dot-row" id="fp-text-dots"></div>
+      </div>
+      <div class="counter-card">
+        <div class="counter-top">
+          <div class="counter-icon">📞</div>
+          <div class="counter-label"><h4>Call reminders</h4><p>per week</p></div>
+          <div class="stepper"><button onclick="changeFreqPanel('call',-1)">−</button><div class="val" id="fp-call-val">1</div><button onclick="changeFreqPanel('call',1)">+</button></div>
+        </div>
+        <div class="dot-row" id="fp-call-dots"></div>
+      </div>
+      <div class="summary-pill"><div class="summary-text" id="fp-summary-text"></div></div>
+      <button class="cta-btn" style="margin-top:8px;" onclick="saveFreqPanel()">Save ♡</button>
+      <div class="toast" id="toast-freq">Saved ♡</div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS PANEL ═══ -->
+  <div class="slide-panel" id="panel-settings">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('settings')">←</div>
+      <div class="panel-title">Settings <em>♡</em></div>
+    </div>
+    <div class="panel-sub">Adjust your love plan anytime</div>
+    <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
+      <!-- Person selector -->
+      <div class="settings-section">
+        <div class="settings-section-label">Editing settings for</div>
+        <div class="settings-person-selector" id="settings-person-selector"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-label">Reminders</div>
+        <div class="settings-row" onclick="openFrequencyPanel()"><div class="settings-row-left"><div class="settings-row-icon">🔔</div><div class="settings-row-text"><strong>Reminder frequency</strong><span id="s7-text-count">—</span></div></div><div class="settings-chevron">›</div></div>
+        <div class="settings-row" onclick="openScheduleFromSettings()"><div class="settings-row-left"><div class="settings-row-icon">📅</div><div class="settings-row-text"><strong>Available windows</strong><span id="s7-windows">Tap to edit your schedule</span></div></div><div class="settings-chevron">›</div></div>
+        <div class="settings-row" onclick="openPanel('resetmode')"><div class="settings-row-left"><div class="settings-row-icon">🔄</div><div class="settings-row-text"><strong>Schedule reset</strong><span id="s7-reset-label">Every Monday, auto-repeat</span></div></div><div class="settings-chevron">›</div></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-label">Region &amp; Gifts</div>
+        <div class="settings-row" onclick="openPanel('region')"><div class="settings-row-left"><div class="settings-row-icon">🌍</div><div class="settings-row-text"><strong>Gift region</strong><span id="s7-region">🇬🇧 United Kingdom</span></div></div><div class="settings-chevron">›</div></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-label">People</div>
+        <div class="settings-row" onclick="openPanel('profiles')"><div class="settings-row-left"><div class="settings-row-icon">👥</div><div class="settings-row-text"><strong>Manage people</strong><span>Add family, friends &amp; more</span></div></div><div class="settings-chevron">›</div></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-label">Account</div>
+        <div class="settings-row settings-row-info" style="cursor:default;">
+          <div class="settings-row-left"><div class="settings-row-icon">🌙</div><div class="settings-row-text"><strong>Dark mode</strong><span>Easy on the eyes</span></div></div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row" onclick="openPanel('about')"><div class="settings-row-left"><div class="settings-row-icon">💛</div><div class="settings-row-text"><strong>About Gra</strong><span>Why this app exists</span></div></div><div class="settings-chevron">›</div></div>
+        <div class="settings-row" onclick="resetApp()"><div class="settings-row-left"><div class="settings-row-icon">↩️</div><div class="settings-row-text"><strong>Reset app</strong><span>Delete all profiles &amp; start over</span></div></div><div class="settings-chevron" style="color:var(--rose);">›</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REGION PANEL ═══ -->
+  <div class="slide-panel" id="panel-region">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('region')">←</div>
+      <div class="panel-title"><em>Gift</em> region</div>
+    </div>
+    <div class="panel-sub">Choose your region so we can link you to local shops and services. This only affects the Gifts tab — your reminders work the same everywhere.</div>
+    <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
+      <div class="info-note">
+        <p>🎁 <strong>Why does this matter?</strong><br>Each region shows different local providers — flower delivery, spa vouchers, chocolates and more. UK users see Bloom & Wild; US users see 1-800-Flowers, and so on. Prices are shown in local currency.</p>
+      </div>
+      <div id="region-options">
+        <div class="option-card active" data-region="uk" onclick="selectRegionPanel(this)">
+          <div class="opt-icon">🇬🇧</div>
+          <div class="opt-body"><div class="opt-name">United Kingdom</div><div class="opt-desc">Bloom & Wild, Hotel Chocolat, Treatwell, Amazon UK</div></div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-region="us" onclick="selectRegionPanel(this)">
+          <div class="opt-icon">🇺🇸</div>
+          <div class="opt-body"><div class="opt-name">United States</div><div class="opt-desc">1-800-Flowers, Compartés, Spafinder, Amazon US</div></div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-region="au" onclick="selectRegionPanel(this)">
+          <div class="opt-icon">🇦🇺</div>
+          <div class="opt-body"><div class="opt-name">Australia</div><div class="opt-desc">Floraly, Koko Black, Spahive, Amazon AU</div></div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-region="eu" onclick="selectRegionPanel(this)">
+          <div class="opt-icon">🇪🇺</div>
+          <div class="opt-body"><div class="opt-name">Europe</div><div class="opt-desc">Euroflorist, Leonidas, Smartbox, Amazon.de</div></div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-region="ca" onclick="selectRegionPanel(this)">
+          <div class="opt-icon">🇨🇦</div>
+          <div class="opt-body"><div class="opt-name">Canada</div><div class="opt-desc">FTD, Bernard Callebaut, Spa Finder, Amazon CA</div></div>
+          <div class="opt-check">✓</div>
+        </div>
+      </div>
+      <button class="cta-btn" style="margin-top:8px;" onclick="closePanel('region')">Save region →</button>
+    </div>
+  </div>
+
+  <!-- ═══ RESET MODE PANEL ═══ -->
+  <div class="slide-panel" id="panel-resetmode">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('resetmode')">←</div>
+      <div class="panel-title">Schedule <em>reset</em></div>
+    </div>
+    <div class="panel-sub">How should Gra handle your reminders after the first week?</div>
+    <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
+      <div id="reset-options">
+        <div class="option-card active" data-reset="repeat" onclick="selectResetPanel(this)">
+          <div class="opt-icon">🔄</div>
+          <div class="opt-body">
+            <div class="opt-name">Auto-repeat every week</div>
+            <div class="opt-desc">Picks fresh random times every Monday, same frequency and windows. Runs until you pause it. Best for long-term relationships.</div>
+          </div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-reset="fixed" onclick="selectResetPanel(this)">
+          <div class="opt-icon">📆</div>
+          <div class="opt-body">
+            <div class="opt-name">Run for a set number of weeks</div>
+            <div class="opt-desc">Choose 2, 4, 8 or 12 weeks — great if you want to build a habit then check in. You'll get a summary at the end.</div>
+          </div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-reset="manual" onclick="selectResetPanel(this)">
+          <div class="opt-icon">✋</div>
+          <div class="opt-body">
+            <div class="opt-name">Manual — reset myself each week</div>
+            <div class="opt-desc">You confirm each Monday whether to continue. Good if your availability changes week to week.</div>
+          </div>
+          <div class="opt-check">✓</div>
+        </div>
+        <div class="option-card" data-reset="pause" onclick="selectResetPanel(this)">
+          <div class="opt-icon">⏸️</div>
+          <div class="opt-body">
+            <div class="opt-name">Pause after this week</div>
+            <div class="opt-desc">Completes the current week then stops. You can re-activate any time from the dashboard.</div>
+          </div>
+          <div class="opt-check">✓</div>
+        </div>
+      </div>
+      <!-- week picker - shown only for "fixed" -->
+      <div id="weeks-picker" style="display:none;">
+        <div class="time-label" style="margin-top:8px;">How many weeks?</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <div class="time-slot active" style="height:40px;font-size:0.72rem;flex:1;" onclick="selectWeeks(this,2)">2 wks</div>
+          <div class="time-slot" style="height:40px;font-size:0.72rem;flex:1;" onclick="selectWeeks(this,4)">4 wks</div>
+          <div class="time-slot" style="height:40px;font-size:0.72rem;flex:1;" onclick="selectWeeks(this,8)">8 wks</div>
+          <div class="time-slot" style="height:40px;font-size:0.72rem;flex:1;" onclick="selectWeeks(this,12)">12 wks</div>
+        </div>
+      </div>
+      <button class="cta-btn" style="margin-top:14px;" onclick="saveResetMode()">Save →</button>
+    </div>
+  </div>
+
+  <!-- PROFILES PANEL -->
+  <div class="slide-panel" id="panel-profiles">
+    <div class="panel-header"><div class="back-btn" onclick="closePanel('profiles')">←</div><div class="panel-title">Your <em>people</em></div></div>
+    <div class="panel-sub">Each person has their own frequency, windows and message tone.</div>
+    <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
+      <div class="people-list" id="people-list"></div>
+      <button class="add-person-btn" onclick="closePanel('profiles'); addAnotherPerson();">+ Add another person</button>
+    </div>
+  </div>
+
+  <!-- ABOUT PANEL -->
+  <div class="slide-panel" id="panel-about">
+    <div class="panel-header">
+      <div class="back-btn" onclick="closePanel('about')">←</div>
+      <div class="panel-title">About <em>Gra</em></div>
+    </div>
+    <div class="app-content" style="padding-top:8px;padding-bottom:40px;">
+
+      <div class="about-hero">
+        <div class="about-heart">💛</div>
+        <div class="about-tagline">Small reminders.<br>Big love.</div>
+      </div>
+
+      <div class="about-story">
+        <div class="about-section-label">Why I built this</div>
+        <p>A while back I realised something uncomfortable: I was genuinely bad at keeping in touch with the people I love most. Not because I didn't care — I thought about my partner, my family, my close friends constantly. But life gets busy, and somehow days would pass without a single message.</p>
+        <p>I noticed that when I did reach out — even just a quick "thinking of you" — it changed everything. The conversation would light up. The relationship felt warmer. And I felt better too.</p>
+        <p>So I started setting phone reminders. Clunky, but it worked. I wanted something more intentional — something that understood <em>who</em> I was nudging and <em>when</em> I was free. <em>Grà</em> is the Scottish Gaelic word for love. This is what I built for myself. I hope it helps you too.</p>
+      </div>
+
+      <div class="about-science">
+        <div class="about-section-label">The science bit</div>
+        <div class="about-science-card">
+          <div class="science-item">
+            <div class="science-icon">🔬</div>
+            <div class="science-text"><strong>Micro-moments matter</strong> — Psychologist Barbara Fredrickson's research shows that brief positive interactions, even a short text, build lasting emotional bonds over time.</div>
+          </div>
+          <div class="science-item">
+            <div class="science-icon">🧠</div>
+            <div class="science-text"><strong>Habits need cues</strong> — BJ Fogg's Tiny Habits research shows that good intentions alone aren't enough. External prompts are what turn caring feelings into consistent behaviour.</div>
+          </div>
+          <div class="science-item">
+            <div class="science-icon">📈</div>
+            <div class="science-text"><strong>Consistency compounds</strong> — Relationship researcher John Gottman found that couples who maintain small, regular gestures of affection report significantly higher long-term relationship satisfaction.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-version">Gra · From the Scottish Gaelic for love · v1.0</div>
+
+      <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">☕ &nbsp;If this helped, buy me a coffee</a>
+
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<!-- ─── PROTO FOOTER ─── -->
+<div class="proto-footer">
+  <button class="proto-nav-btn" id="btn-back" onclick="goBack()" disabled>← Back</button>
+  <div class="proto-screen-name" id="proto-screen-name">Welcome & Setup</div>
+  <button class="proto-nav-btn primary" id="btn-next" onclick="goNext()">Next →</button>
+</div>
+
+<script>
+/* ══════════════════════════════════
+   STATE & CONSTANTS
+══════════════════════════════════ */
+const SCREEN_ORDER = [1, 1.5, 2, 3, 4, 4.5, 6];
+const SCREEN_META = {
+  1:   { label:'Welcome',            name:'Welcome',            app:false },
+  1.5: { label:'Relationship type',  name:'Relationship Type',  app:false },
+  2:   { label:'Reminder frequency', name:'Reminder Frequency', app:false },
+  3:   { label:'Available windows',  name:'Available Windows',  app:false },
+  4:   { label:'Confirm & activate', name:'Confirm & Activate', app:true  },
+  5:   { label:'Reminder preview',   name:'The Reminder',       app:true  },
+  6:   { label:'Dashboard',          name:'Dashboard',          app:true  },
+};
+
+const freq = { text:3, call:1 };
+const MAX  = { text:7, call:3 };
+const MIN  = { text:1, call:0 };
+
+// people[]: { name, rel, emoji, bg, relLabel, freq:{text,call}, stats:{texts,calls,streak}, weekNum }
+let people = [];
+let activePersonIdx = 0;
+
+let currentScreen = 1;
+let transitioning = false;
+let returnTo = null;
+let openPanels = [];
+let nudgeFilter = 'all'; // 'all' or 'person'
+let isAddingPerson = false; // true when going through onboarding to add a second+ person
+let panelReturnTo = null; // tracks if schedule was opened from settings
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+let currentRegion = 'uk';
+let currentRel = 'partner';
+let currentResetMode = 'repeat';
+let selectedDateType = null;
+
+const REL_META = {
+  partner: { emoji:'💑', bg:'#fde8ec', label:'Partner'  },
+  spouse:  { emoji:'💍', bg:'#fde8ec', label:'Spouse'   },
+  family:  { emoji:'👨‍👩‍👧', bg:'#e8f5e8', label:'Family'  },
+  friend:  { emoji:'🤝', bg:'#e8f0ff', label:'Friend'   },
+};
+
+const REL_MESSAGES = {
+  partner: '"Just thinking about you ♡"',
+  spouse:  '"You\'re my favourite part of every day ♡"',
+  family:  '"Hey, how\'s it going? Thinking of you 🌿"',
+  friend:  '"Haven\'t caught up in a while — fancy a call? 😄"',
+};
+
+const MESSAGES = {
+  partner: [
+    '"Just thinking about you ♡"',
+    '"Can\'t wait to see you tonight"',
+    '"Hope your day\'s going well 🌿"',
+    '"Missing you already"',
+    '"You make everything better, you know that?"',
+    '"Counting down until I see you ♡"',
+    '"Just wanted you to know I love you"',
+    '"Thinking of you and smiling 😊"',
+    '"You\'re my favourite person"',
+    '"Hope today is treating you as well as you deserve"',
+    '"Can\'t stop thinking about you"',
+    '"Just a little reminder that I adore you ♡"',
+    '"You\'re the best part of my day, every day"',
+    '"Sending you a big hug through the phone"',
+    '"Miss your face 🥰"',
+    '"Hope work isn\'t too mad — thinking of you"',
+    '"You mean the world to me, just so you know"',
+    '"Wish you were here right now"',
+    '"Can\'t wait to tell you about my day"',
+    '"Loving you from over here ♡"',
+  ],
+  spouse: [
+    '"You\'re my favourite part of every day ♡"',
+    '"Thinking of you — hope work isn\'t too hectic"',
+    '"Save me a hug for later"',
+    '"Can\'t stop thinking about our last date night"',
+    '"Still my favourite person after all this time ♡"',
+    '"Just a reminder that I married the right one"',
+    '"Home feels empty without you"',
+    '"Thinking of you between meetings 😊"',
+    '"Can\'t wait to be on the sofa with you tonight"',
+    '"You\'re doing amazing — I see it even if you don\'t"',
+    '"Grateful for you every single day"',
+    '"Missing my person ♡"',
+    '"Just wanted to say I love you, no reason needed"',
+    '"Hope your day\'s going well — mine\'s better knowing you\'re in it"',
+    '"Save some energy for me tonight 😄"',
+    '"You\'re the reason home feels like home"',
+    '"Still choosing you, every day ♡"',
+    '"Thinking of you and feeling lucky"',
+    '"Can\'t wait to hear about your day"',
+    '"You make the ordinary feel extraordinary ♡"',
+  ],
+  family: [
+    '"Hey, how\'s it going? Thinking of you 🌿"',
+    '"Just checking in — hope you\'re doing well!"',
+    '"Miss you — when are we next catching up?"',
+    '"Proud of you every single day 💛"',
+    '"Just wanted to say I love you"',
+    '"Hope everything\'s good your end!"',
+    '"Been thinking about you lately — hope life\'s treating you well"',
+    '"You\'re always in my thoughts 💛"',
+    '"Miss your face — let\'s sort a catch up soon"',
+    '"Just checking you\'re okay — drop me a message when you can"',
+    '"Thinking of you and sending love 🌿"',
+    '"Hope today\'s a good one for you"',
+    '"Give me a ring when you get a chance — would love to catch up"',
+    '"So proud of everything you\'re doing"',
+    '"Sending you a big hug 💛"',
+    '"Just thinking about you and smiling"',
+    '"Hope you\'re taking care of yourself!"',
+    '"Would love to see you soon — let\'s make a plan"',
+    '"You mean so much to me, just wanted you to know"',
+    '"Thinking of you today — hope it\'s a lovely one 🌿"',
+  ],
+  friend: [
+    '"Haven\'t caught up in a while — fancy a call?"',
+    '"Thinking of you! Hope life\'s treating you well 😄"',
+    '"We should actually plan something soon"',
+    '"Just wanted to say I appreciate you ♡"',
+    '"Mate, it\'s been too long — how are you?"',
+    '"Just thought of you and had to say hey 😄"',
+    '"Hope everything\'s going well your end!"',
+    '"We need to sort a proper catch up"',
+    '"Thinking of you — hope things are good!"',
+    '"Still one of my favourite people, just so you know ♡"',
+    '"Life gets busy but I don\'t want to lose touch — how are you?"',
+    '"Hope you\'re doing well — miss your energy!"',
+    '"Genuinely need to see you soon, it\'s been ages"',
+    '"Just a little hey from me 👋"',
+    '"Hope today\'s treating you well!"',
+    '"Thinking of you and all the laughs we need to catch up on 😄"',
+    '"You\'re a good one — just wanted to remind you"',
+    '"Let\'s actually make plans this time 😄"',
+    '"Haven\'t spoken in a while — hope all\'s well!"',
+    '"Missing our catch ups — let\'s fix that soon ♡"',
+  ],
+};
+
+const GIFTS = {
+  uk:[{emoji:'💐',name:'Fresh flower delivery',desc:'Bloom & Wild — letterbox bouquets',price:'From £25',btn:'Send ♡'},{emoji:'🍫',name:'Artisan chocolates',desc:'Hotel Chocolat — luxury monthly box',price:'From £22/mo',btn:'Gift ♡'},{emoji:'🌿',name:'Spa day voucher',desc:'Treatwell — book local spas online',price:'From £40',btn:'Book ♡'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal, beautiful paper — Amazon UK',price:'~£18',btn:'View ♡'},{emoji:'🕯️',name:'Luxury candle set',desc:'Jo Malone style — romantic ambience',price:'~£28',btn:'View ♡'}],
+  us:[{emoji:'💐',name:'Fresh flower delivery',desc:'1-800-Flowers — same-day delivery',price:'From $35',btn:'Send ♡'},{emoji:'🍫',name:'Artisan chocolates',desc:"Compartés — LA chocolatier, ships nationwide",price:'From $28',btn:'Gift ♡'},{emoji:'🌿',name:'Spa day voucher',desc:'Spafinder — 20,000+ US spas',price:'From $50',btn:'Book ♡'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & writing prompts — Amazon US',price:'~$24',btn:'View ♡'},{emoji:'🕯️',name:'Luxury candle set',desc:'Homesick — free shipping over $50',price:'~$34',btn:'View ♡'}],
+  au:[{emoji:'💐',name:'Fresh flower delivery',desc:'Floraly — same-day Melb/Syd/Bris',price:'From A$55',btn:'Send ♡'},{emoji:'🍫',name:'Artisan chocolates',desc:'Koko Black — Australian bean-to-bar',price:'From A$30',btn:'Gift ♡'},{emoji:'🌿',name:'Spa day voucher',desc:'Spahive — find & book spas Australia',price:'From A$60',btn:'Book ♡'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts — Amazon AU',price:'~A$32',btn:'View ♡'},{emoji:'🕯️',name:'Luxury candle set',desc:'Lumira — Australian luxury fragrance',price:'~A$55',btn:'View ♡'}],
+  eu:[{emoji:'💐',name:'Fresh flower delivery',desc:'Euroflorist — 150+ European countries',price:'From €30',btn:'Send ♡'},{emoji:'🍫',name:'Artisan chocolates',desc:'Leonidas Belgian chocolates — EU shipping',price:'From €22',btn:'Gift ♡'},{emoji:'🌿',name:'Spa day voucher',desc:'Smartbox — spa experiences across Europe',price:'From €49',btn:'Book ♡'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts — Amazon.de',price:'~€20',btn:'View ♡'},{emoji:'🕯️',name:'Luxury candle set',desc:'Diptyque — Parisian candles, EU shipping',price:'~€45',btn:'View ♡'}],
+  ca:[{emoji:'💐',name:'Fresh flower delivery',desc:'FTD Canada — nationwide delivery',price:'From CA$45',btn:'Send ♡'},{emoji:'🍫',name:'Artisan chocolates',desc:'Bernard Callebaut — Canadian chocolate',price:'From CA$30',btn:'Gift ♡'},{emoji:'🌿',name:'Spa day voucher',desc:'SpaFinder — Canada locations',price:'From CA$60',btn:'Book ♡'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts — Amazon CA',price:'~CA$28',btn:'View ♡'},{emoji:'🕯️',name:'Luxury candle set',desc:'P.F. Candle Co — free shipping CA',price:'~CA$38',btn:'View ♡'}],
+};
+
+const REGION_NAMES = {uk:'🇬🇧 United Kingdom',us:'🇺🇸 United States',au:'🇦🇺 Australia',eu:'🇪🇺 Europe',ca:'🇨🇦 Canada'};
+const RESET_LABELS = {repeat:'Every Monday, auto-repeat',fixed:'Fixed number of weeks',manual:'Manual — confirm each week',pause:'Pause after this week'};
+
+/* ══════════════════════════════════
+   STARTUP
+══════════════════════════════════ */
+function init() {
+  updateTime();
+  setInterval(updateTime, 30000);
+  loadDarkMode();
+
+  // Load persisted data (localStorage first for instant load, then sync from Supabase)
+  try {
+    const saved = localStorage.getItem('ln_people');
+    if (saved) people = JSON.parse(saved);
+    const savedRegion = localStorage.getItem('ln_region');
+    if (savedRegion) currentRegion = savedRegion;
+  } catch(e) {}
+
+  loadDates();
+  renderDateChips();
+
+  renderDots('text');
+  renderDots('call');
+  updateSummary();
+  renderGifts();
+  updateRegionUI();
+
+  if (people.length > 0) {
+    // Returning user — jump straight to dashboard, no animation
+    activePersonIdx = 0;
+    document.getElementById('screen-1').classList.remove('active');
+    document.getElementById('screen-6').classList.add('active');
+    currentScreen = 6;
+    renderDashboard();
+    renderSuggestions();
+    updateUI();
+  } else {
+    // Check Supabase for existing data (handles reinstall / new device)
+    loadPeopleRemote().then(loaded => {
+      if (loaded && people.length > 0) {
+        activePersonIdx = 0;
+        document.getElementById('screen-1').classList.remove('active');
+        document.getElementById('screen-6').classList.add('active');
+        currentScreen = 6;
+        renderDashboard();
+        renderSuggestions();
+        updateUI();
+      }
+    }).catch(() => {});
+    currentScreen = 1;
+    updateUI();
+  }
+
+  // Intercept hardware back button — prevent app exit
+  // Wrapped in try/catch so it silently fails in sandboxed iframes (Claude preview etc.)
+  try {
+    if (!location.hash) history.replaceState(null, '', location.pathname + '#app');
+    window.addEventListener('popstate', (e) => {
+      try { history.pushState(null, '', location.pathname + '#app'); } catch(e) {}
+      handleHardwareBack();
+    });
+  } catch(e) {}
+
+  // Service worker + Web Push setup
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        window._swReg = reg;
+        // Try to subscribe to push silently if already granted
+        if (Notification.permission === 'granted') {
+          await ensurePushSubscription(reg);
+        }
+      } catch(e) {}
+    });
+  }
+
+  // Install prompt — capture but DO NOT preventDefault so Chrome can still show its own prompt too
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    deferredPrompt = e;
+    setTimeout(() => { if (deferredPrompt) showInstallBanner(deferredPrompt); }, 1500);
+  });
+
+  // iOS — detect and show manual "Add to Home Screen" instruction
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isIos && !isInStandaloneMode) {
+    setTimeout(() => showIosInstallBanner(), 2000);
+  }
+
+  // Weekly re-engage notification — fires if no active people or all paused
+  scheduleWeeklyReengageCheck();
+  // Check if any date notifications are due
+  checkDueDateNotifs();
+}
+
+// -- SUPABASE + WEB PUSH -------------------------------------------------------
+const SUPABASE_URL  = 'https://lnfijupigmsosokpjutj.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuZmlqdXBpZ21zb3Nva3BqdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODExNDcsImV4cCI6MjA4NzY1NzE0N30.J7SEAKL1U__mhSAP5fOh8Bw82F9sHELgcJ7qbVRSY1w';
+const VAPID_PUBLIC_KEY = 'BHl_D6UaYgMx6ksa8ydT2Onga4vc8DuL7j98fg7y-58NATf-QPbpxnVbLnHIB1TpMj69OMo8xu67xinzpn0nVBc';
+
+function getDeviceId() {
+  let id = localStorage.getItem('ln_device_id');
+  if (!id) {
+    id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now();
+    localStorage.setItem('ln_device_id', id);
+  }
+  return id;
+}
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(opts.headers || {}),
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`sbFetch ${path}: ${res.status} ${text}`);
+  return text ? JSON.parse(text) : null;
+}
+
+async function ensureUser() {
+  const deviceId = getDeviceId();
+  let userId = localStorage.getItem('ln_user_id');
+  if (userId) return userId;
+  try {
+    const rows = await sbFetch(`users?device_id=eq.${encodeURIComponent(deviceId)}&select=id`);
+    if (rows && rows.length > 0) {
+      userId = rows[0].id;
+    } else {
+      const created = await sbFetch('users', { method: 'POST', body: JSON.stringify({ device_id: deviceId }) });
+      userId = created[0].id;
+    }
+    localStorage.setItem('ln_user_id', userId);
+    return userId;
+  } catch(e) { console.error('ensureUser:', e); return null; }
+}
+
+function urlBase64ToUint8Array(b) {
+  const pad = '='.repeat((4 - b.length % 4) % 4);
+  const raw = atob((b + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function ensurePushSubscription(reg) {
+  try {
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    window._pushSub = sub;
+    localStorage.setItem('ln_push_sub', JSON.stringify(sub));
+    // Save to Supabase
+    const userId = await ensureUser();
+    if (userId) {
+      const j = sub.toJSON();
+      await sbFetch('push_subscriptions?on_conflict=user_id', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify({ user_id: userId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+      }).catch(e => console.warn('push_sub save:', e));
+    }
+    return sub;
+  } catch(e) { return null; }
+}
+
+async function requestPushPermission() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return false;
+  if (Notification.permission === 'denied') return false;
+  let perm = Notification.permission;
+  if (perm !== 'granted') perm = await Notification.requestPermission();
+  if (perm !== 'granted') return false;
+  let reg = window._swReg;
+  if (!reg) { try { reg = await navigator.serviceWorker.ready; window._swReg = reg; } catch(e) { return false; } }
+  return !!(await ensurePushSubscription(reg));
+}
+
+async function sendPush(notification) {
+  let sub = window._pushSub;
+  if (!sub) { try { const s = localStorage.getItem('ln_push_sub'); if (s) sub = JSON.parse(s); } catch(e) {} }
+  if (!sub) return false;
+  try {
+    const j = (typeof sub.toJSON === 'function') ? sub.toJSON() : sub;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ subscription: { endpoint: j.endpoint, keys: j.keys }, notification }),
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+async function sendTestPush() {
+  const ok = await requestPushPermission();
+  if (!ok) { showToast('toast-dash', 'Notifications blocked in browser settings'); return; }
+  const sent = await sendPush({ title: 'Gra', body: 'Notifications are working! Your reminders will arrive here.', tag: 'heartline-test' });
+  showToast('toast-dash', sent ? 'Test notification sent!' : 'Could not send — check Supabase function logs');
+}
+
+// Build this week's nudge fire times for a person
+function buildWeeklyNudgeTimes(person) {
+  const chips = document.querySelectorAll('#app-windows-list .window-chip, #windows-list .window-chip');
+  let startHour = 9, endHour = 17;
+  const daySet = new Set();
+  chips.forEach(chip => {
+    const dEl = chip.querySelector('.chip-days');
+    const tEl = chip.querySelector('.chip-time');
+    if (dEl) { ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((d,i) => { if (dEl.textContent.includes(d)) daySet.add(i === 6 ? 0 : i + 1); }); }
+    if (tEl && startHour === 9) {
+      const parts = tEl.textContent.split('\u2013').map(s => s.trim());
+      const ph = s => { const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i); if (!m) return null; let h = +m[1]; if (/pm/i.test(m[3]) && h !== 12) h += 12; if (/am/i.test(m[3]) && h === 12) h = 0; return h; };
+      startHour = ph(parts[0]) ?? 9;
+      endHour   = ph(parts[1]) ?? 17;
+    }
+  });
+  const dayNums = daySet.size ? [...daySet].sort() : [1,2,3,4,5];
+  const types = [...Array(person.freq.text||0).fill('text'), ...Array(person.freq.call||0).fill('call')];
+  const now = new Date();
+  return types.map((type, i) => {
+    const dayNum = dayNums[i % dayNums.length];
+    const target = new Date(now);
+    let ahead = (dayNum - now.getDay() + 7) % 7;
+    if (ahead === 0 && now.getHours() >= endHour) ahead = 7;
+    target.setDate(target.getDate() + ahead);
+    target.setHours(startHour + Math.floor(Math.random() * Math.max(1, endHour - startHour)), Math.floor(Math.random() * 60), 0, 0);
+    return { type, fireAt: target.toISOString() };
+  });
+}
+
+async function scheduleNudgesForPerson(person) {
+  try {
+    const userId = await ensureUser();
+    if (!userId) return;
+    // Clear existing unfired nudges for this person
+    await sbFetch(`nudge_schedules?user_id=eq.${userId}&person_name=eq.${encodeURIComponent(person.name)}&fired=eq.false`, {
+      method: 'DELETE', headers: { 'Prefer': '' }
+    }).catch(() => {});
+    const nudges = buildWeeklyNudgeTimes(person);
+    if (!nudges.length) return;
+    await sbFetch('nudge_schedules', {
+      method: 'POST',
+      body: JSON.stringify(nudges.map(n => ({ user_id: userId, person_name: person.name, nudge_type: n.type, fire_at: n.fireAt }))),
+    });
+    console.log(`Scheduled ${nudges.length} nudges for ${person.name}`);
+  } catch(e) { console.error('scheduleNudgesForPerson:', e); }
+}
+
+// Sync people data to Supabase (also keep localStorage as offline fallback)
+async function savePeopleRemote() {
+  try {
+    const userId = await ensureUser();
+    if (!userId) return;
+    await sbFetch(`users?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': '' },
+      body: JSON.stringify({ people_data: JSON.stringify(people) }),
+    });
+  } catch(e) { console.warn('savePeopleRemote:', e); }
+}
+
+async function loadPeopleRemote() {
+  try {
+    const userId = localStorage.getItem('ln_user_id');
+    if (!userId) return false;
+    const rows = await sbFetch(`users?id=eq.${userId}&select=people_data`);
+    if (rows?.[0]?.people_data) {
+      const loaded = JSON.parse(rows[0].people_data);
+      if (Array.isArray(loaded) && loaded.length > 0) { people = loaded; return true; }
+    }
+  } catch(e) {}
+  return false;
+}
+
+function scheduleWeeklyReengageCheck() {
+  try {
+    const lastShown = parseInt(localStorage.getItem('ln_reengage_ts') || '0');
+    const now = Date.now();
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const noActivePeople = people.length === 0;
+    const allPaused = people.length > 0 && people.every(p => p.resetMode === 'pause');
+    if ((noActivePeople || allPaused) && (now - lastShown) >= WEEK_MS) {
+      localStorage.setItem('ln_reengage_ts', String(now));
+      sendPush({ title: 'Gra', body: 'Want to start a new schedule for someone you love?', tag: 'heartline-reengage' });
+    }
+  } catch(e) {}
+}
+
+function handleHardwareBack() {
+  // Close any open panel first
+  if (openPanels.length > 0) {
+    closePanel(openPanels[openPanels.length - 1]);
+    return;
+  }
+  // Close date modal if open
+  const dateModal = document.getElementById('date-modal');
+  if (dateModal && dateModal.classList.contains('open')) {
+    closeDateModal();
+    return;
+  }
+  // Close confirm modal if open
+  const confirmModal = document.getElementById('confirm-modal');
+  if (confirmModal && confirmModal.style.display !== 'none') {
+    closeConfirmModal();
+    return;
+  }
+  // On dashboard — ask before exiting
+  if (currentScreen === 6) {
+    showConfirm('Close Gra?', 'Your reminders and profiles are safely saved.', 'Yes, close', () => {
+      // Remove our hash trap and go back for real
+      history.replaceState(null, '', location.pathname);
+      history.back();
+    });
+    return;
+  }
+  // Screen 5 (reminder preview) — go back to dashboard
+  if (currentScreen === 5) { goTo(6); return; }
+  // Screen 4.5 (permission) — go back to screen 4
+  if (currentScreen === 4.5) { goTo(4); return; }
+  // Screen 4 (confirm) — go back to screen 3
+  if (currentScreen === 4) { goTo(3); return; }
+  // Screen 3 — use s3Back which handles returnTo logic
+  if (currentScreen === 3) { s3Back(); return; }
+  // Screen 2 — use s2Back which handles panelReturnTo logic
+  if (currentScreen === 2) { s2Back(); return; }
+  // Screen 1 or 1.5 — already at start, do nothing (stay in app)
+  if (currentScreen === 1 || currentScreen === 1.5) { return; }
+  // All other screens — go back one
+  goBack();
+}
+
+function updateTime() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes().toString().padStart(2, '0');
+  document.querySelectorAll('.status-bar .time').forEach(el => el.textContent = `${h}:${m}`);
+  const greet = document.getElementById('greeting-main');
+  if (greet) {
+    const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    greet.innerHTML = `${g} <em>♡</em>`;
+  }
+}
+
+/* ══════════════════════════════════
+   PERSIST
+══════════════════════════════════ */
+function savePeople() {
+  try { localStorage.setItem('ln_people', JSON.stringify(people)); } catch(e) {}
+  savePeopleRemote().catch(() => {});
+}
+
+function saveRegion() {
+  try { localStorage.setItem('ln_region', currentRegion); } catch(e) {}
+}
+
+function resetApp() {
+  const count = people.length;
+  const body = count > 0
+    ? `This will permanently delete all ${count} profile${count !== 1 ? 's' : ''} and start from scratch. This cannot be undone.`
+    : 'This will clear all data and restart the app. This cannot be undone.';
+  showConfirm('Reset app?', body, 'Yes, reset everything', doResetApp);
+}
+
+function doResetApp() {
+  try { localStorage.clear(); } catch(e) {}
+  people = [];
+  isAddingPerson = false;
+  // Clear dates from all people too
+  people.forEach(p => { if (p) p.dates = []; });
+  activePersonIdx = 0;
+  currentRel = 'partner';
+  freq.text = 3; freq.call = 1;
+  const tv = document.getElementById('text-val'); if (tv) tv.textContent = 3;
+  const cv = document.getElementById('call-val'); if (cv) cv.textContent = 1;
+  renderDots('text'); renderDots('call'); updateSummary();
+  const ni = document.getElementById('partner-name'); if (ni) ni.value = '';
+  const wl = document.getElementById('windows-list');
+  if (wl) wl.innerHTML = `<div class="window-chip"><div class="chip-info"><div class="chip-days">Mon – Fri</div><div class="chip-time">9:00am – 5:00pm</div></div><div class="chip-tag">Work hours</div><div class="chip-remove" onclick="removeChip(this)">✕</div></div>`;
+  document.querySelectorAll('.rel-card').forEach(c => c.classList.toggle('active', c.dataset.rel === 'partner'));
+  const bubble = document.getElementById('msg-preview-bubble'); if (bubble) bubble.textContent = REL_MESSAGES.partner;
+  closeAllPanels();
+  renderDateChips();
+  renderUpcomingDates();
+  // Hide nav bar and go to screen 1 properly
+  const nav = document.getElementById('shared-nav');
+  if (nav) nav.style.display = 'none';
+  const dots = document.querySelector('.screen-dots');
+  if (dots) dots.style.display = 'none';
+  document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-1').classList.add('active');
+  currentScreen = 1;
+  updateUI();
+  // Also reset Supabase nudge schedules
+  ensureUser().then(uid => {
+    if (uid) {
+      sbFetch('nudge_schedules?user_id=eq.' + uid, { method: 'DELETE' }).catch(() => {});
+      sbFetch('push_subscriptions?user_id=eq.' + uid, { method: 'DELETE' }).catch(() => {});
+    }
+  });
+}
+
+/* ══════════════════════════════════
+   ONBOARDING
+══════════════════════════════════ */
+function startOnboarding() {
+  const nameEl = document.getElementById('partner-name');
+  if (!nameEl || !nameEl.value.trim()) {
+    nameEl.style.borderColor = 'var(--rose)';
+    nameEl.placeholder = 'Please enter a name first';
+    nameEl.focus();
+    return;
+  }
+  nameEl.style.borderColor = '';
+  nameEl.blur(); // dismiss keyboard
+  goTo(1.5);
+}
+
+function addAnotherPerson() {
+  isAddingPerson = true;
+  // Clear name input for fresh entry
+  const nameEl = document.getElementById('partner-name');
+  if (nameEl) nameEl.value = '';
+  currentRel = 'partner';
+  returnTo = null;
+  panelReturnTo = null;
+  document.querySelectorAll('.rel-card').forEach(c => c.classList.toggle('active', c.dataset.rel === 'partner'));
+  const bubble = document.getElementById('msg-preview-bubble');
+  if (bubble) bubble.textContent = REL_MESSAGES.partner;
+  freq.text = 3; freq.call = 1;
+  document.getElementById('text-val').textContent = 3;
+  document.getElementById('call-val').textContent = 1;
+  renderDots('text'); renderDots('call'); updateSummary();
+  // Clear windows list for fresh start
+  const wl = document.getElementById('windows-list');
+  if (wl) wl.innerHTML = `<div class="window-chip"><div class="chip-info"><div class="chip-days">Mon – Fri</div><div class="chip-time">9:00am – 5:00pm</div></div><div class="chip-tag">Work hours</div><div class="chip-remove" onclick="removeChip(this)">✕</div></div>`;
+  // Reset screen 4 back to confirm state (not activated)
+  const s4confirm = document.getElementById('s4-confirm');
+  const s4activated = document.getElementById('s4-activated');
+  if (s4confirm) s4confirm.style.display = '';
+  if (s4activated) s4activated.classList.remove('show');
+  goTo(1);
+}
+
+/* ══════════════════════════════════
+   NAVIGATION
+══════════════════════════════════ */
+function goTo(n) {
+  if (transitioning || n === currentScreen) return;
+  closeAllPanels();
+
+  const from = document.querySelector(`[id="screen-${currentScreen}"]`);
+  const to   = document.querySelector(`[id="screen-${n}"]`);
+  if (!from || !to) return;
+
+  transitioning = true;
+  const dir = SCREEN_ORDER.indexOf(n) > SCREEN_ORDER.indexOf(currentScreen) ? 1 : -1;
+
+  if (currentScreen === 5) resetS5();
+
+  to.style.transition = 'none';
+  to.style.transform  = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+  to.classList.remove('active');
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    to.style.transition = '';
+    to.style.transform  = 'translateX(0)';
+    to.classList.add('active');
+    from.style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+    from.classList.remove('active');
+    setTimeout(() => { from.style.transform = ''; transitioning = false; }, 360);
+  }));
+
+  currentScreen = n;
+  updateUI();
+  if (n === 6) renderDashboard();
+  // Update screen 2 CTA label
+  const s2cta = document.getElementById('s2-cta');
+  if (s2cta) s2cta.textContent = panelReturnTo === 'settings' ? 'Save & return to settings →' : 'Next — Set your windows →';
+  // Update screen 3 CTA label and back button visibility
+  const s3cta = document.getElementById('s3-cta');
+  if (s3cta) s3cta.textContent = returnTo ? 'Save & return to dashboard →' : 'Save windows →';
+  const s3back = document.getElementById('s3-back');
+  if (s3back) s3back.style.visibility = (people.length === 0 || isAddingPerson) ? 'visible' : 'hidden';
+  // Update confirm screen
+  if (n === 4) updateConfirmScreen();
+}
+
+function goNext() {
+  const idx = SCREEN_ORDER.indexOf(currentScreen);
+  if (idx < SCREEN_ORDER.length - 1) goTo(SCREEN_ORDER[idx + 1]);
+}
+
+function goBack() {
+  const idx = SCREEN_ORDER.indexOf(currentScreen);
+  if (idx > 0) goTo(SCREEN_ORDER[idx - 1]);
+}
+
+let freqPanelIdx = 0; // which person the freq panel is editing
+
+function renderSettingsPersonSelector() {
+  const el = document.getElementById('settings-person-selector');
+  if (!el) return;
+  if (people.length === 0) { el.innerHTML = '<span style="font-size:0.7rem;color:var(--muted);">No people added yet.</span>'; return; }
+  el.innerHTML = people.map((p, i) => `
+    <div class="settings-person-chip ${i === activePersonIdx ? 'active' : ''}" onclick="switchSettingsPerson(${i})">
+      <span class="chip-emoji">${p.emoji}</span>${p.name}
+    </div>`).join('');
+}
+
+function switchSettingsPerson(idx) {
+  activePersonIdx = idx;
+  renderSettingsPersonSelector();
+  updateSettingsValues();
+}
+
+function updateSettingsValues() {
+  const p = people[activePersonIdx];
+  if (!p) return;
+  const tc = document.getElementById('s7-text-count');
+  if (tc) tc.textContent = `${p.freq.text} text + ${p.freq.call} call / week`;
+  const rl = document.getElementById('s7-reset-label'); if (rl) rl.textContent = RESET_LABELS[currentResetMode];
+  const rg = document.getElementById('s7-region'); if (rg) rg.textContent = REGION_NAMES[currentRegion] || currentRegion;
+}
+
+function openFrequencyPanel() {
+  freqPanelIdx = activePersonIdx;
+  closePanel('settings');
+  setTimeout(() => {
+    renderFreqPanel();
+    openPanel('frequency');
+  }, 300);
+}
+
+// Keep old name working for any residual calls
+function openFrequencyFromSettings() { openFrequencyPanel(); }
+
+function renderFreqPanel() {
+  const p = people[freqPanelIdx];
+  if (!p) return;
+
+  // Person selector row
+  const row = document.getElementById('freq-person-row');
+  if (row) {
+    row.innerHTML = people.map((person, i) => `
+      <div class="settings-person-chip ${i === freqPanelIdx ? 'active' : ''}" onclick="switchFreqPerson(${i})">
+        <span class="chip-emoji">${person.emoji}</span>${person.name}
+      </div>`).join('');
+  }
+
+  // Sub label
+  const sub = document.getElementById('freq-panel-sub');
+  if (sub) sub.textContent = `How often do you want to nudge ${p.name}?`;
+
+  // Values
+  const tv = document.getElementById('fp-text-val'); if (tv) tv.textContent = p.freq.text;
+  const cv = document.getElementById('fp-call-val'); if (cv) cv.textContent = p.freq.call;
+
+  renderFreqDots('text', p.freq.text);
+  renderFreqDots('call', p.freq.call);
+  updateFreqSummary();
+}
+
+function switchFreqPerson(idx) {
+  freqPanelIdx = idx;
+  renderFreqPanel();
+}
+
+function renderFreqDots(type, val) {
+  const container = document.getElementById('fp-' + type + '-dots');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < MAX[type]; i++) {
+    const dot = document.createElement('div');
+    dot.className = `nudge-dot ${type}-dot ${i < val ? 'active' : 'inactive'}`;
+    dot.textContent = type === 'text' ? '💬' : '📞';
+    dot.addEventListener('click', () => {
+      const p = people[freqPanelIdx];
+      if (!p) return;
+      const newVal = p.freq[type] === i + 1 && i + 1 > MIN[type] ? i : i + 1;
+      p.freq[type] = Math.max(MIN[type], Math.min(MAX[type], newVal));
+      document.getElementById('fp-' + type + '-val').textContent = p.freq[type];
+      renderFreqDots(type, p.freq[type]);
+      updateFreqSummary();
+    });
+    container.appendChild(dot);
+  }
+}
+
+function changeFreqPanel(type, delta) {
+  const p = people[freqPanelIdx];
+  if (!p) return;
+  const next = p.freq[type] + delta;
+  if (next < MIN[type] || next > MAX[type]) return;
+  p.freq[type] = next;
+  document.getElementById('fp-' + type + '-val').textContent = next;
+  renderFreqDots(type, next);
+  updateFreqSummary();
+}
+
+function updateFreqSummary() {
+  const p = people[freqPanelIdx];
+  if (!p) return;
+  const t = p.freq.text, c = p.freq.call;
+  const tw = t === 1 ? 'once' : `${t} times`;
+  const cw = c === 0 ? null : c === 1 ? 'once' : `${c} times`;
+  let s = `I'll remind you <strong>${tw}</strong> to text ${p.name}`;
+  if (cw) s += `<br>and <strong>${cw}</strong> to call`;
+  s += ' this week ♡';
+  const el = document.getElementById('fp-summary-text');
+  if (el) el.innerHTML = s;
+}
+
+function saveFreqPanel() {
+  savePeople();
+  updateSettingsValues();
+  showToast('toast-freq', 'Saved ♡');
+  setTimeout(() => { closePanel('frequency'); renderDashboard(); openPanel('settings'); }, 800);
+}
+
+function s2Back() {
+  if (panelReturnTo === 'settings') {
+    panelReturnTo = null;
+    returnTo = null;
+    goTo(6);
+    setTimeout(() => openPanel('settings'), 380);
+  } else {
+    goTo(1.5);
+  }
+}
+
+function s2Next() {
+  if (panelReturnTo === 'settings') {
+    panelReturnTo = null;
+    returnTo = null;
+    goTo(6);
+    setTimeout(() => openPanel('settings'), 380);
+  } else {
+    goTo(3);
+  }
+}
+
+function openScheduleFromSettings() {
+  closePanel('settings');
+  setTimeout(() => {
+    syncSchedulePanel();
+    openPanel('schedule');
+  }, 300);
+}
+
+function s3Back() {
+  if (panelReturnTo === 'settings') {
+    panelReturnTo = null;
+    returnTo = null;
+    goTo(6);
+    setTimeout(() => openPanel('settings'), 380);
+    return;
+  }
+  // Mid-onboarding (first person or adding another) — go back to frequency screen
+  if (people.length === 0 || isAddingPerson) {
+    returnTo = null;
+    goTo(2);
+    return;
+  }
+  // Already set up, came here from nav bar — go back to dashboard
+  returnTo = null;
+  goTo(6);
+}
+
+function finishSchedule() {
+  panelReturnTo = null;
+  if (returnTo) { const dest = returnTo; returnTo = null; goTo(dest); }
+  else goTo(4);
+}
+
+function navTo(tab) {
+  closeAllPanels();
+  if (tab === 'home')  { goTo(6); switchTab('home'); }
+  else if (tab === 'gifts') { goTo(6); switchTab('gifts'); }
+  else if (tab === 'schedule') {
+    if (people.length > 0) {
+      // Existing user — open the schedule panel (slides up, back button closes it)
+      syncSchedulePanel();
+      openPanel('schedule');
+      setNavActive('schedule');
+    } else {
+      // Onboarding — go to screen 3 as before
+      returnTo = null;
+      goTo(3);
+      showNav(true);
+      setNavActive('schedule');
+    }
+  }
+  if (tab !== 'settings') setNavActive(tab);
+}
+
+function showNav(show) {
+  document.getElementById('shared-nav').style.display = show ? 'flex' : 'none';
+}
+
+function setNavActive(tab) {
+  ['home','schedule','gifts','settings'].forEach(t => {
+    const el = document.getElementById('nav-' + t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+}
+
+function updateUI() {
+  const meta = SCREEN_META[currentScreen];
+  if (!meta) return;
+  const lbl = document.getElementById('screen-label');
+  const pnm = document.getElementById('proto-screen-name');
+  if (lbl) lbl.textContent = meta.label;
+  if (pnm) pnm.textContent = meta.name;
+
+  document.querySelectorAll('.screen-dot').forEach((d, i) => {
+    d.classList.toggle('active', SCREEN_ORDER[i] === currentScreen);
+  });
+
+  const idx = SCREEN_ORDER.indexOf(currentScreen);
+  const bb = document.getElementById('btn-back');
+  const nb = document.getElementById('btn-next');
+  if (bb) bb.disabled = idx === 0;
+  if (nb) { nb.disabled = currentScreen === 6; nb.textContent = currentScreen === 6 ? '✓ Done' : 'Next →'; }
+
+  const inApp = meta.app;
+  const scheduleEdit = (currentScreen === 3 && returnTo);
+  showNav(inApp || scheduleEdit);
+  if (inApp) setNavActive('home');
+  if (scheduleEdit) setNavActive('schedule');
+}
+
+/* ══════════════════════════════════
+   PANELS
+══════════════════════════════════ */
+function openPanel(name) {
+  const panel = document.getElementById('panel-' + name);
+  if (!panel) return;
+
+  if (name === 'settings') {
+    renderSettingsPersonSelector();
+    updateSettingsValues();
+  }
+
+  if (name === 'profiles') renderPeopleList();
+
+  panel.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; }));
+  openPanels.push(name);
+  setNavActive('settings');
+}
+
+function closePanel(name) {
+  _closePanel(name, true);
+  openPanels = openPanels.filter(p => p !== name);
+  if (openPanels.length === 0 && currentScreen >= 4) setNavActive('home');
+}
+
+function _closePanel(name, animate) {
+  const panel = document.getElementById('panel-' + name);
+  if (!panel) return;
+  panel.style.transform = 'translateY(100%)';
+  if (animate) setTimeout(() => { panel.style.display = 'none'; }, 360);
+  else panel.style.display = 'none';
+}
+
+function closeAllPanels() {
+  [...openPanels].reverse().forEach(p => _closePanel(p, false));
+  openPanels = [];
+}
+
+/* ══════════════════════════════════
+   PEOPLE LIST
+══════════════════════════════════ */
+function renderPeopleList() {
+  const list = document.getElementById('people-list');
+  if (!list) return;
+
+  if (people.length === 0) {
+    list.innerHTML = `
+      <div style="text-align:center;padding:30px 10px;">
+        <div style="font-size:2rem;margin-bottom:8px;">👥</div>
+        <p style="font-size:0.72rem;color:var(--muted);line-height:1.6;">No people added yet.<br>Tap below to add your first.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = people.map((p, i) => `
+    <div class="person-card ${i === activePersonIdx ? 'active-person' : ''} ${p.paused ? 'paused-person' : ''}">
+      <div class="person-card-top">
+        <div class="person-avatar" style="background:${p.bg};">${p.emoji}</div>
+        <div class="person-info">
+          <div class="person-name">${p.name}</div>
+          <div class="person-rel">${p.relLabel}</div>
+          <div class="person-nudges">${p.paused ? '⏸ Paused' : `${p.freq.text} text${p.freq.text !== 1 ? 's' : ''} + ${p.freq.call} call${p.freq.call !== 1 ? 's' : ''} / week`}</div>
+        </div>
+        ${i === activePersonIdx ? '<div class="active-badge">Active</div>' : ''}
+      </div>
+      <div class="pause-toggle-row" style="margin:0 12px 10px;border-radius:10px;">
+        <div>
+          <div class="pause-toggle-label">⏸ Pause reminders</div>
+          <div class="pause-toggle-sub">Temporarily stop nudges for ${p.name}</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" ${p.paused ? 'checked' : ''} onchange="togglePause(${i}, this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="person-card-actions">
+        ${i === activePersonIdx
+          ? `<button class="person-action-btn switch" style="color:var(--muted);cursor:default;">✓ Currently active</button>`
+          : `<button class="person-action-btn switch" onclick="switchProfile(${i})">Switch to ${p.name}</button>`
+        }
+        <button class="person-action-btn remove" onclick="removePerson(${i})">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function switchProfile(idx) {
+  activePersonIdx = idx;
+  const p = people[idx];
+  if (!p) return;
+  if (!p.dates) p.dates = [];
+  // Update dashboard pill
+  const pillName   = document.getElementById('active-profile-name');
+  const pillAvatar = document.getElementById('active-avatar');
+  if (pillName)   pillName.textContent  = p.name;
+  if (pillAvatar) { pillAvatar.textContent = p.emoji; pillAvatar.style.background = p.bg; }
+  // Update greeting & gift tab
+  const sub = document.getElementById('greeting-sub');
+  if (sub) sub.textContent = `Nudging ${p.name}`;
+  const gn = document.getElementById('gift-name');
+  if (gn) gn.textContent = p.name;
+  currentRel = p.rel;
+  renderSuggestions();
+  closePanel('profiles');
+  renderDateChips();
+  renderDashboard();
+}
+
+function removePerson(idx) {
+  const p = people[idx];
+  showConfirm(`Remove ${p.name}?`, "This can't be undone.", 'Remove', () => doRemovePerson(idx));
+}
+
+function doRemovePerson(idx) {
+  people.splice(idx, 1);
+  savePeople();
+  if (people.length === 0) {
+    activePersonIdx = 0;
+    closeAllPanels();
+    goTo(1);
+    return;
+  }
+  if (activePersonIdx >= people.length) activePersonIdx = people.length - 1;
+  renderPeopleList();
+  renderDashboard();
+  // Update pill
+  const p2 = people[activePersonIdx];
+  const pillName   = document.getElementById('active-profile-name');
+  const pillAvatar = document.getElementById('active-avatar');
+  if (pillName)   pillName.textContent  = p2.name;
+  if (pillAvatar) { pillAvatar.textContent = p2.emoji; pillAvatar.style.background = p2.bg; }
+}
+
+/* ══════════════════════════════════
+   SCREEN 1.5 — RELATIONSHIP
+══════════════════════════════════ */
+function selectRel(el) {
+  document.querySelectorAll('.rel-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentRel = el.dataset.rel;
+  const bubble = document.getElementById('msg-preview-bubble');
+  if (bubble) bubble.textContent = REL_MESSAGES[currentRel] || '';
+  renderSuggestions();
+}
+
+function renderSuggestions() {
+  const all = MESSAGES[currentRel] || MESSAGES.partner;
+  // Pick 4 random unique messages
+  const shuffled = [...all].sort(() => Math.random() - 0.5).slice(0, 4);
+  const container = document.getElementById('s5-suggestions');
+  if (!container) return;
+  container.innerHTML = shuffled.map(m => `
+    <div class="suggestion" onclick="copyMsg(this)">
+      <div class="msg-text">${m}</div>
+      <div class="copy-icon">Copy</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════
+   SCREEN 2 — FREQUENCY
+══════════════════════════════════ */
+function renderDots(type) {
+  const container = document.getElementById(type + '-dots');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < MAX[type]; i++) {
+    const dot = document.createElement('div');
+    dot.className = `nudge-dot ${type}-dot ${i < freq[type] ? 'active' : 'inactive'}`;
+    dot.textContent = type === 'text' ? '💬' : '📞';
+    dot.addEventListener('click', () => {
+      const newVal = freq[type] === i + 1 && i + 1 > MIN[type] ? i : i + 1;
+      freq[type] = Math.max(MIN[type], Math.min(MAX[type], newVal));
+      document.getElementById(type + '-val').textContent = freq[type];
+      renderDots(type); updateSummary();
+    });
+    container.appendChild(dot);
+  }
+}
+
+function change(type, delta) {
+  const next = freq[type] + delta;
+  if (next < MIN[type] || next > MAX[type]) return;
+  freq[type] = next;
+  document.getElementById(type + '-val').textContent = next;
+  renderDots(type); updateSummary();
+}
+
+function updateSummary() {
+  const t = freq.text, c = freq.call;
+  const tw = t === 1 ? 'once' : `${t} times`;
+  const cw = c === 0 ? null : c === 1 ? 'once' : `${c} times`;
+  let s = `I'll remind you <strong>${tw}</strong> to text`;
+  if (cw) s += `<br>and <strong>${cw}</strong> to call`;
+  s += ' this week ♡';
+  document.getElementById('summary-text').innerHTML = s;
+}
+
+/* ══════════════════════════════════
+   SCREEN 3 — WINDOWS
+══════════════════════════════════ */
+function toggleDay(el)  { el.classList.toggle('active'); }
+function toggleTime(el) { el.classList.toggle('active'); }
+function removeChip(btn) { btn.closest('.window-chip').remove(); }
+
+function addWindow() {
+  const days  = [...document.querySelectorAll('#day-row .day-pill.active')].map(d => d.dataset.day);
+  const slots = [...document.querySelectorAll('#time-grid .time-slot.active')].map(s => s.textContent);
+  if (!days.length || !slots.length) { showToast('toast-s3', 'Select days and times first'); return; }
+  const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
+  const dayNames = days.map(d => dayMap[d]);
+  const dayStr = days.length >= 5 ? `${dayNames[0]} – ${dayNames[dayNames.length-1]}` : dayNames.join(', ');
+  const timeStr = `${slots[0].split('–')[0].trim()} – ${slots[slots.length-1].split('–').pop().trim()}`;
+  const chip = document.createElement('div');
+  chip.className = 'window-chip';
+  chip.innerHTML = `<div class="chip-info"><div class="chip-days">${dayStr}</div><div class="chip-time">${timeStr}</div></div><div class="chip-tag">Custom</div><div class="chip-remove" onclick="removeChip(this)">✕</div>`;
+  document.getElementById('windows-list').appendChild(chip);
+  showToast('toast-s3', 'Window saved ♡');
+}
+
+function addWindowApp() {
+  const days  = [...document.querySelectorAll('#app-day-row .day-pill.active')].map(d => d.dataset.day);
+  const slots = [...document.querySelectorAll('#app-time-grid .time-slot.active')].map(s => s.textContent);
+  if (!days.length || !slots.length) { showToast('toast-app-schedule', 'Select days and times first'); return; }
+  const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
+  const dayNames = days.map(d => dayMap[d]);
+  const dayStr = days.length >= 5 ? `${dayNames[0]} – ${dayNames[dayNames.length-1]}` : dayNames.join(', ');
+  const timeStr = `${slots[0].split('–')[0].trim()} – ${slots[slots.length-1].split('–').pop().trim()}`;
+  const chip = document.createElement('div');
+  chip.className = 'window-chip';
+  chip.innerHTML = `<div class="chip-info"><div class="chip-days">${dayStr}</div><div class="chip-time">${timeStr}</div></div><div class="chip-tag">Custom</div><div class="chip-remove" onclick="removeChipApp(this)">✕</div>`;
+  document.getElementById('app-windows-list').appendChild(chip);
+  showToast('toast-app-schedule', 'Window added ♡');
+}
+
+function removeChipApp(btn) {
+  btn.closest('.window-chip').remove();
+}
+
+function syncSchedulePanel() {
+  // Copy current day/time state from onboarding screen 3 into the app panel
+  const srcDays  = [...document.querySelectorAll('#day-row .day-pill')];
+  const appDays  = [...document.querySelectorAll('#app-day-row .day-pill')];
+  srcDays.forEach((d, i) => {
+    if (appDays[i]) appDays[i].classList.toggle('active', d.classList.contains('active'));
+  });
+  const srcSlots = [...document.querySelectorAll('#time-grid .time-slot')];
+  const appSlots = [...document.querySelectorAll('#app-time-grid .time-slot')];
+  srcSlots.forEach((s, i) => {
+    if (appSlots[i]) appSlots[i].classList.toggle('active', s.classList.contains('active'));
+  });
+  // Copy windows list
+  const srcWin = document.getElementById('windows-list');
+  const appWin = document.getElementById('app-windows-list');
+  if (srcWin && appWin) appWin.innerHTML = srcWin.innerHTML.replace(/removeChip\(this\)/g, 'removeChipApp(this)');
+  // Render dates for current person
+  renderAppDateChips();
+}
+
+function saveSchedulePanel() {
+  // Copy app panel state back into the screen-3 DOM so renderDashboard picks it up
+  const appDays = [...document.querySelectorAll('#app-day-row .day-pill')];
+  const srcDays = [...document.querySelectorAll('#day-row .day-pill')];
+  appDays.forEach((d, i) => {
+    if (srcDays[i]) srcDays[i].classList.toggle('active', d.classList.contains('active'));
+  });
+  const appSlots = [...document.querySelectorAll('#app-time-grid .time-slot')];
+  const srcSlots = [...document.querySelectorAll('#time-grid .time-slot')];
+  appSlots.forEach((s, i) => {
+    if (srcSlots[i]) srcSlots[i].classList.toggle('active', s.classList.contains('active'));
+  });
+  const appWin = document.getElementById('app-windows-list');
+  const srcWin = document.getElementById('windows-list');
+  if (appWin && srcWin) srcWin.innerHTML = appWin.innerHTML.replace(/removeChipApp\(this\)/g, 'removeChip(this)');
+  showToast('toast-app-schedule', 'Schedule saved ♡');
+  setTimeout(() => { closePanel('schedule'); renderDashboard(); }, 800);
+}
+
+function renderAppDateChips() {
+  const list = document.getElementById('app-dates-list');
+  if (!list) return;
+  const person = people[activePersonIdx];
+  const dates = (person && person.dates) ? person.dates : [];
+  if (dates.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = dates.map(d => {
+    const days = daysUntil(d.date);
+    const cls  = countdownClass(days);
+    return `
+    <div class="date-chip">
+      <div class="date-chip-top">
+        <div class="date-chip-icon">${d.icon}</div>
+        <div class="date-chip-info">
+          <div class="date-chip-label">${d.label}</div>
+          <div class="date-chip-date">${formatDateDisplay(d.date)}</div>
+        </div>
+        <div class="date-chip-countdown ${cls}">${formatCountdown(days)}</div>
+      </div>
+      <div class="date-chip-actions">
+        <button class="date-chip-remove" onclick="removeSpecialDate(${d.id});renderAppDateChips();">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════
+   SPECIAL DATES
+══════════════════════════════════ */
+const DATE_TYPES = {
+  partner: [
+    { type:'birthday',    icon:'🎂', label:'Birthday'    },
+    { type:'anniversary', icon:'💍', label:'Anniversary' },
+    { type:'date-night',  icon:'🌹', label:'Date night'  },
+    { type:'trip',        icon:'✈️',  label:'Trip away'   },
+    { type:'other',       icon:'⭐', label:'Other…'      },
+  ],
+  spouse: [
+    { type:'birthday',    icon:'🎂', label:'Birthday'    },
+    { type:'anniversary', icon:'💍', label:'Anniversary' },
+    { type:'date-night',  icon:'🌹', label:'Date night'  },
+    { type:'trip',        icon:'✈️',  label:'Trip away'   },
+    { type:'other',       icon:'⭐', label:'Other…'      },
+  ],
+  family: [
+    { type:'birthday',    icon:'🎂', label:'Birthday'    },
+    { type:'exam',        icon:'📝', label:'Exam'        },
+    { type:'graduation',  icon:'🎓', label:'Graduation'  },
+    { type:'surgery',     icon:'🏥', label:'Surgery'     },
+    { type:'sports',      icon:'🏆', label:'Big game'    },
+    { type:'other',       icon:'⭐', label:'Other…'      },
+  ],
+  friend: [
+    { type:'birthday',    icon:'🎂', label:'Birthday'    },
+    { type:'exam',        icon:'📝', label:'Exam'        },
+    { type:'sports',      icon:'🏆', label:'Big game'    },
+    { type:'trip',        icon:'✈️',  label:'Trip away'   },
+    { type:'job',         icon:'💼', label:'New job'     },
+    { type:'other',       icon:'⭐', label:'Other…'      },
+  ],
+};
+
+function saveDates() {
+  // Dates are stored inside each person object — just save people
+  savePeople();
+}
+
+function loadDates() {
+  // Dates live on person.dates — nothing extra to load
+  const person = people[activePersonIdx];
+  if (person && !person.dates) person.dates = [];
+}
+
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  // For annual events, find next occurrence
+  const thisYear = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  const nextYear = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
+  const target = thisYear >= today ? thisYear : nextYear;
+  return Math.round((target - today) / 86400000);
+}
+
+function formatCountdown(days) {
+  if (days === 0) return 'Today! 🎉';
+  if (days === 1) return 'Tomorrow';
+  if (days <= 7)  return `${days} days`;
+  if (days <= 30) return `${days} days`;
+  if (days < 60)  return `~${Math.round(days/7)} weeks`;
+  return `~${Math.round(days/30)} months`;
+}
+
+function countdownClass(days) {
+  if (days <= 7)  return 'close';
+  if (days <= 30) return 'soon';
+  return 'far';
+}
+
+function formatDateDisplay(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'long' });
+}
+
+function openDateModal() {
+  const types = DATE_TYPES[currentRel] || DATE_TYPES.partner;
+  selectedDateType = types[0].type;
+  const grid = document.getElementById('date-type-grid');
+  grid.innerHTML = types.map(t => `
+    <button class="date-type-btn ${t.type === selectedDateType ? 'active' : ''}"
+      onclick="selectDateType('${t.type}', this)">
+      <span class="dt-icon">${t.icon}</span>${t.label}
+    </button>`).join('');
+  // Set default date to next month
+  const next = new Date(); next.setMonth(next.getMonth() + 1);
+  document.getElementById('date-picker').value = next.toISOString().split('T')[0];
+  document.getElementById('other-label-row').style.display = 'none';
+  document.getElementById('other-label-input').value = '';
+  document.getElementById('date-modal').classList.add('open');
+}
+
+function closeDateModal() {
+  document.getElementById('date-modal').classList.remove('open');
+}
+
+function selectDateType(type, btn) {
+  selectedDateType = type;
+  document.querySelectorAll('#date-type-grid .date-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('other-label-row').style.display = type === 'other' ? 'block' : 'none';
+}
+
+function saveSpecialDate() {
+  const person = people[activePersonIdx];
+  if (!person) return;
+  if (!person.dates) person.dates = [];
+
+  const dateVal = document.getElementById('date-picker').value;
+  if (!dateVal) { showToast('toast-s3', 'Please pick a date first'); return; }
+  const types = DATE_TYPES[currentRel] || DATE_TYPES.partner;
+  const typeMeta = types.find(t => t.type === selectedDateType) || types[0];
+  let label = typeMeta.label;
+  if (selectedDateType === 'other') {
+    const custom = document.getElementById('other-label-input').value.trim();
+    if (!custom) { showToast('toast-s3', 'Please describe the occasion'); return; }
+    label = custom;
+  }
+  const entry = { id: Date.now(), type: selectedDateType, label, icon: typeMeta.icon, date: dateVal };
+  person.dates.push(entry);
+  saveDates();
+  closeDateModal();
+  renderDateChips();
+  renderAppDateChips();
+  renderUpcomingDates();
+  // Show toast in whichever panel is open
+  const schedPanelOpen = openPanels.includes('schedule');
+  showToast(schedPanelOpen ? 'toast-app-schedule' : 'toast-s3', 'Date saved ♡');
+  scheduleNotificationsForDate(entry);
+}
+
+function removeSpecialDate(id) {
+  const person = people[activePersonIdx];
+  if (!person || !person.dates) return;
+  person.dates = person.dates.filter(d => d.id !== id);
+  saveDates();
+  renderDateChips();
+  renderUpcomingDates();
+}
+
+function renderDateChips() {
+  const list = document.getElementById('dates-list');
+  if (!list) return;
+  const person = people[activePersonIdx];
+  const dates = (person && person.dates) ? person.dates : [];
+  if (dates.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = dates.map(d => {
+    const days = daysUntil(d.date);
+    const cls  = countdownClass(days);
+    return `
+    <div class="date-chip">
+      <div class="date-chip-top">
+        <div class="date-chip-icon">${d.icon}</div>
+        <div class="date-chip-info">
+          <div class="date-chip-label">${d.label}</div>
+          <div class="date-chip-date">${formatDateDisplay(d.date)}</div>
+        </div>
+        <div class="date-chip-countdown ${cls}">${formatCountdown(days)}</div>
+      </div>
+      <div class="date-chip-actions">
+        <button class="date-chip-remove" onclick="removeSpecialDate(${d.id})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderUpcomingDates() {
+  const section = document.getElementById('upcoming-dates-section');
+  const list    = document.getElementById('upcoming-dates-list');
+  if (!section || !list) return;
+
+  const person = people[activePersonIdx];
+  const dates = (person && person.dates) ? person.dates : [];
+
+  // Show dates within 31 days
+  const upcoming = dates
+    .map(d => ({ ...d, days: daysUntil(d.date) }))
+    .filter(d => d.days <= 31)
+    .sort((a, b) => a.days - b.days);
+
+  if (upcoming.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  list.innerHTML = upcoming.map(d => {
+    let badgeText = '';
+    if      (d.days === 0)  badgeText = 'Today! 🎉';
+    else if (d.days === 1)  badgeText = 'Tomorrow';
+    else if (d.days <= 7)   badgeText = `${d.days} days`;
+    else                    badgeText = `${d.days} days away`;
+
+    const msg = d.days === 0
+      ? `${d.label} is today — make it special ♡`
+      : d.days === 1
+      ? `${d.label} is tomorrow — have you got something planned?`
+      : d.days <= 7
+      ? `${d.label} is coming up this week ♡`
+      : `${d.label} is in ${d.days} days — start thinking about something special`;
+
+    return `
+    <div class="date-reminder-item">
+      <div class="date-reminder-icon">${d.icon}</div>
+      <div class="date-reminder-info">
+        <strong>${d.label}</strong>
+        <span>${msg}</span>
+      </div>
+      <div class="date-reminder-badge">${badgeText}</div>
+    </div>`;
+  }).join('');
+}
+
+function scheduleNotificationsForDate(entry) {
+  // Store upcoming date reminders in localStorage.
+  // The app checks these on load and fires push notifications for any that are due.
+  try {
+    const stored = JSON.parse(localStorage.getItem('ln_date_notifs') || '[]');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(entry.date + 'T09:00:00');
+    const thisYear = new Date(today.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0);
+    const target = thisYear >= today ? thisYear : new Date(today.getFullYear() + 1, d.getMonth(), d.getDate(), 9, 0, 0);
+
+    const milestones = [
+      { days: 30, msg: `${entry.label} is in 1 month — start thinking about something special \u2661` },
+      { days: 7,  msg: `${entry.label} is in 1 week — time to get organised \u2661` },
+      { days: 1,  msg: `${entry.label} is tomorrow — have you got something planned? \u2661` },
+      { days: 0,  msg: `Today is ${entry.label} — make it unforgettable \u2661` },
+    ];
+
+    milestones.forEach(({ days, msg }) => {
+      const fireAt = new Date(target.getTime() - days * 86400000);
+      const key = `ln-date-${entry.id}-${days}`;
+      if (!stored.find(n => n.tag === key)) {
+        stored.push({ tag: key, fireAt: fireAt.getTime(), msg, sent: false });
+      }
+    });
+    localStorage.setItem('ln_date_notifs', JSON.stringify(stored));
+    checkDueDateNotifs();
+  } catch(e) {}
+}
+
+async function checkDueDateNotifs() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('ln_date_notifs') || '[]');
+    const now = Date.now();
+    let changed = false;
+    for (const notif of stored) {
+      if (!notif.sent && notif.fireAt <= now) {
+        notif.sent = true;
+        changed = true;
+        await sendPush({ title: 'Gra \uD83D\uDC9B', body: notif.msg, tag: notif.tag });
+      }
+    }
+    if (changed) localStorage.setItem('ln_date_notifs', JSON.stringify(stored));
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════
+   SCREEN 4 — CONFIRM & ACTIVATE
+══════════════════════════════════ */
+function updateConfirmScreen() {
+  const nameEl = document.getElementById('partner-name');
+  const name = nameEl ? nameEl.value.trim() : '—';
+  const cn  = document.getElementById('confirm-name');  if (cn)  cn.textContent  = name;
+  const cn2 = document.getElementById('confirm-name2'); if (cn2) cn2.textContent = name;
+
+  // Update freq rows with live values
+  const tr = document.getElementById('confirm-text-row');
+  const cr = document.getElementById('confirm-call-row');
+  if (tr) tr.textContent = `${freq.text} text reminder${freq.text !== 1 ? 's' : ''} / week`;
+  if (cr) cr.textContent = `${freq.call} call reminder${freq.call !== 1 ? 's' : ''} / week`;
+
+  // Update windows summary from the actual chips the user built
+  const chips = document.querySelectorAll('#windows-list .window-chip');
+  const ws = document.getElementById('confirm-windows-summary');
+  const wsub = document.getElementById('confirm-windows-sub');
+  if (ws && wsub) {
+    if (chips.length === 0) {
+      ws.textContent = 'No windows set';
+      wsub.textContent = 'Go back to add a time window';
+    } else {
+      // Count total active days across all chips
+      const daySet = new Set();
+      chips.forEach(chip => {
+        const daysEl = chip.querySelector('.chip-days');
+        if (daysEl) {
+          const txt = daysEl.textContent;
+          // Try to count from range like "Mon – Fri" or list like "Mon, Wed, Fri"
+          const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+          dayNames.forEach(d => { if (txt.includes(d)) daySet.add(d); });
+        }
+      });
+      const chipWord = chips.length === 1 ? '1 window' : `${chips.length} windows`;
+      const dayWord  = daySet.size === 0 ? '' : ` across ${daySet.size} day${daySet.size !== 1 ? 's' : ''}`;
+      ws.textContent = chipWord;
+      wsub.textContent = `${dayWord} · tap to see`.trim();
+    }
+  }
+
+  // Update s5 notification title
+  const nt = document.getElementById('s5-notif-title');
+  if (nt) nt.textContent = `Time to text ${name} 💛`;
+  const s5n = document.getElementById('s5-name');
+  if (s5n) s5n.textContent = name;
+}
+
+function toggleWindows() {
+  document.getElementById('s4-windows-row').classList.toggle('open');
+}
+
+function activate() {
+  // Save new person to people array
+  const nameEl = document.getElementById('partner-name');
+  const name = nameEl ? nameEl.value.trim() : 'Someone';
+  const meta = REL_META[currentRel] || REL_META.partner;
+
+  const newPerson = {
+    name,
+    rel: currentRel,
+    relLabel: meta.label,
+    emoji: meta.emoji,
+    bg: meta.bg,
+    freq: { text: freq.text, call: freq.call },
+    stats: { texts: 0, calls: 0, streak: 0 },
+    weekNum: 1,
+    dates: [],
+    nudges: {},
+  };
+
+  people.push(newPerson);
+  activePersonIdx = people.length - 1;
+  isAddingPerson = false;
+  savePeople();
+
+  // Update dashboard pill preview
+  const pillName   = document.getElementById('active-profile-name');
+  const pillAvatar = document.getElementById('active-avatar');
+  if (pillName)   pillName.textContent  = name;
+  if (pillAvatar) { pillAvatar.textContent = meta.emoji; pillAvatar.style.background = meta.bg; }
+
+  const sub = document.getElementById('greeting-sub');
+  if (sub) sub.textContent = `Nudging ${name}`;
+  const gn = document.getElementById('gift-name');
+  if (gn) gn.textContent = name;
+
+  // Update notification preview with person name
+  const permPreview = document.getElementById('perm-notif-preview');
+  if (permPreview) permPreview.textContent = 'Time to text ' + name + ' 💛';
+
+  // Show activated briefly, then go to permission screen
+  document.getElementById('s4-confirm').style.display = 'none';
+  document.getElementById('s4-activated').classList.add('show');
+  setTimeout(() => goTo(4.5), 1200);
+}
+
+async function grantPermissionAndActivate() {
+  const person = people[activePersonIdx];
+  const ok = await requestPushPermission();
+  if (ok && person) {
+    scheduleNudgesForPerson(person).catch(console.error);
+  }
+  goTo(6);
+}
+
+function skipPermissionAndActivate() {
+  goTo(6);
+}
+
+/* ══════════════════════════════════
+   SCREEN 5 — REMINDER
+══════════════════════════════════ */
+function openReminder() {
+  document.getElementById('s5-lock').style.display = 'none';
+  document.getElementById('s5-inapp').style.display = 'flex';
+}
+
+function resetS5() {
+  document.getElementById('s5-lock').style.display = 'flex';
+  document.getElementById('s5-inapp').style.display = 'none';
+  document.querySelectorAll('#screen-5 .suggestion').forEach(s => {
+    s.classList.remove('copied');
+    const ci = s.querySelector('.copy-icon');
+    if (ci) ci.textContent = 'Copy';
+  });
+}
+
+function copyMsg(el) {
+  document.querySelectorAll('#screen-5 .suggestion').forEach(s => {
+    s.classList.remove('copied');
+    const ci = s.querySelector('.copy-icon');
+    if (ci) ci.textContent = 'Copy';
+  });
+  el.classList.add('copied');
+  el.querySelector('.copy-icon').textContent = '✓';
+  showToast('toast-s5', 'Copied to clipboard ♡');
+}
+
+/* ══════════════════════════════════
+   DARK MODE
+══════════════════════════════════ */
+let darkMode = false;
+
+function toggleDarkMode(on) {
+  darkMode = on;
+  document.documentElement.classList.toggle('dark-mode', on);
+  try { localStorage.setItem('ln_dark', on ? '1' : '0'); } catch(e) {}
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (toggle) toggle.checked = on;
+}
+
+function loadDarkMode() {
+  try {
+    const saved = localStorage.getItem('ln_dark');
+    if (saved === '1') toggleDarkMode(true);
+  } catch(e) {}
+}
+
+/* ══════════════════════════════════
+   PAUSE MODE
+══════════════════════════════════ */
+function togglePause(idx, paused) {
+  const p = people[idx];
+  if (!p) return;
+  p.paused = paused;
+  if (paused) {
+    // Save last week's score before pausing
+    p.lastWeekTexts = p.stats.texts || 0;
+    p.lastWeekCalls = p.stats.calls || 0;
+  }
+  savePeople();
+  renderPeopleList();
+  renderDashboard();
+}
+
+function resumeActivePerson() {
+  const p = people[activePersonIdx];
+  if (!p) return;
+  p.paused = false;
+  savePeople();
+  renderPeopleList();
+  renderDashboard();
+}
+
+/* ══════════════════════════════════
+   WEEKLY SUMMARY
+══════════════════════════════════ */
+function getWeeklyRating(sent, target) {
+  if (target === 0) return { emoji: '—', text: 'No reminders set' };
+  const pct = sent / target;
+  if (pct >= 1)    return { emoji: '🔥', text: 'Perfect week!' };
+  if (pct >= 0.75) return { emoji: '💛', text: 'Really good!' };
+  if (pct >= 0.5)  return { emoji: '😊', text: 'Good effort' };
+  if (pct >= 0.25) return { emoji: '😐', text: 'Room to grow' };
+  return { emoji: '💪', text: 'Try again this week' };
+}
+
+function shouldShowWeeklySummary() {
+  // Show on Mondays, or if forced via flag on person
+  const day = new Date().getDay(); // 0=Sun, 1=Mon
+  if (day !== 1) return false;
+  // Check if already dismissed today
+  try {
+    const dismissed = localStorage.getItem('ln_summary_dismissed');
+    if (dismissed === new Date().toDateString()) return false;
+  } catch(e) {}
+  return people.length > 0 && people.some(p => (p.stats.texts || 0) + (p.stats.calls || 0) > 0);
+}
+
+function renderWeeklySummary() {
+  const card = document.getElementById('weekly-summary');
+  const rows = document.getElementById('weekly-summary-rows');
+  const footer = document.getElementById('weekly-summary-footer');
+  if (!card || !rows) return;
+
+  if (!shouldShowWeeklySummary()) { card.style.display = 'none'; return; }
+
+  const activePeople = people.filter(p => !p.paused);
+  if (!activePeople.length) { card.style.display = 'none'; return; }
+
+  rows.innerHTML = activePeople.map(p => {
+    const sent = (p.stats.texts || 0) + (p.stats.calls || 0);
+    const target = (p.freq.text || 0) + (p.freq.call || 0);
+    const pct = target > 0 ? Math.min(100, Math.round(sent / target * 100)) : 0;
+    const rating = getWeeklyRating(sent, target);
+    return `
+      <div class="weekly-person-row">
+        <div class="weekly-person-avatar" style="background:${p.bg};">${p.emoji}</div>
+        <div class="weekly-person-name">${p.name}</div>
+        <div class="weekly-score-bar"><div class="weekly-score-fill" style="width:${pct}%"></div></div>
+        <div class="weekly-score-label">${sent}/${target}</div>
+        <div class="weekly-rating">${rating.emoji}</div>
+      </div>`;
+  }).join('');
+
+  // Overall footer message
+  const totalSent = activePeople.reduce((s, p) => s + (p.stats.texts || 0) + (p.stats.calls || 0), 0);
+  const totalTarget = activePeople.reduce((s, p) => s + (p.freq.text || 0) + (p.freq.call || 0), 0);
+  const overall = getWeeklyRating(totalSent, totalTarget);
+  footer.textContent = overall.text + ' — fresh schedule starts today ♡';
+
+  card.style.display = 'block';
+}
+
+function dismissWeeklySummary() {
+  const card = document.getElementById('weekly-summary');
+  if (card) card.style.display = 'none';
+  try { localStorage.setItem('ln_summary_dismissed', new Date().toDateString()); } catch(e) {}
+  // Reset weekly stats for new week
+  people.forEach(p => {
+    p.lastWeekTexts = p.stats.texts || 0;
+    p.lastWeekCalls = p.stats.calls || 0;
+    p.stats.texts = 0;
+    p.stats.calls = 0;
+    p.nudges = {};
+  });
+  savePeople();
+  renderDashboard();
+}
+
+/* ══════════════════════════════════
+   SCREEN 6 — DASHBOARD
+══════════════════════════════════ */
+/* ══════════════════════════════════
+   NUDGED IT (from reminder screen)
+══════════════════════════════════ */
+function nudgedIt() {
+  const person = people[activePersonIdx];
+  if (person) {
+    person.stats.texts = (person.stats.texts || 0) + 1;
+    savePeople();
+    const total = (person.stats.texts || 0) + (person.stats.calls || 0);
+    checkMilestone(total);
+  }
+  goTo(6);
+}
+
+/* ══════════════════════════════════
+   NUDGE FILTER TOGGLE
+══════════════════════════════════ */
+function setNudgeFilter(mode) {
+  nudgeFilter = mode;
+  const btnAll    = document.getElementById('toggle-all');
+  const btnPerson = document.getElementById('toggle-person');
+  if (btnAll)    btnAll.classList.toggle('active', mode === 'all');
+  if (btnPerson) btnPerson.classList.toggle('active', mode === 'person');
+  renderDashboard();
+}
+
+function markNotified(personIdx, nudgeIdx) {
+  const person = people[personIdx];
+  if (!person) return;
+  if (!person.nudges) person.nudges = {};
+  person.nudges['w_' + nudgeIdx] = 'notified';
+  savePeople();
+  renderDashboard();
+}
+
+/* ══════════════════════════════════
+   NUDGE ACTIONS (sent / skipped / snooze)
+══════════════════════════════════ */
+function handleNudgeAction(personIdx, nudgeIdx, action) {
+  const person = people[personIdx];
+  if (!person) return;
+  if (!person.nudges) person.nudges = {};
+  const key = 'w_' + nudgeIdx;
+  const typeKey = 'type_' + nudgeIdx;
+
+  if (action === 'yes') {
+    person.nudges[key] = 'sent';
+    const nudgeType = person.nudges[typeKey] || 'text';
+    if (nudgeType === 'call') person.stats.calls = (person.stats.calls || 0) + 1;
+    else person.stats.texts = (person.stats.texts || 0) + 1;
+    savePeople();
+    const total = (person.stats.texts || 0) + (person.stats.calls || 0);
+    checkMilestone(total);
+  } else if (action === 'no') {
+    person.nudges[key] = 'skipped';
+    savePeople();
+  } else if (action === 'snooze') {
+    // Snooze: clear notified state so it shows as "Coming up" again,
+    // then re-mark as notified after 1 hour (or 5s in demo)
+    person.nudges[key] = null;
+    savePeople();
+    showToast('toast-dash', '⏰ Reminder snoozed for 1 hour');
+    renderDashboard();
+    // In a real app this would be 3600000ms; keep as 5000ms for demo visibility
+    setTimeout(() => markNotified(personIdx, nudgeIdx), 5000);
+    return;
+  }
+  renderDashboard();
+}
+
+/* ══════════════════════════════════
+   MILESTONES & CONFETTI
+══════════════════════════════════ */
+const MILESTONE_COUNTS = [10, 20, 50, 100];
+
+function checkMilestone(total) {
+  if (!MILESTONE_COUNTS.includes(total)) return;
+  launchConfetti();
+  const msgs = {
+    10:  { icon: '🎉', text: '10 nudges sent!' },
+    20:  { icon: '🔥', text: '20 nudges! You\'re on fire!' },
+    50:  { icon: '💛', text: '50 nudges! Incredible!' },
+    100: { icon: '✨', text: '100 nudges! Legend!' },
+  };
+  const m = msgs[total];
+  if (m) showMilestoneToast(m.icon, m.text);
+}
+
+function launchConfetti() {
+  const overlay = document.getElementById('confetti-overlay');
+  if (!overlay) return;
+  const colors = ['#c9697a','#f0a0b0','#ffd700','#90c0ff','#b0e090','#ff9060','#e0a0f0'];
+  overlay.innerHTML = '';
+  for (let i = 0; i < 52; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const size = 5 + Math.random() * 7;
+    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};animation-duration:${1.2+Math.random()*1.8}s;animation-delay:${Math.random()*0.6}s;`;
+    overlay.appendChild(p);
+  }
+  setTimeout(() => { overlay.innerHTML = ''; }, 4000);
+}
+
+function showMilestoneToast(icon, text) {
+  const t = document.getElementById('milestone-toast');
+  if (!t) return;
+  t.innerHTML = `<strong>${icon}</strong>${text}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ══════════════════════════════════
+   SCREEN 6 — DASHBOARD
+══════════════════════════════════ */
+function renderDashboard() {
+  const person = people[activePersonIdx];
+
+  // Weekly summary (show on Mondays)
+  renderWeeklySummary();
+
+  // Pause banner
+  const pauseBanner = document.getElementById('pause-banner');
+  const pauseText = document.getElementById('pause-banner-text');
+  if (pauseBanner) {
+    const isPaused = person && person.paused;
+    pauseBanner.style.display = isPaused ? 'flex' : 'none';
+    if (isPaused && pauseText) pauseText.textContent = `Reminders for ${person.name} are paused.`;
+  }
+
+  // Stats — always show active person's
+  const texts  = person ? (person.stats.texts  || 0) : 0;
+  const calls  = person ? (person.stats.calls  || 0) : 0;
+  const streak = person ? (person.stats.streak || 0) : 0;
+  const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  el('stat-texts',  texts);
+  el('stat-calls',  calls);
+  el('stat-streak', streak);
+  el('streak-num',  streak);
+
+  const streakMsg = document.getElementById('streak-msg');
+  if (streakMsg) streakMsg.textContent = streak === 0 ? 'Start your first nudge!' : 'Keep it going! 💪';
+
+  document.querySelectorAll('.streak-dot').forEach((d, i) => {
+    d.classList.remove('done', 'partial');
+    if (i < streak) d.classList.add('done');
+  });
+
+  // Keep toggle "person" button labelled with active person's name
+  const btnPerson = document.getElementById('toggle-person');
+  if (btnPerson) btnPerson.textContent = person ? person.name : 'Selected person';
+
+  // Render reminder list
+  const list = document.getElementById('reminder-list');
+  if (!list) return;
+
+  // Which people to show
+  const showPeople = (nudgeFilter === 'all') ? people : (person ? [person] : []);
+
+  if (!showPeople.length || showPeople.every(p => !p || (p.freq.text === 0 && p.freq.call === 0))) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No reminders set up yet.<br>Go to Schedule to get started.</p></div>`;
+    const t = document.getElementById('nudges-title');
+    if (t) t.textContent = "This week's nudges";
+    renderUpcomingDates();
+    return;
+  }
+
+  const activeDays = [...document.querySelectorAll('#day-row .day-pill.active')].map(d => d.dataset.day);
+  const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
+  const dayNames = activeDays.length ? activeDays.map(d => dayMap[d] || d) : ['Mon','Tue','Wed','Thu','Fri'];
+  const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')];
+  let windowLabel = 'your window';
+  if (activeSlots.length) {
+    const first = activeSlots[0].textContent.split('–')[0].trim();
+    const last  = activeSlots[activeSlots.length-1].textContent.split('–').pop().trim();
+    windowLabel = `${first}–${last}`;
+  }
+
+  let allItems = [];
+  showPeople.forEach(p => {
+    if (!p || (p.freq.text === 0 && p.freq.call === 0)) return;
+    const pIdx = people.indexOf(p);
+    if (!p.nudges) p.nudges = {};
+    const types = [...Array(p.freq.text).fill('text'), ...Array(p.freq.call).fill('call')];
+    types.forEach((type, i) => {
+      p.nudges['type_' + i] = type;
+      allItems.push({
+        type, personIdx: pIdx, nudgeIdx: i,
+        personName: p.name,
+        day: dayNames[i % dayNames.length],
+        windowLabel,
+        state: p.nudges['w_' + i] || null,
+        paused: !!p.paused,
+      });
+    });
+  });
+
+  // Sort by day order then nudge index
+  allItems.sort((a, b) => {
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const da = days.indexOf(a.day), db = days.indexOf(b.day);
+    if (da !== db) return da - db;
+    return a.nudgeIdx - b.nudgeIdx;
+  });
+
+  const multiPerson = nudgeFilter === 'all' && people.length > 1;
+  const total = allItems.length;
+  const showAll = list.dataset.showAll === 'true';
+  const visibleItems = showAll ? allItems : allItems.slice(0, 5);
+
+  list.innerHTML = visibleItems.map((item, idx) => {
+    const personTag = multiPerson ? `<span class="person-tag">${item.personName}</span>` : '';
+
+    // Paused items show differently
+    if (item.paused) {
+      return `
+        <div class="reminder-item paused" style="opacity:0.4;">
+          <div class="reminder-icon" style="filter:grayscale(1);">${item.type === 'text' ? '💬' : '📞'}</div>
+          <div class="reminder-info" style="flex:1;min-width:0;">
+            <strong>${item.type === 'text' ? 'Text' : 'Call'} reminder${personTag}</strong>
+            <span>Paused</span>
+          </div>
+          <div class="reminder-badge" style="background:#f5f0e8;color:#b09060;font-size:0.58rem;font-weight:600;padding:3px 8px;border-radius:20px;">⏸ Paused</div>
+        </div>`;
+    }
+
+    // A nudge shows action buttons only if explicitly marked 'notified'
+    // (in real use this is set when the OS notification fires)
+    const isNotified = item.state === 'notified';
+    const isFirstPending = item.state === null && idx === allItems.findIndex(a => a.state === null && !a.paused);
+    const isSent    = item.state === 'sent';
+    const isSkipped = item.state === 'skipped';
+    const isSnoozed = item.state === 'snoozed';
+
+    let badge = '';
+    if (isSent)          badge = `<div class="reminder-badge sent">✓ Sent</div>`;
+    else if (isSkipped)  badge = `<div class="reminder-badge skipped">Skipped</div>`;
+    else if (isSnoozed)  badge = `<div class="reminder-badge" style="background:#fff8e8;color:#8a6a00;font-size:0.58rem;font-weight:600;padding:3px 8px;border-radius:20px;">⏰ Snoozed</div>`;
+    else if (isNotified) badge = `<div class="reminder-badge" style="background:var(--rose);color:white;font-size:0.58rem;font-weight:600;padding:3px 8px;border-radius:20px;animation:pulse 1.5s infinite;">Now!</div>`;
+    else if (isFirstPending) badge = `<div class="reminder-badge upcoming" style="cursor:pointer;" onclick="markNotified(${item.personIdx},${item.nudgeIdx})" title="Tap to simulate notification">Coming up</div>`;
+    else badge = `<div class="reminder-badge upcoming">Coming up</div>`;
+
+    const actions = isNotified ? `
+      <div class="nudge-actions">
+        <button class="nudge-act-btn sent-yes" onclick="handleNudgeAction(${item.personIdx},${item.nudgeIdx},'yes')">✓ Done it</button>
+        <button class="nudge-act-btn sent-no"  onclick="handleNudgeAction(${item.personIdx},${item.nudgeIdx},'no')">✗ Didn't</button>
+        <button class="nudge-act-btn snooze"   onclick="handleNudgeAction(${item.personIdx},${item.nudgeIdx},'snooze')">⏰ 1 hr</button>
+      </div>` : '';
+
+    return `
+      <div class="reminder-item${isNotified ? ' notified' : isSent ? ' done' : ''}">
+        <div class="reminder-icon">${item.type === 'text' ? '💬' : '📞'}</div>
+        <div class="reminder-info" style="flex:1;min-width:0;">
+          <strong>${item.type === 'text' ? 'Text' : 'Call'} reminder${personTag}</strong>
+          <span>${item.day} · ${item.windowLabel}</span>
+          ${actions}
+        </div>
+        ${badge}
+      </div>`;
+  }).join('');
+
+  // Show more / show less button
+  if (total > 5 && !showAll) {
+    list.innerHTML += `<button onclick="document.getElementById('reminder-list').dataset.showAll='true';renderDashboard();" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:11px;font-family:'DM Sans',sans-serif;font-size:0.72rem;color:var(--muted);cursor:pointer;margin-top:4px;">Show all ${total} nudges ↓</button>`;
+  } else if (showAll && total > 5) {
+    list.innerHTML += `<button onclick="document.getElementById('reminder-list').dataset.showAll='false';renderDashboard();" style="width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:11px;font-family:'DM Sans',sans-serif;font-size:0.72rem;color:var(--muted);cursor:pointer;margin-top:4px;">Show less ↑</button>`;
+  }
+
+  const t = document.getElementById('nudges-title');
+  if (t) t.textContent = `This week's nudges (${total})`;
+
+  // Update greeting pill
+  if (person) {
+    el('active-profile-name', person.name);
+    el('greeting-sub', `Nudging ${person.name}`);
+    const av = document.getElementById('active-avatar');
+    if (av) { av.textContent = person.emoji; av.style.background = person.bg; }
+    const gn = document.getElementById('gift-name');
+    if (gn) gn.textContent = person.name;
+    currentRel = person.rel;
+    renderSuggestions();
+  }
+
+  renderUpcomingDates();
+}
+
+function switchTab(tab) {
+  const home  = document.getElementById('s6-home');
+  const gifts = document.getElementById('s6-gifts');
+  if (tab === 'home')  { home.style.display = 'flex';  gifts.style.display = 'none'; setNavActive('home'); }
+  else                 { home.style.display = 'none'; gifts.style.display = 'flex';  setNavActive('gifts'); }
+}
+
+/* ══════════════════════════════════
+   GIFTS
+══════════════════════════════════ */
+function renderGifts() {
+  const list = document.getElementById('gift-list');
+  if (!list) return;
+  list.innerHTML = (GIFTS[currentRegion] || GIFTS.uk).map(g => `
+    <div class="gift-card">
+      <div class="gift-emoji">${g.emoji}</div>
+      <div class="gift-info">
+        <div class="gift-name">${g.name}</div>
+        <div class="gift-desc">${g.desc}</div>
+        <div class="gift-price">${g.price}</div>
+      </div>
+      <button class="gift-btn">${g.btn}</button>
+    </div>`).join('');
+}
+
+const REGION_FLAGS = {uk:'🇬🇧',us:'🇺🇸',au:'🇦🇺',eu:'🇪🇺',ca:'🇨🇦'};
+const REGION_SHORT = {uk:'UK',us:'US',au:'AU',eu:'EU',ca:'CA'};
+
+function updateRegionUI() {
+  const rg = document.getElementById('s7-region'); if (rg) rg.textContent = REGION_NAMES[currentRegion] || currentRegion;
+  const gb = document.getElementById('gift-region-btn'); if (gb) gb.textContent = `🌍 Region: ${REGION_FLAGS[currentRegion] || ''} ${REGION_SHORT[currentRegion] || currentRegion}`;
+}
+
+function setRegion(region) {
+  currentRegion = region;
+  renderGifts();
+  saveRegion();
+  updateRegionUI();
+}
+
+function selectRegionPanel(el) {
+  document.querySelectorAll('#region-options .option-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentRegion = el.dataset.region;
+  renderGifts();
+  saveRegion();
+  updateRegionUI();
+}
+
+/* ══════════════════════════════════
+   RESET MODE
+══════════════════════════════════ */
+function selectResetPanel(el) {
+  document.querySelectorAll('#reset-options .option-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentResetMode = el.dataset.reset;
+  document.getElementById('weeks-picker').style.display = currentResetMode === 'fixed' ? 'block' : 'none';
+}
+
+function selectWeeks(el) {
+  document.querySelectorAll('#weeks-picker .time-slot').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function saveResetMode() {
+  const rl = document.getElementById('s7-reset-label');
+  if (rl) rl.textContent = RESET_LABELS[currentResetMode];
+  closePanel('resetmode');
+}
+
+/* ══════════════════════════════════
+   CUSTOM CONFIRM MODAL
+══════════════════════════════════ */
+function showConfirm(title, body, okLabel, onOk) {
+  const modal = document.getElementById('confirm-modal');
+  document.getElementById('confirm-modal-title').textContent = title;
+  document.getElementById('confirm-modal-body').textContent = body;
+  const okBtn = document.getElementById('confirm-modal-ok');
+  okBtn.textContent = okLabel;
+  okBtn.onclick = () => { closeConfirmModal(); onOk(); };
+  modal.style.display = 'flex';
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').style.display = 'none';
+}
+function showToast(id, msg) {
+  const t = document.getElementById(id);
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ══════════════════════════════════
+   INSTALL BANNER
+══════════════════════════════════ */
+function showInstallBanner(deferredPrompt) {
+  if (document.getElementById('install-banner')) return; // already showing
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a1f1f;color:white;border-radius:14px;padding:12px 18px;font-family:"DM Sans",sans-serif;font-size:0.78rem;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.5);white-space:nowrap;border:1px solid rgba(201,105,122,0.3);';
+  banner.innerHTML = `<span>💛 Add Gra to your home screen</span><button onclick="installApp()" style="background:var(--rose);color:white;border:none;border-radius:8px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;">Install</button><button onclick="this.closest('#install-banner').remove()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1rem;padding:0 4px;">✕</button>`;
+  document.body.appendChild(banner);
+
+  window.installApp = async () => {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    banner.remove();
+  };
+}
+
+function showIosInstallBanner() {
+  if (document.getElementById('install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a1f1f;color:white;border-radius:14px;padding:14px 16px;font-family:"DM Sans",sans-serif;font-size:0.75rem;display:flex;flex-direction:column;gap:8px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(201,105,122,0.3);max-width:280px;';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <span style="font-weight:600;">💛 Add Gra to your home screen</span>
+      <button onclick="this.closest('#install-banner').remove()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1rem;flex-shrink:0;">✕</button>
+    </div>
+    <div style="color:rgba(255,255,255,0.6);line-height:1.5;">Tap <strong style="color:white;">Share</strong> <span style="font-size:1rem;">⎙</span> at the bottom of Safari, then <strong style="color:white;">Add to Home Screen</strong>.</div>`;
+  document.body.appendChild(banner);
+}
+
+/* ══════════════════════════════════
+   KEYBOARD (desktop prototype nav)
+══════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goNext();
+  if (e.key === 'ArrowLeft')  goBack();
+  if (e.key === 'Escape')     closeAllPanels();
+});
+
+
+
+/* ══════════════════════════════════
+   GO
+══════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
