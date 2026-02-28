@@ -1,19 +1,17 @@
-const CACHE = 'gra-v1';
+const CACHE = 'gra-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/Gra/',
+  '/Gra/index.html',
+  '/Gra/manifest.json',
+  '/Gra/icons/icon-192x192.png',
+  '/Gra/icons/icon-512x512.png',
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap',
 ];
-
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
   );
 });
-
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -21,7 +19,6 @@ self.addEventListener('activate', e => {
     ).then(() => self.clients.claim())
   );
 });
-
 self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith('http')) return;
   e.respondWith(
@@ -33,24 +30,21 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(cache => cache.put(e.request, copy));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => caches.match('/Gra/index.html'));
     })
   );
 });
-
-// PUSH — fires even when app is closed/backgrounded
 self.addEventListener('push', e => {
-  let data = { title: 'Gra 💛', body: 'Time to send some love \u2661', tag: 'gra-nudge' };
+  let data = { title: 'Gra 💛', body: 'Time to send some love ♡', tag: 'gra-nudge' };
   try { if (e.data) data = { ...data, ...e.data.json() }; } catch(err) {}
-
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-96x96.png',
+      icon: '/Gra/icons/icon-192x192.png',
+      badge: '/Gra/icons/icon-96x96.png',
       tag: data.tag || 'gra-nudge',
       renotify: true,
-      data: { url: data.url || '/' },
+      data: { url: data.url || '/Gra/' },
       actions: [
         { action: 'done', title: 'Done it' },
         { action: 'snooze', title: 'Snooze 1hr' }
@@ -58,7 +52,6 @@ self.addEventListener('push', e => {
     })
   );
 });
-
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
@@ -66,7 +59,7 @@ self.addEventListener('notificationclick', e => {
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
       }
-      if (clients.openWindow) return clients.openWindow('/');
+      if (clients.openWindow) return clients.openWindow('/Gra/');
     })
   );
 });
