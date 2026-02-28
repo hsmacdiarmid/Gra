@@ -1156,6 +1156,7 @@ body::before {
             <span class="toggle-slider"></span>
           </label>
         </div>
+        <div class="settings-row" onclick="sendTestPush()"><div class="settings-row-left"><div class="settings-row-icon">🔔</div><div class="settings-row-text"><strong>Send test notification</strong><span>Check push notifications are working</span></div></div><div class="settings-chevron">›</div></div>
         <div class="settings-row" onclick="openPanel('about')"><div class="settings-row-left"><div class="settings-row-icon">💛</div><div class="settings-row-text"><strong>About Gra</strong><span>Why this app exists</span></div></div><div class="settings-chevron">›</div></div>
         <div class="settings-row" onclick="resetApp()"><div class="settings-row-left"><div class="settings-row-icon">↩️</div><div class="settings-row-text"><strong>Reset app</strong><span>Delete all profiles &amp; start over</span></div></div><div class="settings-chevron" style="color:var(--rose);">›</div></div>
       </div>
@@ -1918,6 +1919,16 @@ function addAnotherPerson() {
   // Clear windows list for fresh start
   const wl = document.getElementById('windows-list');
   if (wl) wl.innerHTML = `<div class="window-chip"><div class="chip-info"><div class="chip-days">Mon – Fri</div><div class="chip-time">9:00am – 5:00pm</div></div><div class="chip-tag">Work hours</div><div class="chip-remove" onclick="removeChip(this)">✕</div></div>`;
+  // Reset day pills — default Mon–Fri on, Sat–Sun off
+  document.querySelectorAll('#day-row .day-pill').forEach(pill => {
+    const weekdays = ['Mo','Tu','We','Th','Fr'];
+    pill.classList.toggle('active', weekdays.includes(pill.dataset.day));
+  });
+  // Reset time slots — default 9am–5pm on
+  document.querySelectorAll('#time-grid .time-slot').forEach(slot => {
+    const workSlots = ['9–10am','10–11am','11am–12','12–1pm','1–2pm','2–3pm','3–4pm','4–5pm'];
+    slot.classList.toggle('active', workSlots.includes(slot.textContent.trim()));
+  });
   // Reset screen 4 back to confirm state (not activated)
   const s4confirm = document.getElementById('s4-confirm');
   const s4activated = document.getElementById('s4-activated');
@@ -2866,10 +2877,19 @@ function activate() {
   const permPreview = document.getElementById('perm-notif-preview');
   if (permPreview) permPreview.textContent = 'Time to text ' + name + ' 💛';
 
-  // Show activated briefly, then go to permission screen
+  // Show activated briefly, then skip permission screen if already granted
   document.getElementById('s4-confirm').style.display = 'none';
   document.getElementById('s4-activated').classList.add('show');
-  setTimeout(() => goTo(4.5), 1200);
+  if (Notification.permission === 'granted') {
+    // Already have permission — silently ensure subscription and go straight to dashboard
+    const person = people[activePersonIdx];
+    requestPushPermission().then(ok => {
+      if (ok && person) scheduleNudgesForPerson(person).catch(console.error);
+    });
+    setTimeout(() => goTo(6), 1200);
+  } else {
+    setTimeout(() => goTo(4.5), 1200);
+  }
 }
 
 async function grantPermissionAndActivate() {
