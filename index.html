@@ -6,15 +6,15 @@
 <title>Gra</title>
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/Gra/manifest.json">
 <meta name="theme-color" content="#c9697a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gra">
-<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-<link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/Gra/icons/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/Gra/icons/icon-192x192.png">
+<link rel="icon" type="image/x-icon" href="/Gra/icons/favicon.ico">
 
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -1543,7 +1543,7 @@ function init() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/sw.js');
+        const reg = await navigator.serviceWorker.register('/Gra/sw.js');
         window._swReg = reg;
         // Try to subscribe to push silently if already granted
         if (Notification.permission === 'granted') {
