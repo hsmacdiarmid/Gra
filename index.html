@@ -1508,9 +1508,13 @@ function init() {
   renderGifts();
   updateRegionUI();
 
-  if (people.length > 0) {
+    if (people.length > 0) {
     // Returning user — jump straight to dashboard, no animation
-    activePersonIdx = 0;
+    const savedIdx = localStorage.getItem('ln_active_idx');
+    if (savedIdx !== null) {
+      const idx = parseInt(savedIdx, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < people.length) activePersonIdx = idx;
+    }
     document.getElementById('screen-1').classList.remove('active');
     document.getElementById('screen-6').classList.add('active');
     currentScreen = 6;
