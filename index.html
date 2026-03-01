@@ -1492,6 +1492,11 @@ function init() {
     if (saved) people = JSON.parse(saved);
     const savedRegion = localStorage.getItem('ln_region');
     if (savedRegion) currentRegion = savedRegion;
+    const savedIdx = localStorage.getItem('ln_active_idx');
+    if (savedIdx !== null) {
+      const idx = parseInt(savedIdx, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < people.length) activePersonIdx = idx;
+    }
   } catch(e) {}
 
   loadDates();
@@ -1571,6 +1576,24 @@ function init() {
   scheduleWeeklyReengageCheck();
   // Check if any date notifications are due
   checkDueDateNotifs();
+
+  // When app becomes visible (user opens from notification), auto-mark first pending nudge as notified
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentScreen === 6 && people.length > 0) {
+      autoMarkNotified();
+      renderDashboard();
+    }
+  });
+
+  // Also handle SW messages for nudge notifications
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'nudge_fired') {
+        autoMarkNotified();
+        if (currentScreen === 6) renderDashboard();
+      }
+    });
+  }
 }
 
 // -- SUPABASE + WEB PUSH -------------------------------------------------------
@@ -1831,7 +1854,10 @@ function updateTime() {
    PERSIST
 ══════════════════════════════════ */
 function savePeople() {
-  try { localStorage.setItem('ln_people', JSON.stringify(people)); } catch(e) {}
+  try {
+    localStorage.setItem('ln_people', JSON.stringify(people));
+    localStorage.setItem('ln_active_idx', String(activePersonIdx));
+  } catch(e) {}
   savePeopleRemote().catch(() => {});
 }
 
@@ -2313,6 +2339,7 @@ function renderPeopleList() {
 
 function switchProfile(idx) {
   activePersonIdx = idx;
+  try { localStorage.setItem('ln_active_idx', String(idx)); } catch(e) {}
   const p = people[idx];
   if (!p) return;
   if (!p.dates) p.dates = [];
@@ -3228,11 +3255,11 @@ function renderDashboard() {
   const activeDays = [...document.querySelectorAll('#day-row .day-pill.active')].map(d => d.dataset.day);
   const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
   const dayNames = activeDays.length ? activeDays.map(d => dayMap[d] || d) : ['Mon','Tue','Wed','Thu','Fri'];
-  const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')];
+  const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')].map(s => s.textContent.trim());
   let windowLabel = 'your window';
   if (activeSlots.length) {
-    const first = activeSlots[0].textContent.split('–')[0].trim();
-    const last  = activeSlots[activeSlots.length-1].textContent.split('–').pop().trim();
+    const first = activeSlots[0].split('–')[0].trim();
+    const last  = activeSlots[activeSlots.length-1].split('–').pop().trim();
     windowLabel = `${first}–${last}`;
   }
 
@@ -3244,11 +3271,13 @@ function renderDashboard() {
     const types = [...Array(p.freq.text).fill('text'), ...Array(p.freq.call).fill('call')];
     types.forEach((type, i) => {
       p.nudges['type_' + i] = type;
+      // Assign a specific time slot if available, cycling through slots
+      const slotLabel = activeSlots.length ? activeSlots[i % activeSlots.length] : windowLabel;
       allItems.push({
         type, personIdx: pIdx, nudgeIdx: i,
         personName: p.name,
         day: dayNames[i % dayNames.length],
-        windowLabel,
+        windowLabel: slotLabel,
         state: p.nudges['w_' + i] || null,
         paused: !!p.paused,
       });
@@ -3480,6 +3509,30 @@ document.addEventListener('keydown', e => {
 });
 
 
+
+/* ══════════════════════════════════
+   AUTO-MARK NOTIFIED
+   Called when app opens/becomes visible after a push notification.
+   Marks the first pending (null state) nudge as 'notified' so the
+   "Done it / Didn't / Snooze" action buttons appear on the dashboard.
+══════════════════════════════════ */
+function autoMarkNotified() {
+  // Find first pending nudge across all active people
+  for (let pIdx = 0; pIdx < people.length; pIdx++) {
+    const p = people[pIdx];
+    if (!p || p.paused) continue;
+    if (!p.nudges) p.nudges = {};
+    const total = (p.freq.text || 0) + (p.freq.call || 0);
+    for (let i = 0; i < total; i++) {
+      const key = 'w_' + i;
+      if (!p.nudges[key]) {
+        p.nudges[key] = 'notified';
+        savePeople();
+        return; // only mark one at a time
+      }
+    }
+  }
+}
 
 /* ══════════════════════════════════
    GO
