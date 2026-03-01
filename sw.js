@@ -1,4 +1,4 @@
-const CACHE = 'gra-v3';
+const CACHE = 'gra-v4';
 const ASSETS = [
   '/Gra/',
   '/Gra/index.html',
@@ -7,11 +7,13 @@ const ASSETS = [
   '/Gra/icons/icon-512x512.png',
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap',
 ];
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
   );
 });
+
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -19,21 +21,22 @@ self.addEventListener('activate', e => {
     ).then(() => self.clients.claim())
   );
 });
+
 self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith('http')) return;
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (e.request.url.startsWith(self.location.origin)) {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(e.request, copy));
-        }
-        return response;
-      }).catch(() => caches.match('/Gra/index.html'));
+    fetch(e.request).then(response => {
+      if (e.request.url.startsWith(self.location.origin)) {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, copy));
+      }
+      return response;
+    }).catch(() => {
+      return caches.match(e.request).then(cached => cached || caches.match('/Gra/index.html'));
     })
   );
 });
+
 self.addEventListener('push', e => {
   let data = { title: 'Gra 💛', body: 'Time to send some love ♡', tag: 'gra-nudge' };
   try { if (e.data) data = { ...data, ...e.data.json() }; } catch(err) {}
@@ -52,6 +55,7 @@ self.addEventListener('push', e => {
     })
   );
 });
+
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
