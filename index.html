@@ -2927,14 +2927,27 @@ function updateConfirmScreen() {
       wsub.textContent = 'Go back to add a time window';
     } else {
       // Count total active days across all chips
+      // Handles ranges like "Mon – Fri" and lists like "Mon, Wed, Fri"
+      const ALL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
       const daySet = new Set();
       chips.forEach(chip => {
         const daysEl = chip.querySelector('.chip-days');
         if (daysEl) {
-          const txt = daysEl.textContent;
-          // Try to count from range like "Mon – Fri" or list like "Mon, Wed, Fri"
-          const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-          dayNames.forEach(d => { if (txt.includes(d)) daySet.add(d); });
+          const txt = daysEl.textContent.trim();
+          // Check for a range like "Mon – Fri" or "Mon – Sun"
+          const rangeMatch = txt.match(/([A-Za-z]+)\s*[–-]\s*([A-Za-z]+)/);
+          if (rangeMatch) {
+            const startIdx = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[1].toLowerCase().slice(0,3)));
+            const endIdx   = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[2].toLowerCase().slice(0,3)));
+            if (startIdx !== -1 && endIdx !== -1) {
+              const from = Math.min(startIdx, endIdx);
+              const to   = Math.max(startIdx, endIdx);
+              for (let i = from; i <= to; i++) daySet.add(ALL_DAYS[i]);
+            }
+          } else {
+            // Comma-separated list like "Mon, Wed, Fri"
+            ALL_DAYS.forEach(d => { if (txt.includes(d)) daySet.add(d); });
+          }
         }
       });
       const chipWord = chips.length === 1 ? '1 window' : `${chips.length} windows`;
