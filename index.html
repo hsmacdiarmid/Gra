@@ -480,6 +480,9 @@ body::before {
   #shared-nav { border-radius: 0 !important; }
 }
 
+/* Prevent native pull-to-refresh causing a full page reload */
+html, body { overscroll-behavior-y: contain; }
+
 /* ── TOAST ── */
 .toast { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--ink); color: white; font-size: 0.68rem; padding: 7px 14px; border-radius: 20px; white-space: nowrap; opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 200; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -788,12 +791,18 @@ body::before {
       </div>
 
       <div style="height:1px;background:var(--border);margin:4px 0 12px;flex-shrink:0;"></div>
-      <div class="windows-label">Special dates 🗓</div>
-      <div class="dates-intro">
-        <p><strong>Never miss a moment that matters.</strong> Add birthdays, anniversaries and big days — Gra will remind you <strong>1 month, 1 week, the day before</strong> and <strong>on the day</strong> itself.</p>
+      <div id="special-dates-section">
+        <div class="windows-label">Special dates 🗓</div>
+        <div class="dates-intro" id="dates-intro-el">
+          <p><strong>Never miss a moment that matters.</strong> Add birthdays, anniversaries and big days — Gra will remind you <strong>1 month, 1 week, the day before</strong> and <strong>on the day</strong> itself.</p>
+        </div>
+        <div class="dates-list" id="dates-list"></div>
+        <div id="tutorial-sample-dates" style="display:none;flex-direction:column;gap:6px;margin-bottom:6px;">
+          <div class="date-chip"><div class="date-chip-top"><div class="date-chip-icon">🎂</div><div class="date-chip-info"><div class="date-chip-label">Birthday</div><div class="date-chip-date">14 August</div></div><div class="date-chip-countdown soon">47 days</div></div></div>
+          <div class="date-chip"><div class="date-chip-top"><div class="date-chip-icon">💍</div><div class="date-chip-info"><div class="date-chip-label">Anniversary</div><div class="date-chip-date">3 October</div></div><div class="date-chip-countdown far">102 days</div></div></div>
+        </div>
+        <button class="add-date-btn" onclick="openDateModal()">🗓 &nbsp;Add a special date</button>
       </div>
-      <div class="dates-list" id="dates-list"></div>
-      <button class="add-date-btn" onclick="openDateModal()">🗓 &nbsp;Add a special date</button>
 
       <button class="cta-btn" id="s3-cta" onclick="finishSchedule()">Save windows →</button>
     </div>
@@ -988,14 +997,14 @@ body::before {
 
   <!-- ═══ TUTORIAL OVERLAY ═══ -->
   <div id="tutorial-overlay" style="display:none;position:absolute;inset:0;z-index:500;border-radius:46px;overflow:hidden;pointer-events:none;">
-    <div id="tutorial-backdrop" style="position:absolute;inset:0;background:rgba(20,10,20,0.72);pointer-events:none;"></div>
-    <div id="tutorial-spotlight" style="position:absolute;background:transparent;border:2.5px solid var(--rose);border-radius:14px;box-shadow:0 0 0 9999px rgba(20,10,20,0.72);transition:all 0.35s cubic-bezier(0.4,0,0.2,1);pointer-events:none;"></div>
+
+    <div id="tutorial-spotlight" style="position:absolute;background:transparent;border:2.5px solid var(--rose);border-radius:14px;box-shadow:0 0 0 9999px rgba(10,5,15,0.8);transition:all 0.35s cubic-bezier(0.4,0,0.2,1);pointer-events:none;z-index:501;"></div>
     <div id="tutorial-card" style="
       position:absolute;left:14px;right:14px;
-      background:white;border-radius:18px;
+      background:#ffffff;border-radius:18px;
       padding:14px 16px 12px;
-      box-shadow:0 12px 40px rgba(0,0,0,0.3);
-      pointer-events:auto;
+      box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.9);
+      pointer-events:auto;isolation:isolate;z-index:502;
       transition:top 0.35s cubic-bezier(0.4,0,0.2,1), bottom 0.35s cubic-bezier(0.4,0,0.2,1);
     ">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;">
@@ -1523,6 +1532,11 @@ function init() {
     if (saved) people = JSON.parse(saved);
     const savedRegion = localStorage.getItem('ln_region');
     if (savedRegion) currentRegion = savedRegion;
+    const savedIdx = localStorage.getItem('ln_active_idx');
+    if (savedIdx !== null) {
+      const idx = parseInt(savedIdx, 10);
+      if (!isNaN(idx) && idx >= 0) activePersonIdx = idx;
+    }
   } catch(e) {}
 
   loadDates();
@@ -1536,7 +1550,7 @@ function init() {
 
   if (people.length > 0) {
     // Returning user — jump straight to dashboard, no animation
-    activePersonIdx = 0;
+    if (activePersonIdx >= people.length) activePersonIdx = 0;
     document.getElementById('screen-1').classList.remove('active');
     document.getElementById('screen-6').classList.add('active');
     currentScreen = 6;
@@ -1602,6 +1616,8 @@ function init() {
   scheduleWeeklyReengageCheck();
   // Check if any date notifications are due
   checkDueDateNotifs();
+  // Periodically re-prompt for notification permission if previously skipped
+  scheduleNotifRePrompt();
 }
 
 // -- SUPABASE + WEB PUSH -------------------------------------------------------
@@ -1789,6 +1805,73 @@ async function loadPeopleRemote() {
   return false;
 }
 
+// Re-prompt notification permission every 3 days if user skipped it
+function scheduleNotifRePrompt() {
+  try {
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+    const REPROMPT_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+    const lastPrompt = parseInt(localStorage.getItem('ln_notif_prompted') || '0', 10);
+    const now = Date.now();
+    // Only show if they've set up at least one person and enough time has passed
+    if (people.length > 0 && (now - lastPrompt) >= REPROMPT_INTERVAL_MS) {
+      // Wait 3 seconds after app opens before showing the banner
+      setTimeout(() => showNotifRePromptBanner(), 3000);
+    }
+    // Also re-check every 4 hours in a long session
+    setInterval(() => {
+      if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+      const last = parseInt(localStorage.getItem('ln_notif_prompted') || '0', 10);
+      if (people.length > 0 && (Date.now() - last) >= REPROMPT_INTERVAL_MS) {
+        showNotifRePromptBanner();
+      }
+    }, 4 * 60 * 60 * 1000);
+  } catch(e) {}
+}
+
+function showNotifRePromptBanner() {
+  if (document.getElementById('notif-reprompt-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'notif-reprompt-banner';
+  banner.style.cssText = 'position:absolute;bottom:85px;left:12px;right:12px;background:#1a1020;color:white;border-radius:16px;padding:14px 14px 12px;font-family:"DM Sans",sans-serif;font-size:0.75rem;z-index:180;box-shadow:0 8px 32px rgba(0,0,0,0.6);border:1px solid rgba(201,105,122,0.4);';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+      <div style="font-size:1.4rem;flex-shrink:0;">🔔</div>
+      <div>
+        <div style="font-weight:600;margin-bottom:3px;color:white;">Enable reminders?</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.6);line-height:1.5;">Gra can't nudge you without notification permission. It only notifies you in your chosen windows — nothing else.</div>
+      </div>
+      <button onclick="document.getElementById('notif-reprompt-banner').remove();try{localStorage.setItem('ln_notif_prompted',Date.now())}catch(e){}" style="background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;font-size:1rem;flex-shrink:0;padding:0;">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="notifRePromptAllow()" style="flex:1;padding:9px;background:linear-gradient(135deg,#c9697a,#b85068);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;color:white;cursor:pointer;">🔔 Allow notifications</button>
+      <button onclick="notifRePromptLater()" style="padding:9px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.72rem;color:rgba(255,255,255,0.5);cursor:pointer;">Later</button>
+    </div>`;
+  // Attach to the phone screen-wrap so it appears inside the phone frame
+  const wrap = document.querySelector('.screen-wrap') || document.body;
+  wrap.appendChild(banner);
+}
+
+async function notifRePromptAllow() {
+  const banner = document.getElementById('notif-reprompt-banner');
+  if (banner) banner.remove();
+  try { localStorage.setItem('ln_notif_prompted', String(Date.now())); } catch(e) {}
+  const ok = await requestPushPermission();
+  if (ok) {
+    showToast('toast-dash', '🔔 Notifications enabled ♡');
+    const person = people[activePersonIdx];
+    if (person) scheduleNudgesForPerson(person).catch(console.error);
+  } else {
+    showToast('toast-dash', 'Could not enable — check browser settings');
+  }
+}
+
+function notifRePromptLater() {
+  const banner = document.getElementById('notif-reprompt-banner');
+  if (banner) banner.remove();
+  // Snooze for 1 day rather than full 3 days so "later" feels responsive
+  try { localStorage.setItem('ln_notif_prompted', String(Date.now() - 2 * 24 * 60 * 60 * 1000)); } catch(e) {}
+}
+
 function scheduleWeeklyReengageCheck() {
   try {
     const lastShown = parseInt(localStorage.getItem('ln_reengage_ts') || '0');
@@ -1863,6 +1946,7 @@ function updateTime() {
 ══════════════════════════════════ */
 function savePeople() {
   try { localStorage.setItem('ln_people', JSON.stringify(people)); } catch(e) {}
+  try { localStorage.setItem('ln_active_idx', String(activePersonIdx)); } catch(e) {}
   savePeopleRemote().catch(() => {});
 }
 
@@ -2345,6 +2429,7 @@ function renderPeopleList() {
 
 function switchProfile(idx) {
   activePersonIdx = idx;
+  try { localStorage.setItem('ln_active_idx', String(idx)); } catch(e) {}
   const p = people[idx];
   if (!p) return;
   if (!p.dates) p.dates = [];
@@ -2938,6 +3023,7 @@ async function grantPermissionAndActivate() {
 }
 
 function skipPermissionAndActivate() {
+  try { localStorage.setItem('ln_notif_prompted', String(Date.now())); } catch(e) {}
   goTo(6);
   if (shouldShowTutorial()) setTimeout(() => { ensureTutorialIds(); startTutorialAtDashboard(); }, 500);
 }
@@ -3268,11 +3354,30 @@ function renderDashboard() {
   const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
   const dayNames = activeDays.length ? activeDays.map(d => dayMap[d] || d) : ['Mon','Tue','Wed','Thu','Fri'];
   const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')];
-  let windowLabel = 'your window';
-  if (activeSlots.length) {
-    const first = activeSlots[0].textContent.split('–')[0].trim();
-    const last  = activeSlots[activeSlots.length-1].textContent.split('–').pop().trim();
-    windowLabel = `${first}–${last}`;
+
+  // Parse active time slots into start hours
+  const slotHours = activeSlots.map(s => {
+    const txt = s.textContent.trim();
+    const m = txt.match(/^(\d+)(?::(\d+))?\s*(am|pm)/i);
+    if (!m) return null;
+    let h = parseInt(m[1]);
+    if (/pm/i.test(m[3]) && h !== 12) h += 12;
+    if (/am/i.test(m[3]) && h === 12) h = 0;
+    return h;
+  }).filter(h => h !== null);
+
+  // Format an hour number as e.g. "10am", "2pm"
+  function fmtHour(h) {
+    if (h === 0) return '12am';
+    if (h === 12) return '12pm';
+    return h < 12 ? `${h}am` : `${h - 12}pm`;
+  }
+
+  // Seeded pseudo-random so hours don't jump on every render
+  function seededHour(seed) {
+    if (!slotHours.length) return null;
+    const idx = Math.abs(seed * 2654435761 % slotHours.length) | 0;
+    return slotHours[idx];
   }
 
   let allItems = [];
@@ -3280,9 +3385,20 @@ function renderDashboard() {
     if (!p || (p.freq.text === 0 && p.freq.call === 0)) return;
     const pIdx = people.indexOf(p);
     if (!p.nudges) p.nudges = {};
+
+    // Assign stable hours to nudges if not yet assigned this render cycle
+    if (!p._nudgeHours) p._nudgeHours = {};
+
     const types = [...Array(p.freq.text).fill('text'), ...Array(p.freq.call).fill('call')];
     types.forEach((type, i) => {
       p.nudges['type_' + i] = type;
+      // Assign a stable hour per nudge slot (persisted in _nudgeHours, resets weekly)
+      if (p._nudgeHours[i] === undefined) {
+        const h = seededHour(pIdx * 100 + i);
+        p._nudgeHours[i] = h;
+      }
+      const hour = p._nudgeHours[i];
+      const windowLabel = hour !== null ? `${dayNames[i % dayNames.length]} · around ${fmtHour(hour)}` : `${dayNames[i % dayNames.length]} · your window`;
       allItems.push({
         type, personIdx: pIdx, nudgeIdx: i,
         personName: p.name,
@@ -3354,7 +3470,7 @@ function renderDashboard() {
         <div class="reminder-icon">${item.type === 'text' ? '💬' : '📞'}</div>
         <div class="reminder-info" style="flex:1;min-width:0;">
           <strong>${item.type === 'text' ? 'Text' : 'Call'} reminder${personTag}</strong>
-          <span>${item.day} · ${item.windowLabel}</span>
+          <span>${item.windowLabel}</span>
           ${actions}
         </div>
         ${badge}
@@ -3577,12 +3693,20 @@ const TUTORIAL_STEPS = [
   },
   {
     screen: 3,
-    spotlight: 'dates-intro-el',
+    spotlight: 'special-dates-section',
     cardPos: 'above',
     title: 'Add special dates 🗓',
     body: 'Birthdays, anniversaries, big exams — add them here. Gra will remind you a month out, a week out, the day before, and on the day itself, so you\'re never caught off guard.',
     scrollTo: 'screen-3-content',
     scrollToBottom: true,
+    onEnter: () => {
+      const s = document.getElementById('tutorial-sample-dates');
+      if (s) s.style.display = 'flex';
+    },
+    onLeave: () => {
+      const s = document.getElementById('tutorial-sample-dates');
+      if (s) s.style.display = 'none';
+    },
   },
   // ── Dashboard screens ──
   {
