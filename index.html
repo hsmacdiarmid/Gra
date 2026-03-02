@@ -716,7 +716,7 @@ body::before {
         <div class="nav-title">How often will you <em>nudge?</em></div>
       </div>
       <div class="step-subtitle">Choose how many text and call reminders each week.</div>
-      <div class="counter-card">
+      <div class="counter-card" id="counter-text">
         <div class="counter-top">
           <div class="counter-icon">💬</div>
           <div class="counter-label"><h4>Text reminders</h4><p>per week</p></div>
@@ -724,7 +724,7 @@ body::before {
         </div>
         <div class="dot-row" id="text-dots"></div>
       </div>
-      <div class="counter-card">
+      <div class="counter-card" id="counter-call">
         <div class="counter-top">
           <div class="counter-icon">📞</div>
           <div class="counter-label"><h4>Call reminders</h4><p>per week</p></div>
@@ -775,6 +775,7 @@ body::before {
         <div class="time-slot" onclick="toggleTime(this)">8–9pm</div>
         <div class="time-slot" onclick="toggleTime(this)">9–10pm</div>
       </div>
+      <div id="windows-section">
       <div class="windows-label">Your windows</div>
       <div class="windows-list" id="windows-list">
         <div class="window-chip">
@@ -784,6 +785,7 @@ body::before {
         </div>
       </div>
       <button class="add-window-btn" onclick="addWindow()">+ Add another window</button>
+      </div>
 
       <div style="height:1px;background:var(--border);margin:4px 0 12px;flex-shrink:0;"></div>
       <div class="windows-label">Special dates 🗓</div>
@@ -973,7 +975,7 @@ body::before {
     <div class="toast" id="toast-dash"></div>
     <!-- GIFTS TAB -->
     <div class="app-content" id="s6-gifts" style="display:none;">
-      <div class="gift-header">
+      <div class="gift-header" id="gift-header-el">
         <div class="gift-header-title">Surprise <em id="gift-name">them</em> 🎁</div>
         <div class="gift-header-sub">Curated ideas she'll actually love</div>
       </div>
@@ -981,6 +983,34 @@ body::before {
       <div class="affiliate-note">✦ Curated with care · We may earn a small commission at no cost to you</div>
       <button class="region-footer-btn" onclick="openPanel('region')" id="gift-region-btn">🌍 Region: 🇬🇧 UK</button>
       <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">☕ &nbsp;Buy the creator a coffee</a>
+    </div>
+  </div>
+
+  <!-- ═══ TUTORIAL OVERLAY ═══ -->
+  <div id="tutorial-overlay" style="display:none;position:absolute;inset:0;z-index:500;border-radius:46px;overflow:hidden;pointer-events:none;">
+    <div id="tutorial-backdrop" style="position:absolute;inset:0;background:rgba(20,10,20,0.72);pointer-events:none;"></div>
+    <div id="tutorial-spotlight" style="position:absolute;background:transparent;border:2.5px solid var(--rose);border-radius:14px;box-shadow:0 0 0 9999px rgba(20,10,20,0.72);transition:all 0.35s cubic-bezier(0.4,0,0.2,1);pointer-events:none;"></div>
+    <div id="tutorial-card" style="
+      position:absolute;left:14px;right:14px;
+      background:white;border-radius:18px;
+      padding:14px 16px 12px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.3);
+      pointer-events:auto;
+      transition:top 0.35s cubic-bezier(0.4,0,0.2,1), bottom 0.35s cubic-bezier(0.4,0,0.2,1);
+    ">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;">
+        <div id="tutorial-step-label" style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);line-height:1.6;"></div>
+        <button onclick="endTutorial()" style="background:none;border:none;font-size:0.72rem;color:#c0a8a0;cursor:pointer;padding:0 0 0 8px;line-height:1.6;white-space:nowrap;">✕ skip</button>
+      </div>
+      <div id="tutorial-title" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.3;"></div>
+      <div id="tutorial-body" style="font-size:0.7rem;color:#8a7070;line-height:1.6;margin-bottom:12px;"></div>
+      <!-- dots row -->
+      <div id="tutorial-dots" style="display:flex;gap:4px;align-items:center;margin-bottom:10px;"></div>
+      <!-- buttons row -->
+      <div style="display:flex;gap:7px;justify-content:flex-end;">
+        <button id="tutorial-back-btn" onclick="tutorialBack()" style="padding:6px 12px;background:white;border:1.5px solid #f0ddd8;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.68rem;color:#b09090;cursor:pointer;display:none;">← Back</button>
+        <button id="tutorial-next-btn" onclick="tutorialNext()" style="padding:6px 16px;background:linear-gradient(135deg,var(--rose),var(--rose-dark));border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:600;color:white;cursor:pointer;">Next →</button>
+      </div>
     </div>
   </div>
 
@@ -1158,6 +1188,7 @@ body::before {
         </div>
         <div class="settings-row" onclick="sendTestPush()"><div class="settings-row-left"><div class="settings-row-icon">🔔</div><div class="settings-row-text"><strong>Send test notification</strong><span>Check push notifications are working</span></div></div><div class="settings-chevron">›</div></div>
         <div class="settings-row" onclick="openPanel('about')"><div class="settings-row-left"><div class="settings-row-icon">💛</div><div class="settings-row-text"><strong>About Gra</strong><span>Why this app exists</span></div></div><div class="settings-chevron">›</div></div>
+        <div class="settings-row" onclick="closePanel('settings');setTimeout(startTutorial,350);"><div class="settings-row-left"><div class="settings-row-icon">👋</div><div class="settings-row-text"><strong>App tour</strong><span>Replay the walkthrough</span></div></div><div class="settings-chevron">›</div></div>
         <div class="settings-row" onclick="resetApp()"><div class="settings-row-left"><div class="settings-row-icon">↩️</div><div class="settings-row-text"><strong>Reset app</strong><span>Delete all profiles &amp; start over</span></div></div><div class="settings-chevron" style="color:var(--rose);">›</div></div>
       </div>
     </div>
@@ -1492,11 +1523,6 @@ function init() {
     if (saved) people = JSON.parse(saved);
     const savedRegion = localStorage.getItem('ln_region');
     if (savedRegion) currentRegion = savedRegion;
-    const savedIdx = localStorage.getItem('ln_active_idx');
-    if (savedIdx !== null) {
-      const idx = parseInt(savedIdx, 10);
-      if (!isNaN(idx) && idx >= 0 && idx < people.length) activePersonIdx = idx;
-    }
   } catch(e) {}
 
   loadDates();
@@ -1508,13 +1534,9 @@ function init() {
   renderGifts();
   updateRegionUI();
 
-    if (people.length > 0) {
+  if (people.length > 0) {
     // Returning user — jump straight to dashboard, no animation
-    const savedIdx = localStorage.getItem('ln_active_idx');
-    if (savedIdx !== null) {
-      const idx = parseInt(savedIdx, 10);
-      if (!isNaN(idx) && idx >= 0 && idx < people.length) activePersonIdx = idx;
-    }
+    activePersonIdx = 0;
     document.getElementById('screen-1').classList.remove('active');
     document.getElementById('screen-6').classList.add('active');
     currentScreen = 6;
@@ -1580,24 +1602,6 @@ function init() {
   scheduleWeeklyReengageCheck();
   // Check if any date notifications are due
   checkDueDateNotifs();
-
-  // When app becomes visible (user opens from notification), auto-mark first pending nudge as notified
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && currentScreen === 6 && people.length > 0) {
-      autoMarkNotified();
-      renderDashboard();
-    }
-  });
-
-  // Also handle SW messages for nudge notifications
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'nudge_fired') {
-        autoMarkNotified();
-        if (currentScreen === 6) renderDashboard();
-      }
-    });
-  }
 }
 
 // -- SUPABASE + WEB PUSH -------------------------------------------------------
@@ -1791,7 +1795,7 @@ function scheduleWeeklyReengageCheck() {
     const now = Date.now();
     const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const noActivePeople = people.length === 0;
-    const allPaused = people.length > 0 && people.every(p => p.resetMode === 'pause');
+    const allPaused = people.length > 0 && people.every(p => p.paused);
     if ((noActivePeople || allPaused) && (now - lastShown) >= WEEK_MS) {
       localStorage.setItem('ln_reengage_ts', String(now));
       sendPush({ title: 'Gra', body: 'Want to start a new schedule for someone you love?', tag: 'heartline-reengage' });
@@ -1858,10 +1862,7 @@ function updateTime() {
    PERSIST
 ══════════════════════════════════ */
 function savePeople() {
-  try {
-    localStorage.setItem('ln_people', JSON.stringify(people));
-    localStorage.setItem('ln_active_idx', String(activePersonIdx));
-  } catch(e) {}
+  try { localStorage.setItem('ln_people', JSON.stringify(people)); } catch(e) {}
   savePeopleRemote().catch(() => {});
 }
 
@@ -1906,13 +1907,14 @@ function doResetApp() {
   document.getElementById('screen-1').classList.add('active');
   currentScreen = 1;
   updateUI();
-  // Also reset Supabase nudge schedules
-  ensureUser().then(uid => {
-    if (uid) {
-      sbFetch('nudge_schedules?user_id=eq.' + uid, { method: 'DELETE' }).catch(() => {});
-      sbFetch('push_subscriptions?user_id=eq.' + uid, { method: 'DELETE' }).catch(() => {});
+  // Also reset Supabase nudge schedules — fire-and-forget, ignore network errors
+  try {
+    const userId = localStorage.getItem('ln_user_id');
+    if (userId) {
+      sbFetch('nudge_schedules?user_id=eq.' + userId, { method: 'DELETE' }).catch(() => {});
+      sbFetch('push_subscriptions?user_id=eq.' + userId, { method: 'DELETE' }).catch(() => {});
     }
-  });
+  } catch(e) {}
 }
 
 /* ══════════════════════════════════
@@ -2343,7 +2345,6 @@ function renderPeopleList() {
 
 function switchProfile(idx) {
   activePersonIdx = idx;
-  try { localStorage.setItem('ln_active_idx', String(idx)); } catch(e) {}
   const p = people[idx];
   if (!p) return;
   if (!p.dates) p.dates = [];
@@ -2917,7 +2918,10 @@ function activate() {
     requestPushPermission().then(ok => {
       if (ok && person) scheduleNudgesForPerson(person).catch(console.error);
     });
-    setTimeout(() => goTo(6), 1200);
+    setTimeout(() => {
+      goTo(6);
+      if (shouldShowTutorial()) setTimeout(() => { ensureTutorialIds(); startTutorialAtDashboard(); }, 500);
+    }, 1200);
   } else {
     setTimeout(() => goTo(4.5), 1200);
   }
@@ -2930,10 +2934,12 @@ async function grantPermissionAndActivate() {
     scheduleNudgesForPerson(person).catch(console.error);
   }
   goTo(6);
+  if (shouldShowTutorial()) setTimeout(() => { ensureTutorialIds(); startTutorialAtDashboard(); }, 500);
 }
 
 function skipPermissionAndActivate() {
   goTo(6);
+  if (shouldShowTutorial()) setTimeout(() => { ensureTutorialIds(); startTutorialAtDashboard(); }, 500);
 }
 
 /* ══════════════════════════════════
@@ -3081,6 +3087,7 @@ function dismissWeeklySummary() {
     p.lastWeekCalls = p.stats.calls || 0;
     p.stats.texts = 0;
     p.stats.calls = 0;
+    p.stats.streak = 0;
     p.nudges = {};
   });
   savePeople();
@@ -3097,6 +3104,7 @@ function nudgedIt() {
   const person = people[activePersonIdx];
   if (person) {
     person.stats.texts = (person.stats.texts || 0) + 1;
+    person.stats.streak = (person.stats.streak || 0) + 1;
     savePeople();
     const total = (person.stats.texts || 0) + (person.stats.calls || 0);
     checkMilestone(total);
@@ -3140,6 +3148,7 @@ function handleNudgeAction(personIdx, nudgeIdx, action) {
     const nudgeType = person.nudges[typeKey] || 'text';
     if (nudgeType === 'call') person.stats.calls = (person.stats.calls || 0) + 1;
     else person.stats.texts = (person.stats.texts || 0) + 1;
+    person.stats.streak = (person.stats.streak || 0) + 1;
     savePeople();
     const total = (person.stats.texts || 0) + (person.stats.calls || 0);
     checkMilestone(total);
@@ -3147,9 +3156,8 @@ function handleNudgeAction(personIdx, nudgeIdx, action) {
     person.nudges[key] = 'skipped';
     savePeople();
   } else if (action === 'snooze') {
-    // Snooze: clear notified state so it shows as "Coming up" again,
-    // then re-mark as notified after 1 hour (or 5s in demo)
-    person.nudges[key] = null;
+    // Snooze: mark as snoozed so the badge shows, then re-mark as notified after 1 hour
+    person.nudges[key] = 'snoozed';
     savePeople();
     showToast('toast-dash', '⏰ Reminder snoozed for 1 hour');
     renderDashboard();
@@ -3259,11 +3267,11 @@ function renderDashboard() {
   const activeDays = [...document.querySelectorAll('#day-row .day-pill.active')].map(d => d.dataset.day);
   const dayMap = {Mo:'Mon',Tu:'Tue',We:'Wed',Th:'Thu',Fr:'Fri',Sa:'Sat',Su:'Sun'};
   const dayNames = activeDays.length ? activeDays.map(d => dayMap[d] || d) : ['Mon','Tue','Wed','Thu','Fri'];
-  const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')].map(s => s.textContent.trim());
+  const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')];
   let windowLabel = 'your window';
   if (activeSlots.length) {
-    const first = activeSlots[0].split('–')[0].trim();
-    const last  = activeSlots[activeSlots.length-1].split('–').pop().trim();
+    const first = activeSlots[0].textContent.split('–')[0].trim();
+    const last  = activeSlots[activeSlots.length-1].textContent.split('–').pop().trim();
     windowLabel = `${first}–${last}`;
   }
 
@@ -3275,14 +3283,12 @@ function renderDashboard() {
     const types = [...Array(p.freq.text).fill('text'), ...Array(p.freq.call).fill('call')];
     types.forEach((type, i) => {
       p.nudges['type_' + i] = type;
-      // Assign a specific time slot if available, cycling through slots
-      const slotLabel = activeSlots.length ? activeSlots[i % activeSlots.length] : windowLabel;
       allItems.push({
         type, personIdx: pIdx, nudgeIdx: i,
         personName: p.name,
         day: dayNames[i % dayNames.length],
-        windowLabel: slotLabel,
-        state: p.nudges['w_' + i] || null,
+        windowLabel,
+        state: p.nudges['w_' + i] ?? null,
         paused: !!p.paused,
       });
     });
@@ -3301,7 +3307,10 @@ function renderDashboard() {
   const showAll = list.dataset.showAll === 'true';
   const visibleItems = showAll ? allItems : allItems.slice(0, 5);
 
-  list.innerHTML = visibleItems.map((item, idx) => {
+  // Pre-compute which item is the first pending across ALL items (not just visible)
+  const firstPendingItem = allItems.find(a => a.state === null && !a.paused);
+
+  list.innerHTML = visibleItems.map((item) => {
     const personTag = multiPerson ? `<span class="person-tag">${item.personName}</span>` : '';
 
     // Paused items show differently
@@ -3320,7 +3329,7 @@ function renderDashboard() {
     // A nudge shows action buttons only if explicitly marked 'notified'
     // (in real use this is set when the OS notification fires)
     const isNotified = item.state === 'notified';
-    const isFirstPending = item.state === null && idx === allItems.findIndex(a => a.state === null && !a.paused);
+    const isFirstPending = item.state === null && item === firstPendingItem;
     const isSent    = item.state === 'sent';
     const isSkipped = item.state === 'skipped';
     const isSnoozed = item.state === 'snoozed';
@@ -3515,33 +3524,404 @@ document.addEventListener('keydown', e => {
 
 
 /* ══════════════════════════════════
-   AUTO-MARK NOTIFIED
-   Called when app opens/becomes visible after a push notification.
-   Marks the first pending (null state) nudge as 'notified' so the
-   "Done it / Didn't / Snooze" action buttons appear on the dashboard.
+   TUTORIAL
 ══════════════════════════════════ */
-function autoMarkNotified() {
-  // Find first pending nudge across all active people
-  for (let pIdx = 0; pIdx < people.length; pIdx++) {
-    const p = people[pIdx];
-    if (!p || p.paused) continue;
-    if (!p.nudges) p.nudges = {};
-    const total = (p.freq.text || 0) + (p.freq.call || 0);
-    for (let i = 0; i < total; i++) {
-      const key = 'w_' + i;
-      if (!p.nudges[key]) {
-        p.nudges[key] = 'notified';
-        savePeople();
-        return; // only mark one at a time
+
+// Each step: { screen, spotlight (element id), scrollTo (optional scroll container id),
+//   cardPos ('above'|'below'|'center'), title, body }
+// spotlightMulti: array of IDs to highlight together (bounding box of all elements combined)
+const TUTORIAL_STEPS = [
+  // ── Onboarding screens ──
+  {
+    screen: 1,
+    spotlight: 'partner-name',
+    cardPos: 'below',
+    title: 'Start by naming someone you love',
+    body: 'Type in the name of a partner, family member, or friend you want to stay in better touch with. This is just for your reminders — Gra never contacts anyone directly.',
+  },
+  {
+    screen: 1.5,
+    spotlight: 'rel-grid',
+    cardPos: 'below',
+    title: 'Choose your relationship',
+    body: 'This shapes the tone of the message suggestions you\'ll see when a reminder fires. A nudge to a partner sounds different from one to a parent or a friend — Gra adjusts accordingly.',
+  },
+  {
+    screen: 2,
+    spotlightMulti: ['counter-text', 'counter-call'],
+    cardPos: 'below',
+    title: 'Set how often you want to reach out',
+    body: 'Use the + and − buttons to choose how many text and call reminders per week. You can set as few as one or as many as seven. This can be changed anytime from Settings.',
+  },
+  {
+    screen: 3,
+    spotlight: 'day-row',
+    cardPos: 'below',
+    title: 'Pick your days',
+    body: 'These are the days you\'re typically apart from this person — the days you\'d naturally send a message. Gra will only schedule reminders on the days you select here.',
+  },
+  {
+    screen: 3,
+    spotlight: 'time-grid',
+    cardPos: 'below',
+    title: 'Pick your time slots',
+    body: 'Select the hours you\'re free to reach out. Reminders are scattered randomly across these slots each week, so they feel natural rather than like a recurring alarm.',
+  },
+  {
+    screen: 3,
+    spotlight: 'windows-section',
+    cardPos: 'above',
+    title: 'Your default is already set',
+    body: 'We\'ve pre-filled Monday to Friday, 9am–5pm as your starting window — the classic work week. You can delete it, adjust it, or tap "+ Add another window" to build out evenings, weekends, or anything else that fits your life.',
+    scrollTo: 'screen-3-content',
+  },
+  {
+    screen: 3,
+    spotlight: 'dates-intro-el',
+    cardPos: 'above',
+    title: 'Add special dates 🗓',
+    body: 'Birthdays, anniversaries, big exams — add them here. Gra will remind you a month out, a week out, the day before, and on the day itself, so you\'re never caught off guard.',
+    scrollTo: 'screen-3-content',
+    scrollToBottom: true,
+  },
+  // ── Dashboard screens ──
+  {
+    screen: 6,
+    spotlight: 'reminder-list',
+    cardPos: 'below',
+    title: 'Your nudges for the week',
+    body: 'This is your dashboard. Every reminder for the week lives here — you can see at a glance who you need to reach out to, and when. Each card shows the day and window your nudge will fire.',
+    scrollTo: 's6-home',
+    scrollToTop: true,
+  },
+  {
+    screen: 6,
+    spotlight: 'nudge-filter-toggle',
+    cardPos: 'below',
+    title: 'Filter by person',
+    body: 'Use this toggle to see all your people\'s reminders together, or focus on just the one you\'ve selected. Handy once you start nudging more than one person.',
+    scrollTo: 's6-home',
+    scrollToTop: true,
+  },
+  {
+    screen: 6,
+    spotlight: 'tutorial-demo-reminder',
+    cardPos: 'below',
+    title: 'When a reminder fires',
+    body: 'You\'ll get a notification at the right time. Tap it and three options appear — log that you reached out, mark it missed, or snooze for an hour and try again later.',
+    scrollTo: 's6-home',
+    scrollToTop: true,
+    onEnter: () => {
+      // Inject a fake "notified" reminder into the list so the user can see the action buttons
+      const list = document.getElementById('reminder-list');
+      if (list && !document.getElementById('tutorial-demo-reminder')) {
+        const demo = document.createElement('div');
+        demo.id = 'tutorial-demo-reminder';
+        demo.className = 'reminder-item notified';
+        demo.style.cssText = 'border-color:var(--rose);background:#fff8fa;';
+        demo.innerHTML = `
+          <div class="reminder-icon">💬</div>
+          <div class="reminder-info" style="flex:1;min-width:0;">
+            <strong>Text reminder</strong>
+            <span>Mon · 9am–5pm</span>
+            <div class="nudge-actions">
+              <button class="nudge-act-btn sent-yes">✓ Done it</button>
+              <button class="nudge-act-btn sent-no">✗ Didn't</button>
+              <button class="nudge-act-btn snooze">⏰ 1 hr</button>
+            </div>
+          </div>
+          <div class="reminder-badge" style="background:var(--rose);color:white;font-size:0.58rem;font-weight:600;padding:3px 8px;border-radius:20px;">Now!</div>`;
+        list.insertBefore(demo, list.firstChild);
       }
-    }
+    },
+    onLeave: () => {
+      const demo = document.getElementById('tutorial-demo-reminder');
+      if (demo) demo.remove();
+    },
+  },
+  {
+    screen: 6,
+    spotlight: 'stats-row-el',
+    cardPos: 'above',
+    title: 'Your stats',
+    body: 'Every nudge you act on is counted here. It\'s a quiet record of all the small moments of love you\'ve put into the world. They add up more than you\'d think.',
+    scrollTo: 's6-home',
+  },
+  {
+    screen: 6,
+    spotlight: 'shared-nav',
+    cardPos: 'above',
+    title: 'Getting around',
+    body: 'Four tabs at the bottom: Home (your reminders), Schedule (edit your windows), Gifts (curated ideas for the person you\'re nudging), and Settings (adjust frequency and profiles).',
+  },
+  {
+    screen: 6,
+    spotlight: 'profile-pill-el',
+    cardPos: 'below',
+    title: 'Switch between people',
+    body: 'Tap the button in the top-right to switch between people or add someone new. You can set up reminders for as many people as you like — each with their own schedule and frequency.',
+    scrollTo: 's6-home',
+    scrollToTop: true,
+  },
+  {
+    screen: 6,
+    spotlightMulti: ['gift-header-el', 'gift-list'],
+    cardPos: 'above',
+    title: 'Want to do something extra? 🎁',
+    body: 'Head to the Gifts tab for curated ideas your loved one will actually appreciate — flowers, chocolates, spa days and more. Everything is hand-picked and available in your region.',
+    onEnter: () => { switchTab('gifts'); },
+    onLeave: () => { switchTab('home'); },
+    scrollTo: 's6-gifts',
+    scrollToTop: true,
+  },
+  {
+    screen: 6,
+    spotlight: null,
+    cardPos: 'center',
+    title: 'You\'re all set ♡',
+    body: 'That\'s everything! Set it up once and Gra will quietly do the remembering for you. The people you love are worth the two seconds it takes to send a message.',
+    onEnter: () => { switchTab('home'); },
+  },
+];
+
+let tutorialStep = 0;
+let tutorialIsFirstTime = false; // track if this is a brand-new user flow
+
+function shouldShowTutorial() {
+  try { return !localStorage.getItem('ln_tutorial_done'); } catch(e) { return false; }
+}
+
+function markTutorialDone() {
+  try { localStorage.setItem('ln_tutorial_done', '1'); } catch(e) {}
+}
+
+function startTutorial() {
+  ensureTutorialIds();
+  tutorialIsFirstTime = false;
+  tutorialStep = 0;
+  applyTutorialStep();
+}
+
+// Start at the first dashboard step (used after completing onboarding — first-time users)
+function startTutorialAtDashboard() {
+  ensureTutorialIds();
+  tutorialIsFirstTime = true;
+  switchTab('home');
+  tutorialStep = TUTORIAL_STEPS.findIndex(s => s.screen === 6);
+  if (tutorialStep < 0) tutorialStep = 0;
+  renderTutorialStep();
+}
+
+function endTutorial() {
+  // Clean up any active tab state from steps
+  const step = TUTORIAL_STEPS[tutorialStep];
+  if (step && step.onLeave) step.onLeave();
+  document.getElementById('tutorial-overlay').style.display = 'none';
+  markTutorialDone();
+  // First-time users: go back to screen 1 after the tour
+  if (tutorialIsFirstTime) {
+    goTo(1);
   }
+}
+
+function tutorialNext() {
+  if (tutorialStep >= TUTORIAL_STEPS.length - 1) { endTutorial(); return; }
+  const leaving = TUTORIAL_STEPS[tutorialStep];
+  tutorialStep++;
+  const arriving = TUTORIAL_STEPS[tutorialStep];
+  // onLeave the step we're leaving
+  if (leaving.onLeave) leaving.onLeave();
+  applyTutorialStepNoLeave(arriving);
+}
+
+function tutorialBack() {
+  if (tutorialStep <= 0) return;
+  const leaving = TUTORIAL_STEPS[tutorialStep];
+  tutorialStep--;
+  const arriving = TUTORIAL_STEPS[tutorialStep];
+  // onLeave the step we're leaving (going back)
+  if (leaving.onLeave) leaving.onLeave();
+  applyTutorialStepNoLeave(arriving);
+}
+
+// Applies a step without calling onLeave (caller already handled it)
+function applyTutorialStepNoLeave(step) {
+  if (step.screen !== currentScreen) {
+    document.getElementById('tutorial-overlay').style.display = 'none';
+    if (step.screen === 6) {
+      goTo(6);
+      setTimeout(() => {
+        if (step.onEnter) step.onEnter();
+        renderTutorialStep();
+      }, 420);
+    } else {
+      goTo(step.screen);
+      setTimeout(() => {
+        if (step.onEnter) step.onEnter();
+        renderTutorialStep();
+      }, 420);
+    }
+    return;
+  }
+  if (step.onEnter) step.onEnter();
+  renderTutorialStep();
+}
+
+function applyTutorialStep() {
+  applyTutorialStepNoLeave(TUTORIAL_STEPS[tutorialStep]);
+}
+
+function renderTutorialStep() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  const total = TUTORIAL_STEPS.length;
+  const overlay = document.getElementById('tutorial-overlay');
+  overlay.style.display = 'block';
+
+  document.getElementById('tutorial-step-label').textContent = `${tutorialStep + 1} of ${total}`;
+  document.getElementById('tutorial-title').textContent = step.title;
+  const bodyEl = document.getElementById('tutorial-body');
+  if (step.bodyHtml) {
+    bodyEl.innerHTML = step.bodyHtml;
+  } else {
+    bodyEl.textContent = step.body || '';
+  }
+
+  // Progress dots
+  const dotsEl = document.getElementById('tutorial-dots');
+  dotsEl.innerHTML = TUTORIAL_STEPS.map((_, i) => `<div style="width:${i === tutorialStep ? 14 : 5}px;height:5px;border-radius:3px;background:${i === tutorialStep ? 'var(--rose)' : '#e8d8d4'};transition:all 0.2s;flex-shrink:0;"></div>`).join('');
+
+  // Back button
+  document.getElementById('tutorial-back-btn').style.display = tutorialStep > 0 ? 'inline-block' : 'none';
+  // Next button label
+  document.getElementById('tutorial-next-btn').textContent = tutorialStep === total - 1 ? 'Done ♡' : 'Next →';
+
+  positionTutorialSpotlight(step);
+}
+
+function positionTutorialSpotlight(step) {
+  const spotlight = document.getElementById('tutorial-spotlight');
+  const card      = document.getElementById('tutorial-card');
+  const overlay   = document.getElementById('tutorial-overlay');
+
+  // Resolve single or multi spotlight target
+  let targetEl = null;
+  let multiEls = null;
+
+  if (step.spotlightMulti) {
+    multiEls = step.spotlightMulti.map(id => document.getElementById(id)).filter(el => el && el.offsetHeight > 0);
+    if (multiEls.length === 0) multiEls = null;
+  } else if (step.spotlight) {
+    targetEl = document.getElementById(step.spotlight);
+    if (targetEl && (targetEl.offsetHeight === 0 || targetEl.style.display === 'none')) targetEl = null;
+  }
+
+  const doPosition = () => {
+    const overlayRect = overlay.getBoundingClientRect();
+    const overlayH    = overlayRect.height;
+    const MARGIN = 10;
+
+    card.style.top = '-9999px'; card.style.bottom = 'auto'; card.style.transform = '';
+    const cardH = card.offsetHeight || 190;
+
+    // No target — centre card
+    if (!targetEl && !multiEls || step.cardPos === 'center') {
+      spotlight.style.opacity = '0'; spotlight.style.width = '0'; spotlight.style.height = '0';
+      const centreTop = Math.max(MARGIN, (overlayH - cardH) / 2);
+      card.style.top = centreTop + 'px'; card.style.bottom = 'auto'; card.style.transform = '';
+      return;
+    }
+
+    // Compute bounding rect — either single element or union of multi elements
+    let eTop, eLeft, eRight, eBottom;
+    if (multiEls) {
+      eTop    = Infinity; eLeft   = Infinity; eRight  = -Infinity; eBottom = -Infinity;
+      multiEls.forEach(el => {
+        const r = el.getBoundingClientRect();
+        eTop    = Math.min(eTop,    r.top    - overlayRect.top);
+        eLeft   = Math.min(eLeft,   r.left   - overlayRect.left);
+        eRight  = Math.max(eRight,  r.right  - overlayRect.left);
+        eBottom = Math.max(eBottom, r.bottom - overlayRect.top);
+      });
+    } else {
+      const r = targetEl.getBoundingClientRect();
+      eTop    = r.top    - overlayRect.top;
+      eLeft   = r.left   - overlayRect.left;
+      eRight  = r.right  - overlayRect.left;
+      eBottom = r.bottom - overlayRect.top;
+    }
+    const eW = eRight - eLeft;
+    const eH = eBottom - eTop;
+    const SPX = 7, SPY = 5;
+
+    spotlight.style.opacity = '1';
+    spotlight.style.top    = (eTop  - SPY) + 'px';
+    spotlight.style.left   = (eLeft - SPX) + 'px';
+    spotlight.style.width  = (eW + SPX * 2) + 'px';
+    spotlight.style.height = (eH + SPY * 2) + 'px';
+
+    let top;
+    if (step.cardPos === 'below') {
+      top = eBottom + SPY + MARGIN;
+      if (top + cardH > overlayH - MARGIN) top = eTop - SPY - MARGIN - cardH;
+    } else {
+      top = eTop - SPY - MARGIN - cardH;
+      if (top < MARGIN) top = eBottom + SPY + MARGIN;
+    }
+    top = Math.max(MARGIN, Math.min(top, overlayH - cardH - MARGIN));
+    card.style.top = top + 'px'; card.style.bottom = 'auto';
+  };
+
+  // Scroll if needed, then position
+  const scrollId = step.scrollTo;
+  const scrollContainer = scrollId ? document.getElementById(scrollId) : null;
+  const scrollTarget = targetEl || (multiEls && multiEls[0]) || null;
+
+  if (scrollContainer && scrollTarget) {
+    if (step.scrollToTop) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else if (step.scrollToBottom) {
+      scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else {
+      const cRect = scrollContainer.getBoundingClientRect();
+      const eRect = scrollTarget.getBoundingClientRect();
+      const offset = eRect.top - cRect.top + scrollContainer.scrollTop - scrollContainer.clientHeight / 2 + eRect.height / 2;
+      scrollContainer.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    }
+  } else {
+    doPosition();
+  }
+}
+
+function ensureTutorialIds() {
+  const q = (sel, id) => { const el = document.querySelector(sel); if (el && !el.id) el.id = id; };
+  q('.reset-note',  'reset-note-el');
+  q('.stats-row',   'stats-row-el');
+  q('.profile-pill','profile-pill-el');
+  q('.dates-intro', 'dates-intro-el');
+  // screen-3 content scroll container
+  const s3 = document.querySelector('#screen-3 .app-content');
+  if (s3 && !s3.id) s3.id = 'screen-3-content';
 }
 
 /* ══════════════════════════════════
    GO
 ══════════════════════════════════ */
 init();
+
+// Check if tutorial should run on first open (after dashboard renders)
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    ensureTutorialIds();
+    // Returning user landed on dashboard and hasn't done the tutorial yet
+    if (currentScreen === 6 && shouldShowTutorial()) {
+      startTutorial();
+    }
+    // New users: tutorial is triggered from grantPermissionAndActivate / skipPermissionAndActivate
+  }, 600);
+});
 </script>
 </body>
 </html>
