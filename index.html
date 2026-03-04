@@ -623,6 +623,17 @@ html, body { overscroll-behavior-y: contain; }
 .date-reminder-info strong { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ink); }
 .date-reminder-info span { font-size: 0.62rem; color: var(--muted); }
 .date-reminder-badge { font-size: 0.56rem; font-weight: 600; padding: 3px 8px; border-radius: 20px; background: var(--rose); color: white; flex-shrink: 0; }
+.date-reminder-item { cursor: pointer; transition: transform 0.12s; }
+.date-reminder-item:active { transform: scale(0.98); }
+.date-info-bubble { position: absolute; left: 16px; right: 16px; background: var(--white); border: 1.5px solid var(--border); border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); z-index: 300; animation: bubbleIn 0.2s cubic-bezier(0.34,1.2,0.64,1); }
+@keyframes bubbleIn { from { opacity:0; transform:scale(0.92) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.date-info-bubble-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.date-info-bubble-icon { font-size: 1.6rem; flex-shrink: 0; }
+.date-info-bubble-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+.date-info-bubble-sub { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+.date-info-bubble-notes { font-size: 0.72rem; color: var(--ink); line-height: 1.6; background: var(--rose-light); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; border-left: 3px solid var(--rose); }
+.date-info-bubble-close { width: 100%; padding: 8px; background: none; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; color: var(--muted); cursor: pointer; }
+.dark-mode .date-info-bubble { background: var(--white); }
 
 </style>
 </head>
@@ -848,13 +859,13 @@ html, body { overscroll-behavior-y: contain; }
           </div>
         </div>
         <div class="love-note"><div class="note-label">Your first reminder will look like this</div><div class="note-text">💛 Time to text <strong id="confirm-name2">Sarah</strong><br><span style="font-size:0.8rem;color:#b09090;">Just a little love goes a long way</span></div></div>
-        <button class="cta-btn" onclick="activate()">♡ &nbsp;Activate my love plan</button>
+        <button class="cta-btn" id="activate-btn" onclick="activate()">♡ &nbsp;Activate my love plan</button>
       </div>
       <div class="activated-state" id="s4-activated">
         <div class="big-heart">💛</div>
         <h2>You're all set!</h2>
         <p>Your first nudge will arrive during your window this week.</p>
-        <div class="first-nudge">Next reminder: <strong>Tomorrow, around 10am</strong><br>Resets every Monday with fresh timing ♡</div>
+        <div class="first-nudge" id="first-nudge-text">Next reminder: <strong>Tomorrow, around 10am</strong><br>Resets every Monday with fresh timing ♡</div>
         <button class="cta-btn" onclick="goTo(6)" style="margin-top:8px;">Go to my dashboard →</button>
       </div>
     </div>
@@ -976,7 +987,7 @@ html, body { overscroll-behavior-y: contain; }
         <div class="stat-tile"><div class="stat-num" id="stat-texts">0</div><div class="stat-label">texts nudged</div></div>
         <div class="stat-tile"><div class="stat-num" id="stat-calls">0</div><div class="stat-label">calls nudged</div></div>
       </div>
-      <div class="quote-card"><div class="quote-text">"Small gestures, repeated with love, build something unbreakable."</div><div class="quote-attr">— Gra</div></div>
+      <div class="quote-card" id="quote-card"><div class="quote-text" id="quote-text">"Small gestures, repeated with love, build something unbreakable."</div><div class="quote-attr">— Gra</div></div>
     </div>
     <div style="text-align:center;padding:4px 0 8px;">
       <button onclick="sendTestPush()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'DM Sans',sans-serif;font-size:0.66rem;color:var(--muted);cursor:pointer;">🔔 Test notification</button>
@@ -1051,6 +1062,10 @@ html, body { overscroll-behavior-y: contain; }
         <label class="date-input-label">Date</label>
         <input class="date-input" id="date-picker" type="date" />
       </div>
+      <div class="date-input-row" id="date-notes-row">
+        <label class="date-input-label">More info <span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:0.58rem;">(optional)</span></label>
+        <textarea class="date-input" id="date-notes-input" rows="2" placeholder="e.g. John has his final accounting exam today — message him before 9am" maxlength="200" style="resize:none;line-height:1.5;font-size:0.78rem;"></textarea>
+      </div>
       <div class="date-modal-actions">
         <button class="cta-btn secondary" style="padding:11px;flex:1;" onclick="closeDateModal()">Cancel</button>
         <button class="cta-btn" style="padding:11px;flex:2;" onclick="saveSpecialDate()">Save date ♡</button>
@@ -1075,7 +1090,8 @@ html, body { overscroll-behavior-y: contain; }
       <div class="back-btn" onclick="closePanel('schedule')">←</div>
       <div class="panel-title">Your <em>schedule</em></div>
     </div>
-    <div class="panel-sub">When are you apart? Nudges fire during these windows.</div>
+    <div id="schedule-panel-for" style="display:flex;align-items:center;gap:8px;padding:0 22px 10px;flex-shrink:0;"></div>
+    <div class="panel-sub" style="padding-top:0;">When are you apart? Nudges fire during these windows.</div>
     <div class="app-content" style="padding-top:4px;padding-bottom:80px;">
       <div class="time-label">Days</div>
       <div class="day-row" id="app-day-row" style="margin-bottom:14px;">
@@ -1618,6 +1634,51 @@ function init() {
   checkDueDateNotifs();
   // Periodically re-prompt for notification permission if previously skipped
   scheduleNotifRePrompt();
+  // Listen for push notification messages from service worker (sets notified state)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', event => {
+      const data = event.data;
+      if (data && data.type === 'nudge-fired' && data.personIdx !== undefined && data.nudgeIdx !== undefined) {
+        markNotified(data.personIdx, data.nudgeIdx);
+      }
+    });
+  }
+  // Start quote rotation
+  startQuoteRotation();
+}
+
+/* ══════════════════════════════════
+   ROTATING LOVE QUOTES
+══════════════════════════════════ */
+const LOVE_QUOTES = [
+  '"Small gestures, repeated with love, build something unbreakable."',
+  '"The most precious gift we can offer anyone is our attention."',
+  '"Love is not something you feel — it\'s something you do."',
+  '"A single text sent with care can change someone\'s whole day."',
+  '"Staying close takes intention, and that intention is love."',
+  '"We don\'t need grand gestures. We need consistent ones."',
+  '"To be truly seen by someone is its own kind of miracle."',
+  '"Love is spelled T-I-M-E."',
+  '"The little moments between us — that\'s where love actually lives."',
+  '"Reach out. You never know how much someone needed to hear from you."',
+  '"Distance can\'t diminish what\'s built on genuine care."',
+  '"One message. One call. One moment. It adds up to a lifetime."',
+];
+let quoteIdx = Math.floor(Math.random() * LOVE_QUOTES.length);
+
+function startQuoteRotation() {
+  setInterval(() => {
+    quoteIdx = (quoteIdx + 1) % LOVE_QUOTES.length;
+    const el = document.getElementById('quote-text');
+    if (el && currentScreen === 6) {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.5s';
+      setTimeout(() => {
+        el.textContent = LOVE_QUOTES[quoteIdx];
+        el.style.opacity = '1';
+      }, 500);
+    }
+  }, 12000); // rotate every 12 seconds
 }
 
 // -- SUPABASE + WEB PUSH -------------------------------------------------------
@@ -1731,7 +1792,7 @@ async function sendTestPush() {
   showToast('toast-dash', sent ? 'Test notification sent!' : 'Could not send — check Supabase function logs');
 }
 
-// Build this week's nudge fire times for a person
+// Build this week's nudge fire times for a person — smart scheduling from current date/time
 function buildWeeklyNudgeTimes(person) {
   const chips = document.querySelectorAll('#app-windows-list .window-chip, #windows-list .window-chip');
   let startHour = 9, endHour = 17;
@@ -1750,13 +1811,36 @@ function buildWeeklyNudgeTimes(person) {
   const dayNums = daySet.size ? [...daySet].sort() : [1,2,3,4,5];
   const types = [...Array(person.freq.text||0).fill('text'), ...Array(person.freq.call||0).fill('call')];
   const now = new Date();
+  const nowDay = now.getDay(); // 0=Sun,1=Mon,...
+  const nowHour = now.getHours();
+
+  // Find the next valid scheduled day starting from today
+  // Build a sorted list of (dayNum, offset) pairs starting from today forward through the week
+  // then wrap around if needed
+  function nextOccurrence(targetDayNum, slotOffset) {
+    // slotOffset staggers multiple nudges on same day (0,1,2...)
+    let ahead = (targetDayNum - nowDay + 7) % 7;
+    // If today is the day but window hasn't started yet, schedule today
+    // If today is the day and window is already over, push to next week
+    if (ahead === 0) {
+      const slotHour = startHour + slotOffset;
+      if (nowHour >= endHour) ahead = 7; // window passed today, next week
+      // else schedule today (ahead stays 0)
+    }
+    const target = new Date(now);
+    target.setDate(target.getDate() + ahead);
+    const rangeHours = Math.max(1, endHour - startHour);
+    const assignedHour = startHour + (slotOffset % rangeHours);
+    target.setHours(assignedHour, Math.floor(Math.random() * 60), 0, 0);
+    return target;
+  }
+
+  // Distribute nudges across the available days in order
   return types.map((type, i) => {
     const dayNum = dayNums[i % dayNums.length];
-    const target = new Date(now);
-    let ahead = (dayNum - now.getDay() + 7) % 7;
-    if (ahead === 0 && now.getHours() >= endHour) ahead = 7;
-    target.setDate(target.getDate() + ahead);
-    target.setHours(startHour + Math.floor(Math.random() * Math.max(1, endHour - startHour)), Math.floor(Math.random() * 60), 0, 0);
+    // Count how many nudges share this dayNum (to stagger hours)
+    const slotOffset = types.slice(0, i).filter((_, j) => dayNums[j % dayNums.length] === dayNum).length;
+    const target = nextOccurrence(dayNum, slotOffset);
     return { type, fireAt: target.toISOString() };
   });
 }
@@ -2050,6 +2134,11 @@ function addAnotherPerson() {
   const s4activated = document.getElementById('s4-activated');
   if (s4confirm) s4confirm.style.display = '';
   if (s4activated) s4activated.classList.remove('show');
+  // Clear special dates list for fresh new user
+  const datesList = document.getElementById('dates-list');
+  if (datesList) datesList.innerHTML = '';
+  const appDatesList = document.getElementById('app-dates-list');
+  if (appDatesList) appDatesList.innerHTML = '';
   goTo(1);
 }
 
@@ -2484,6 +2573,17 @@ function selectRel(el) {
   currentRel = el.dataset.rel;
   const bubble = document.getElementById('msg-preview-bubble');
   if (bubble) bubble.textContent = REL_MESSAGES[currentRel] || '';
+  // Update activate button text
+  const activateBtn = document.getElementById('activate-btn');
+  if (activateBtn) {
+    const relActivateText = {
+      partner: '♡ \u00a0Activate my love plan',
+      spouse:  '♡ \u00a0Activate my love plan',
+      family:  '♡ \u00a0Start keeping in touch',
+      friend:  '♡ \u00a0Start keeping in touch',
+    };
+    activateBtn.innerHTML = relActivateText[currentRel] || relActivateText.partner;
+  }
   renderSuggestions();
 }
 
@@ -2587,6 +2687,8 @@ function syncSchedulePanel() {
   srcDays.forEach((d, i) => {
     if (appDays[i]) appDays[i].classList.toggle('active', d.classList.contains('active'));
   });
+  // Render person pip(s) — clickable to switch which person's schedule is being edited
+  renderSchedulePanelPips();
   const srcSlots = [...document.querySelectorAll('#time-grid .time-slot')];
   const appSlots = [...document.querySelectorAll('#app-time-grid .time-slot')];
   srcSlots.forEach((s, i) => {
@@ -2598,6 +2700,46 @@ function syncSchedulePanel() {
   if (srcWin && appWin) appWin.innerHTML = srcWin.innerHTML.replace(/removeChip\(this\)/g, 'removeChipApp(this)');
   // Render dates for current person
   renderAppDateChips();
+}
+
+function renderSchedulePanelPips() {
+  const forEl = document.getElementById('schedule-panel-for');
+  if (!forEl) return;
+  if (people.length === 0) { forEl.innerHTML = ''; return; }
+
+  if (people.length === 1) {
+    const p = people[0];
+    forEl.innerHTML = `
+      <div style="width:28px;height:28px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:0.9rem;border:2px solid var(--rose);">${p.emoji}</div>
+      <span style="font-size:0.72rem;color:var(--ink);font-weight:600;">For ${p.name}</span>`;
+    return;
+  }
+
+  // Multiple people — render clickable pips
+  const activePerson = people[activePersonIdx];
+  const pips = people.map((p, i) => {
+    const isActive = i === activePersonIdx;
+    return `<div
+      onclick="switchSchedulePerson(${i})"
+      title="Edit ${p.name}'s schedule"
+      style="width:32px;height:32px;border-radius:50%;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;transition:all 0.18s;border:2.5px solid ${isActive ? 'var(--rose)' : 'transparent'};box-shadow:${isActive ? '0 0 0 1px var(--rose)' : 'none'};"
+      >${p.emoji}</div>`;
+  }).join('');
+
+  forEl.innerHTML = `
+    <div style="display:flex;gap:6px;align-items:center;">${pips}</div>
+    <span style="font-size:0.72rem;color:var(--ink);font-weight:600;" id="schedule-editing-label">Editing: ${activePerson ? activePerson.name : ''}</span>`;
+}
+
+function switchSchedulePerson(idx) {
+  activePersonIdx = idx;
+  try { localStorage.setItem('ln_active_idx', String(idx)); } catch(e) {}
+  // Re-render pips with new active person highlighted
+  renderSchedulePanelPips();
+  // Reload that person's schedule into the panel
+  // (In this prototype, schedule is shared globally — just update the label and dates)
+  renderAppDateChips();
+  showToast('toast-app-schedule', `Editing ${people[idx] ? people[idx].name + "'s" : ''} schedule`);
 }
 
 function saveSchedulePanel() {
@@ -2695,7 +2837,12 @@ function loadDates() {
 function daysUntil(dateStr) {
   const today = new Date(); today.setHours(0,0,0,0);
   const d = new Date(dateStr + 'T00:00:00');
-  // For annual events, find next occurrence
+  // If the stored date is still in the future (including today), use it directly
+  // This handles one-off events (trips, exams, surgeries etc.)
+  if (d >= today) {
+    return Math.round((d - today) / 86400000);
+  }
+  // Date has passed — treat as annual and find next occurrence
   const thisYear = new Date(today.getFullYear(), d.getMonth(), d.getDate());
   const nextYear = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
   const target = thisYear >= today ? thisYear : nextYear;
@@ -2731,11 +2878,12 @@ function openDateModal() {
       onclick="selectDateType('${t.type}', this)">
       <span class="dt-icon">${t.icon}</span>${t.label}
     </button>`).join('');
-  // Set default date to next month
-  const next = new Date(); next.setMonth(next.getMonth() + 1);
+  // Set default date to today
+  const next = new Date();
   document.getElementById('date-picker').value = next.toISOString().split('T')[0];
   document.getElementById('other-label-row').style.display = 'none';
   document.getElementById('other-label-input').value = '';
+  document.getElementById('date-notes-input').value = '';
   document.getElementById('date-modal').classList.add('open');
 }
 
@@ -2765,7 +2913,8 @@ function saveSpecialDate() {
     if (!custom) { showToast('toast-s3', 'Please describe the occasion'); return; }
     label = custom;
   }
-  const entry = { id: Date.now(), type: selectedDateType, label, icon: typeMeta.icon, date: dateVal };
+  const notes = (document.getElementById('date-notes-input').value || '').trim();
+  const entry = { id: Date.now(), type: selectedDateType, label, icon: typeMeta.icon, date: dateVal, notes: notes || '' };
   person.dates.push(entry);
   saveDates();
   closeDateModal();
@@ -2818,43 +2967,211 @@ function renderUpcomingDates() {
   const list    = document.getElementById('upcoming-dates-list');
   if (!section || !list) return;
 
-  const person = people[activePersonIdx];
-  const dates = (person && person.dates) ? person.dates : [];
+  // Gather dates from ALL people, tagged with who they belong to
+  const allUpcoming = [];
+  people.forEach(function(person) {
+    const dates = (person && person.dates) ? person.dates : [];
+    dates.forEach(function(d) {
+      const days = daysUntil(d.date);
+      if (days <= 60) allUpcoming.push(Object.assign({}, d, { days: days, person: person }));
+    });
+  });
 
-  // Show dates within 31 days
-  const upcoming = dates
-    .map(d => ({ ...d, days: daysUntil(d.date) }))
-    .filter(d => d.days <= 31)
-    .sort((a, b) => a.days - b.days);
+  // Also show dates that just passed (days < 0, within last 2 days) for "remind next year / delete" prompt
+  const justPassed = [];
+  people.forEach(function(person) {
+    const dates = (person && person.dates) ? person.dates : [];
+    dates.forEach(function(d) {
+      const rawDays = rawDaysUntilNoAnnual(d.date);
+      if (rawDays < 0 && rawDays >= -3) justPassed.push(Object.assign({}, d, { days: rawDays, person: person }));
+    });
+  });
 
-  if (upcoming.length === 0) { section.style.display = 'none'; return; }
+  allUpcoming.sort(function(a, b) { return a.days - b.days; });
+
+  if (allUpcoming.length === 0 && justPassed.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
 
-  list.innerHTML = upcoming.map(d => {
-    let badgeText = '';
-    if      (d.days === 0)  badgeText = 'Today! 🎉';
-    else if (d.days === 1)  badgeText = 'Tomorrow';
-    else if (d.days <= 7)   badgeText = `${d.days} days`;
-    else                    badgeText = `${d.days} days away`;
+  const multiPerson = people.length > 1;
+  const showAll = list.dataset.showAll === 'true';
+  const visible = showAll ? allUpcoming : allUpcoming.slice(0, 2);
 
-    const msg = d.days === 0
-      ? `${d.label} is today — make it special ♡`
-      : d.days === 1
-      ? `${d.label} is tomorrow — have you got something planned?`
-      : d.days <= 7
-      ? `${d.label} is coming up this week ♡`
-      : `${d.label} is in ${d.days} days — start thinking about something special`;
+  function renderItem(d) {
+    let badgeText, badgeBg, badgeColor, cardBg, cardBorder;
+    if (d.days === 0) {
+      badgeText = 'Today!';
+      badgeBg = '#e03050'; badgeColor = 'white';
+      cardBg = 'linear-gradient(135deg,#fff0f2,#ffe8ec)'; cardBorder = '#f0a0b0';
+    } else if (d.days === 1) {
+      badgeText = 'Tomorrow';
+      badgeBg = '#c9697a'; badgeColor = 'white';
+      cardBg = 'linear-gradient(135deg,#fff3f5,#fdeef2)'; cardBorder = '#f0b8c8';
+    } else if (d.days <= 7) {
+      badgeText = d.days + ' days';
+      badgeBg = '#e8803a'; badgeColor = 'white';
+      cardBg = 'linear-gradient(135deg,#fff8f0,#fdf3e8)'; cardBorder = '#f0d0a8';
+    } else if (d.days <= 14) {
+      badgeText = d.days + ' days';
+      badgeBg = '#d4a020'; badgeColor = 'white';
+      cardBg = 'linear-gradient(135deg,#fffaf0,#fdf7e0)'; cardBorder = '#f0e0a0';
+    } else if (d.days <= 31) {
+      badgeText = d.days + ' days';
+      badgeBg = 'var(--rose-light)'; badgeColor = 'var(--rose)';
+      cardBg = 'linear-gradient(135deg,#fff5f8,#fdf0f5)'; cardBorder = '#f0c8d8';
+    } else {
+      badgeText = Math.round(d.days / 7) + ' weeks';
+      badgeBg = 'var(--rose-light)'; badgeColor = 'var(--rose)';
+      cardBg = 'linear-gradient(135deg,#fff5f8,#fdf0f5)'; cardBorder = '#f0c8d8';
+    }
 
-    return `
-    <div class="date-reminder-item">
-      <div class="date-reminder-icon">${d.icon}</div>
-      <div class="date-reminder-info">
-        <strong>${d.label}</strong>
-        <span>${msg}</span>
-      </div>
-      <div class="date-reminder-badge">${badgeText}</div>
-    </div>`;
-  }).join('');
+    const personPip = multiPerson
+      ? '<span style="width:16px;height:16px;border-radius:50%;background:' + d.person.bg + ';display:inline-flex;align-items:center;justify-content:center;font-size:0.55rem;flex-shrink:0;vertical-align:middle;margin-right:3px;" title="' + d.person.name + '">' + d.person.emoji + '</span>'
+      : '';
+
+    const hasInfo = d.notes && d.notes.trim();
+    const infoHint = hasInfo ? ' · tap for info' : '';
+    const safeId = String(d.id).replace(/'/g, '');
+    const safeName = d.person.name.replace(/'/g, '');
+    return '<div class="date-reminder-item" onclick="showDateInfoBubble(\'' + safeId + '\',\'' + safeName + '\')" style="background:' + cardBg + ';border-color:' + cardBorder + ';padding:8px 11px;margin-bottom:5px;">'
+      + '<div class="date-reminder-icon" style="font-size:1rem;">' + d.icon + '</div>'
+      + '<div class="date-reminder-info" style="flex:1;min-width:0;">'
+      + '<strong style="font-size:0.72rem;">' + personPip + d.label + ' \u2014 ' + d.person.name + '</strong>'
+      + (hasInfo ? '<span style="display:block;font-size:0.58rem;color:var(--rose);margin-top:1px;">' + infoHint + '</span>' : '')
+      + '</div>'
+      + '<div class="date-reminder-badge" style="background:' + badgeBg + ';color:' + badgeColor + ';font-size:0.55rem;padding:2px 7px;">' + badgeText + '</div>'
+      + '</div>';
+  }
+
+  function renderPassedItem(d) {
+    const ago = Math.abs(d.days);
+    const agoText = ago === 0 ? 'today' : ago === 1 ? 'yesterday' : ago + ' days ago';
+    return '<div class="date-reminder-item" style="background:linear-gradient(135deg,#f8f8f8,#f0f0f0);border-color:#ddd;padding:8px 11px;margin-bottom:5px;">'
+      + '<div class="date-reminder-icon" style="font-size:1rem;filter:grayscale(0.5);">' + d.icon + '</div>'
+      + '<div class="date-reminder-info" style="flex:1;min-width:0;">'
+      + '<strong style="font-size:0.72rem;color:#888;">' + d.label + ' \u2014 ' + d.person.name + ' <span style="font-weight:400;">(' + agoText + ')</span></strong>'
+      + '<div style="display:flex;gap:6px;margin-top:5px;">'
+      + '<button onclick="repeatDateNextYear(' + d.person.rel + ',\'' + d.id + '\',\'' + d.person.name + '\')" style="flex:1;padding:4px 8px;background:#fff;border:1.5px solid #c9697a;border-radius:8px;font-family:\'DM Sans\',sans-serif;font-size:0.6rem;font-weight:600;color:#c9697a;cursor:pointer;">🔁 Remind next year</button>'
+      + '<button onclick="deletePastDate(\'' + d.id + '\',\'' + d.person.name + '\')" style="flex:1;padding:4px 8px;background:#fff;border:1.5px solid #ddd;border-radius:8px;font-family:\'DM Sans\',sans-serif;font-size:0.6rem;font-weight:600;color:#aaa;cursor:pointer;">🗑 Delete</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  let html = '';
+
+  // Just-passed items first (with action buttons)
+  justPassed.forEach(function(d) { html += renderPassedItem(d); });
+
+  // Upcoming items (max 2, or all if expanded)
+  visible.forEach(function(d) { html += renderItem(d); });
+
+  // Show all / show less button
+  if (allUpcoming.length > 2) {
+    if (!showAll) {
+      html += '<button onclick="document.getElementById(\'upcoming-dates-list\').dataset.showAll=\'true\';renderUpcomingDates();" style="width:100%;padding:7px;background:none;border:1.5px dashed var(--border);border-radius:10px;font-family:\'DM Sans\',sans-serif;font-size:0.68rem;color:var(--muted);cursor:pointer;margin-top:2px;">Show all ' + allUpcoming.length + ' dates \u2193</button>';
+    } else {
+      html += '<button onclick="document.getElementById(\'upcoming-dates-list\').dataset.showAll=\'false\';renderUpcomingDates();" style="width:100%;padding:7px;background:none;border:1.5px dashed var(--border);border-radius:10px;font-family:\'DM Sans\',sans-serif;font-size:0.68rem;color:var(--muted);cursor:pointer;margin-top:2px;">Show less \u2191</button>';
+    }
+  }
+
+  list.innerHTML = html;
+}
+
+// Returns raw days until a date WITHOUT annual rollover (negative = already passed)
+function rawDaysUntilNoAnnual(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - today) / 86400000);
+}
+
+function repeatDateNextYear(rel, id, personName) {
+  // Find the person and the date entry, roll the date forward one year
+  const person = people.find(function(p) { return p.name === personName; });
+  if (!person || !person.dates) return;
+  const entry = person.dates.find(function(d) { return String(d.id) === String(id); });
+  if (!entry) return;
+  const d = new Date(entry.date + 'T00:00:00');
+  d.setFullYear(d.getFullYear() + 1);
+  entry.date = d.toISOString().split('T')[0];
+  savePeople();
+  scheduleNotificationsForDate(entry);
+  renderUpcomingDates();
+  showToast('toast-dash', 'Reminder set for next year \u2661');
+}
+
+function deletePastDate(id, personName) {
+  const person = people.find(function(p) { return p.name === personName; });
+  if (!person || !person.dates) return;
+  person.dates = person.dates.filter(function(d) { return String(d.id) !== String(id); });
+  savePeople();
+  renderUpcomingDates();
+  renderDateChips();
+  showToast('toast-dash', 'Date removed');
+}
+
+
+
+function showDateInfoBubble(id, personName) {
+  // Find the date entry
+  const person = people.find(function(p) { return p.name === personName; });
+  if (!person) return;
+  const entry = person.dates && person.dates.find(function(d) { return String(d.id) === String(id); });
+  if (!entry) return;
+
+  // Remove any existing bubble
+  closeDateInfoBubble();
+
+  const days = daysUntil(entry.date);
+  let whenText;
+  if (days === 0) whenText = 'Today';
+  else if (days === 1) whenText = 'Tomorrow';
+  else if (days < 0) whenText = Math.abs(days) + ' days ago';
+  else whenText = 'In ' + days + ' days — ' + new Date(new Date().getTime() + days * 86400000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const notesHtml = (entry.notes && entry.notes.trim())
+    ? '<div class="date-info-bubble-notes">' + entry.notes.trim() + '</div>'
+    : '';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'date-info-bubble';
+  bubble.id = 'date-info-bubble';
+  bubble.innerHTML =
+    '<div class="date-info-bubble-header">'
+    + '<div class="date-info-bubble-icon">' + entry.icon + '</div>'
+    + '<div>'
+    + '<div class="date-info-bubble-title">' + entry.label + ' — ' + personName + '</div>'
+    + '<div class="date-info-bubble-sub">' + whenText + ' · ' + formatDateDisplay(entry.date) + '</div>'
+    + '</div>'
+    + '</div>'
+    + notesHtml
+    + '<button class="date-info-bubble-close" onclick="closeDateInfoBubble()">Close</button>';
+
+  // Position it over the upcoming-dates-section
+  const section = document.getElementById('upcoming-dates-section');
+  const screenWrap = document.querySelector('.screen-wrap');
+  if (!section || !screenWrap) return;
+
+  screenWrap.appendChild(bubble);
+
+  // Position below the section header, accounting for scroll
+  const sectionRect = section.getBoundingClientRect();
+  const wrapRect = screenWrap.getBoundingClientRect();
+  const topPos = sectionRect.top - wrapRect.top + section.scrollTop;
+  bubble.style.top = Math.max(60, topPos) + 'px';
+
+  // Close on backdrop tap
+  bubble._outsideHandler = function(e) {
+    if (!bubble.contains(e.target)) closeDateInfoBubble();
+  };
+  setTimeout(function() { document.addEventListener('click', bubble._outsideHandler); }, 50);
+}
+
+function closeDateInfoBubble() {
+  const existing = document.getElementById('date-info-bubble');
+  if (existing) {
+    if (existing._outsideHandler) document.removeEventListener('click', existing._outsideHandler);
+    existing.remove();
+  }
 }
 
 function scheduleNotificationsForDate(entry) {
@@ -2957,6 +3274,18 @@ function updateConfirmScreen() {
     }
   }
 
+  // Update activate button text based on relationship
+  const activateBtn = document.getElementById('activate-btn');
+  if (activateBtn) {
+    const relActivateText = {
+      partner: '♡ \u00a0Activate my love plan',
+      spouse:  '♡ \u00a0Activate my love plan',
+      family:  '♡ \u00a0Start keeping in touch',
+      friend:  '♡ \u00a0Start keeping in touch',
+    };
+    activateBtn.innerHTML = relActivateText[currentRel] || relActivateText.partner;
+  }
+
   // Update s5 notification title
   const nt = document.getElementById('s5-notif-title');
   if (nt) nt.textContent = `Time to text ${name} 💛`;
@@ -3010,6 +3339,25 @@ function activate() {
   // Show activated briefly, then skip permission screen if already granted
   document.getElementById('s4-confirm').style.display = 'none';
   document.getElementById('s4-activated').classList.add('show');
+
+  // Compute real next notification time for display
+  const firstNudgeEl = document.getElementById('first-nudge-text');
+  if (firstNudgeEl) {
+    try {
+      const nudgeTimes = buildWeeklyNudgeTimes(people[activePersonIdx]);
+      if (nudgeTimes && nudgeTimes.length > 0) {
+        const firstFire = new Date(nudgeTimes[0].fireAt);
+        const now = new Date();
+        const days = Math.round((firstFire.setHours(0,0,0,0) - now.setHours(0,0,0,0)) / 86400000);
+        const fireDate = new Date(nudgeTimes[0].fireAt);
+        const dayLabel = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : fireDate.toLocaleDateString('en-GB', { weekday: 'long' });
+        const hr = fireDate.getHours();
+        const hrLabel = hr === 0 ? '12am' : hr === 12 ? '12pm' : hr < 12 ? `${hr}am` : `${hr-12}pm`;
+        firstNudgeEl.innerHTML = `Next reminder: <strong>${dayLabel}, around ${hrLabel}</strong><br>Schedule auto-updates based on your windows ♡`;
+      }
+    } catch(e) {}
+  }
+
   if (Notification.permission === 'granted') {
     // Already have permission — silently ensure subscription and go straight to dashboard
     const person = people[activePersonIdx];
@@ -3255,13 +3603,26 @@ function handleNudgeAction(personIdx, nudgeIdx, action) {
     person.nudges[key] = 'skipped';
     savePeople();
   } else if (action === 'snooze') {
-    // Snooze: mark as snoozed so the badge shows, then re-mark as notified after 1 hour
+    // Snooze: mark as snoozed so the badge shows, then send a real push and re-mark as notified after 1 hour
     person.nudges[key] = 'snoozed';
     savePeople();
     showToast('toast-dash', '⏰ Reminder snoozed for 1 hour');
     renderDashboard();
-    // In a real app this would be 3600000ms; keep as 5000ms for demo visibility
-    setTimeout(() => markNotified(personIdx, nudgeIdx), 5000);
+    // Schedule a real push notification after 1 hour (3600000ms)
+    const personName = person.name;
+    const nudgeType = person.nudges['type_' + nudgeIdx] || 'text';
+    setTimeout(() => {
+      // Re-mark as notified (shows action buttons again in-app)
+      markNotified(personIdx, nudgeIdx);
+      // Also send a push so it appears on lock screen
+      const verb = nudgeType === 'call' ? 'call' : 'text';
+      sendPush({
+        title: 'Gra — snoozed reminder',
+        body: `Still time to ${verb} ${personName} ♡`,
+        tag: `heartline-snooze-${personIdx}-${nudgeIdx}`,
+        data: { personIdx, nudgeIdx }
+      }).catch(() => {});
+    }, 3600000);
     return;
   }
   renderDashboard();
@@ -3386,6 +3747,33 @@ function renderDashboard() {
     return h < 12 ? `${h}am` : `${h - 12}pm`;
   }
 
+  // Day names as JS day numbers (0=Sun)
+  const dayNameToNum = {Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:0};
+  const now = new Date();
+  const nowDay = now.getDay();
+  const nowHour = now.getHours();
+  const startHour = slotHours.length ? Math.min(...slotHours) : 9;
+  const endHour   = slotHours.length ? Math.max(...slotHours) + 1 : 17;
+
+  // Compute how many days ahead a target day is from today, treating today as 0
+  // If the target is today but the window has already passed, it's 7 days ahead (next week)
+  function daysAheadFor(targetDayName) {
+    const targetNum = dayNameToNum[targetDayName];
+    if (targetNum === undefined) return 99;
+    let ahead = (targetNum - nowDay + 7) % 7;
+    // If it lands today but the window is already over, push to next week
+    if (ahead === 0 && nowHour >= endHour) ahead = 7;
+    return ahead;
+  }
+
+  // Compute the display label for a target day name
+  function nextDayLabel(targetDayName) {
+    const ahead = daysAheadFor(targetDayName);
+    if (ahead === 0) return 'Today';
+    if (ahead === 1) return 'Tomorrow';
+    return targetDayName;
+  }
+
   // Seeded pseudo-random so hours don't jump on every render
   function seededHour(seed) {
     if (!slotHours.length) return null;
@@ -3411,7 +3799,9 @@ function renderDashboard() {
         p._nudgeHours[i] = h;
       }
       const hour = p._nudgeHours[i];
-      const windowLabel = hour !== null ? `${dayNames[i % dayNames.length]} · around ${fmtHour(hour)}` : `${dayNames[i % dayNames.length]} · your window`;
+      const rawDay = dayNames[i % dayNames.length];
+      const smartDay = nextDayLabel(rawDay);
+      const windowLabel = hour !== null ? `${smartDay} · around ${fmtHour(hour)}` : `${smartDay} · your window`;
       allItems.push({
         type, personIdx: pIdx, nudgeIdx: i,
         personName: p.name,
@@ -3423,10 +3813,10 @@ function renderDashboard() {
     });
   });
 
-  // Sort by day order then nudge index
+  // Sort by days-ahead from today (so today's nudges first, then tomorrow's, etc.)
+  // Within the same day, sort by nudge index
   allItems.sort((a, b) => {
-    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const da = days.indexOf(a.day), db = days.indexOf(b.day);
+    const da = daysAheadFor(a.day), db = daysAheadFor(b.day);
     if (da !== db) return da - db;
     return a.nudgeIdx - b.nudgeIdx;
   });
@@ -3774,6 +4164,38 @@ const TUTORIAL_STEPS = [
     onLeave: () => {
       const demo = document.getElementById('tutorial-demo-reminder');
       if (demo) demo.remove();
+    },
+  },
+  {
+    screen: 6,
+    spotlight: 'upcoming-dates-section',
+    cardPos: 'above',
+    title: 'Special dates on your dashboard',
+    body: 'Any special dates coming up in the next two months appear right here — birthdays, exams, anniversaries. Gra shows the two most urgent first. Tap any card to see full details and any notes you added.',
+    scrollTo: 's6-home',
+    onEnter: () => {
+      const section = document.getElementById('upcoming-dates-section');
+      const list = document.getElementById('upcoming-dates-list');
+      if (section && list && !document.getElementById('tutorial-demo-date')) {
+        section.style.display = 'block';
+        const demo = document.createElement('div');
+        demo.id = 'tutorial-demo-date';
+        demo.className = 'date-reminder-item';
+        demo.style.cssText = 'background:linear-gradient(135deg,#fff8f0,#fdf3e8);border-color:#f0d0a8;padding:8px 11px;margin-bottom:5px;cursor:pointer;';
+        demo.innerHTML = '<div class="date-reminder-icon" style="font-size:1rem;">🎂</div>'
+          + '<div class="date-reminder-info" style="flex:1;min-width:0;">'
+          + '<strong style="font-size:0.72rem;">Birthday — Sarah</strong>'
+          + '<span style="display:block;font-size:0.58rem;color:var(--rose);margin-top:1px;">· tap for info</span>'
+          + '</div>'
+          + '<div class="date-reminder-badge" style="background:#e8803a;color:white;font-size:0.55rem;padding:2px 7px;">5 days</div>';
+        list.innerHTML = '';
+        list.appendChild(demo);
+      }
+    },
+    onLeave: () => {
+      const demo = document.getElementById('tutorial-demo-date');
+      if (demo) demo.remove();
+      renderUpcomingDates();
     },
   },
   {
