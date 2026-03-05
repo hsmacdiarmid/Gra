@@ -1794,39 +1794,70 @@ async function sendTestPush() {
 
 // Build this week's nudge fire times for a person — smart scheduling from current date/time
 function buildWeeklyNudgeTimes(person) {
-  const chips = document.querySelectorAll('#app-windows-list .window-chip, #windows-list .window-chip');
+  // ── 1. Get windows — prefer stored person.windows, fall back to live DOM ──
+  let windowSources = [];
+  if (person && person.windows && person.windows.length) {
+    // Use persisted windows (works even when schedule panel is not open)
+    windowSources = person.windows;
+  } else {
+    // Fallback: read from DOM chips (onboarding flow, first-time setup)
+    const chips = document.querySelectorAll('#app-windows-list .window-chip, #windows-list .window-chip');
+    chips.forEach(chip => {
+      const dEl = chip.querySelector('.chip-days');
+      const tEl = chip.querySelector('.chip-time');
+      if (dEl && tEl) windowSources.push({ days: dEl.textContent.trim(), time: tEl.textContent.trim() });
+    });
+  }
+
+  // ── 2. Parse windows into {daySet, startHour, endHour} ──
   let startHour = 9, endHour = 17;
   const daySet = new Set();
-  chips.forEach(chip => {
-    const dEl = chip.querySelector('.chip-days');
-    const tEl = chip.querySelector('.chip-time');
-    if (dEl) { ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((d,i) => { if (dEl.textContent.includes(d)) daySet.add(i === 6 ? 0 : i + 1); }); }
-    if (tEl && startHour === 9) {
-      const parts = tEl.textContent.split('\u2013').map(s => s.trim());
-      const ph = s => { const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i); if (!m) return null; let h = +m[1]; if (/pm/i.test(m[3]) && h !== 12) h += 12; if (/am/i.test(m[3]) && h === 12) h = 0; return h; };
-      startHour = ph(parts[0]) ?? 9;
-      endHour   = ph(parts[1]) ?? 17;
+  const ALL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const parseHour = s => {
+    const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i);
+    if (!m) return null;
+    let h = +m[1];
+    if (/pm/i.test(m[3]) && h !== 12) h += 12;
+    if (/am/i.test(m[3]) && h === 12) h = 0;
+    return h;
+  };
+
+  windowSources.forEach((w, wi) => {
+    // Parse days — handles "Mon – Fri" ranges and "Mon, Wed, Fri" lists
+    const daysText = w.days || '';
+    const rangeMatch = daysText.match(/([A-Za-z]+)\s*[–\-]\s*([A-Za-z]+)/);
+    if (rangeMatch) {
+      const startIdx = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[1].toLowerCase().slice(0,3)));
+      const endIdx   = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[2].toLowerCase().slice(0,3)));
+      if (startIdx !== -1 && endIdx !== -1) {
+        const from = Math.min(startIdx, endIdx), to = Math.max(startIdx, endIdx);
+        for (let i = from; i <= to; i++) {
+          // Convert ALL_DAYS index (0=Mon) to getDay() value (0=Sun,1=Mon…)
+          daySet.add(i === 6 ? 0 : i + 1);
+        }
+      }
+    } else {
+      ALL_DAYS.forEach((d, i) => {
+        if (daysText.includes(d)) daySet.add(i === 6 ? 0 : i + 1);
+      });
+    }
+    // Parse time — only use the first window's hours for now
+    if (wi === 0) {
+      const parts = (w.time || '').split(/[–\-]/).map(s => s.trim());
+      startHour = parseHour(parts[0]) ?? 9;
+      endHour   = parseHour(parts[1]) ?? 17;
     }
   });
+
   const dayNums = daySet.size ? [...daySet].sort() : [1,2,3,4,5];
   const types = [...Array(person.freq.text||0).fill('text'), ...Array(person.freq.call||0).fill('call')];
   const now = new Date();
-  const nowDay = now.getDay(); // 0=Sun,1=Mon,...
+  const nowDay = now.getDay();
   const nowHour = now.getHours();
 
-  // Find the next valid scheduled day starting from today
-  // Build a sorted list of (dayNum, offset) pairs starting from today forward through the week
-  // then wrap around if needed
   function nextOccurrence(targetDayNum, slotOffset) {
-    // slotOffset staggers multiple nudges on same day (0,1,2...)
     let ahead = (targetDayNum - nowDay + 7) % 7;
-    // If today is the day but window hasn't started yet, schedule today
-    // If today is the day and window is already over, push to next week
-    if (ahead === 0) {
-      const slotHour = startHour + slotOffset;
-      if (nowHour >= endHour) ahead = 7; // window passed today, next week
-      // else schedule today (ahead stays 0)
-    }
+    if (ahead === 0 && nowHour >= endHour) ahead = 7;
     const target = new Date(now);
     target.setDate(target.getDate() + ahead);
     const rangeHours = Math.max(1, endHour - startHour);
@@ -1835,10 +1866,8 @@ function buildWeeklyNudgeTimes(person) {
     return target;
   }
 
-  // Distribute nudges across the available days in order
   return types.map((type, i) => {
     const dayNum = dayNums[i % dayNums.length];
-    // Count how many nudges share this dayNum (to stagger hours)
     const slotOffset = types.slice(0, i).filter((_, j) => dayNums[j % dayNums.length] === dayNum).length;
     const target = nextOccurrence(dayNum, slotOffset);
     return { type, fireAt: target.toISOString() };
@@ -2032,6 +2061,41 @@ function savePeople() {
   try { localStorage.setItem('ln_people', JSON.stringify(people)); } catch(e) {}
   try { localStorage.setItem('ln_active_idx', String(activePersonIdx)); } catch(e) {}
   savePeopleRemote().catch(() => {});
+}
+
+// ── WINDOW PERSISTENCE HELPERS ──────────────────────────────
+// Read window chips from a container and return a plain array of {days, time} objects
+function readWindowChips(containerId) {
+  const chips = document.querySelectorAll(`#${containerId} .window-chip`);
+  const windows = [];
+  chips.forEach(chip => {
+    const dEl = chip.querySelector('.chip-days');
+    const tEl = chip.querySelector('.chip-time');
+    if (dEl && tEl) windows.push({ days: dEl.textContent.trim(), time: tEl.textContent.trim() });
+  });
+  return windows;
+}
+
+// Render stored window array back into a container as chips
+function renderWindowChips(containerId, windows, removeHandler) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  // Keep any chips already there only if windows is empty (preserve defaults)
+  if (!windows || !windows.length) return;
+  container.innerHTML = windows.map(w =>
+    `<div class="window-chip">
+      <div class="chip-info"><div class="chip-days">${w.days}</div><div class="chip-time">${w.time}</div></div>
+      <div class="chip-tag">Custom</div>
+      <div class="chip-remove" onclick="${removeHandler}(this)">✕</div>
+    </div>`
+  ).join('');
+}
+
+// Save current windows for a person and persist
+function saveWindowsForPerson(idx, containerId) {
+  if (!people[idx]) return;
+  people[idx].windows = readWindowChips(containerId);
+  savePeople();
 }
 
 function saveRegion() {
@@ -2694,10 +2758,18 @@ function syncSchedulePanel() {
   srcSlots.forEach((s, i) => {
     if (appSlots[i]) appSlots[i].classList.toggle('active', s.classList.contains('active'));
   });
-  // Copy windows list
-  const srcWin = document.getElementById('windows-list');
+  // Copy windows list — prefer stored person.windows over onboarding DOM
+  const person = people[activePersonIdx];
   const appWin = document.getElementById('app-windows-list');
-  if (srcWin && appWin) appWin.innerHTML = srcWin.innerHTML.replace(/removeChip\(this\)/g, 'removeChipApp(this)');
+  if (appWin) {
+    if (person && person.windows && person.windows.length) {
+      // Render from stored data so the panel always reflects what was actually saved
+      renderWindowChips('app-windows-list', person.windows, 'removeChipApp');
+    } else {
+      const srcWin = document.getElementById('windows-list');
+      if (srcWin && appWin) appWin.innerHTML = srcWin.innerHTML.replace(/removeChip\(this\)/g, 'removeChipApp(this)');
+    }
+  }
   // Render dates for current person
   renderAppDateChips();
 }
@@ -2757,6 +2829,15 @@ function saveSchedulePanel() {
   const appWin = document.getElementById('app-windows-list');
   const srcWin = document.getElementById('windows-list');
   if (appWin && srcWin) srcWin.innerHTML = appWin.innerHTML.replace(/removeChipApp\(this\)/g, 'removeChip(this)');
+
+  // ← Persist windows into the active person so buildWeeklyNudgeTimes can use them
+  saveWindowsForPerson(activePersonIdx, 'app-windows-list');
+  // Re-schedule nudges with the updated windows
+  const person = people[activePersonIdx];
+  if (person && Notification.permission === 'granted') {
+    scheduleNudgesForPerson(person).catch(console.error);
+  }
+
   showToast('toast-app-schedule', 'Schedule saved ♡');
   setTimeout(() => { closePanel('schedule'); renderDashboard(); }, 800);
 }
@@ -3314,6 +3395,7 @@ function activate() {
     weekNum: 1,
     dates: [],
     nudges: {},
+    windows: readWindowChips('windows-list'),  // ← persist schedule windows
   };
 
   people.push(newPerson);
