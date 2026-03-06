@@ -1,4 +1,4 @@
-const CACHE = 'gra-v9';
+const CACHE = 'gra-v10';
 const ASSETS = [
   '/Gra/',
   '/Gra/index.html',
