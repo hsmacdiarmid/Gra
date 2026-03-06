@@ -3403,6 +3403,17 @@ async function checkDueNudges() {
         headers: { 'Prefer': '' },
         body: JSON.stringify({ fired: true })
       }).catch(() => {});
+
+      // Flip the matching nudge to 'notified' in the dashboard so
+      // the ✓ Done / ✗ Didn't / ⏰ Snooze action buttons appear.
+      // Match by person name + nudge type (nudge_index isn't stored in the DB row).
+      const personIdx = people.findIndex(p => p && p.name === row.person_name);
+      if (personIdx >= 0) {
+        const person = people[personIdx];
+        const types = [...Array(person.freq.text || 0).fill('text'), ...Array(person.freq.call || 0).fill('call')];
+        const nudgeIdx = types.findIndex((t, i) => t === row.nudge_type && !(person.nudges && person.nudges['w_' + i]));
+        if (nudgeIdx >= 0) markNotified(personIdx, nudgeIdx);
+      }
     }
 
     // Persist fired set (cap at 200 to avoid unbounded growth)
@@ -3977,13 +3988,20 @@ function renderDashboard() {
   const activeSlots = [...document.querySelectorAll('#time-grid .time-slot.active')];
 
   // Parse active time slots into start hours
+  // Labels are like "9–10am", "11am–12", "12–1pm" — extract start number, infer am/pm from anywhere in label
   const slotHours = activeSlots.map(s => {
     const txt = s.textContent.trim();
-    const m = txt.match(/^(\d+)(?::(\d+))?\s*(am|pm)/i);
-    if (!m) return null;
-    let h = parseInt(m[1]);
-    if (/pm/i.test(m[3]) && h !== 12) h += 12;
-    if (/am/i.test(m[3]) && h === 12) h = 0;
+    const startMatch = txt.match(/^(\d+)/);
+    if (!startMatch) return null;
+    let h = parseInt(startMatch[1]);
+    const hasPm = /pm/i.test(txt);
+    const hasAm = /am/i.test(txt);
+    if (hasPm && !hasAm) { if (h !== 12) h += 12; }       // "1–2pm" → 13
+    else if (hasAm && !hasPm) { if (h === 12) h = 0; }    // "11am–12" → 11
+    else if (hasAm && hasPm) {
+      if (/^\d+am/i.test(txt)) { if (h === 12) h = 0; }   // starts with Xam
+      else if (h !== 12) h += 12;
+    }
     return h;
   }).filter(h => h !== null);
 
