@@ -1557,6 +1557,8 @@ function init() {
 
   loadDates();
   renderDateChips();
+  // Auto-reset weekly stats if Monday has passed since last reset (don't rely on user dismissing summary)
+  checkAutoWeeklyReset();
 
   renderDots('text');
   renderDots('call');
@@ -1632,6 +1634,8 @@ function init() {
   scheduleWeeklyReengageCheck();
   // Check if any date notifications are due
   checkDueDateNotifs();
+  // Poll Supabase for due nudges (main notification delivery mechanism)
+  startNudgePoller();
   // Periodically re-prompt for notification permission if previously skipped
   scheduleNotifRePrompt();
   // Listen for push notification messages from service worker (sets notified state)
@@ -1850,26 +1854,84 @@ function buildWeeklyNudgeTimes(person) {
   });
 
   const dayNums = daySet.size ? [...daySet].sort() : [1,2,3,4,5];
-  const types = [...Array(person.freq.text||0).fill('text'), ...Array(person.freq.call||0).fill('call')];
+  // Shuffle types so calls and texts are interleaved, not batched
+  const textTypes = Array(person.freq.text||0).fill('text');
+  const callTypes = Array(person.freq.call||0).fill('call');
+  // Interleave: spread calls evenly among texts
+  const types = [];
+  const totalText = textTypes.length, totalCall = callTypes.length;
+  const total = totalText + totalCall;
+  let ti = 0, ci = 0;
+  for (let k = 0; k < total; k++) {
+    const callDue = totalCall > 0 && Math.round(ci * total / totalCall) <= k && ci < totalCall;
+    if (callDue) { types.push('call'); ci++; } else { types.push('text'); ti++; }
+  }
+
   const now = new Date();
   const nowDay = now.getDay();
   const nowHour = now.getHours();
+  const MIN_GAP_HOURS = 6; // minimum hours between any two nudges on the same day
 
-  function nextOccurrence(targetDayNum, slotOffset) {
-    let ahead = (targetDayNum - nowDay + 7) % 7;
-    if (ahead === 0 && nowHour >= endHour) ahead = 7;
-    const target = new Date(now);
-    target.setDate(target.getDate() + ahead);
-    const rangeHours = Math.max(1, endHour - startHour);
-    const assignedHour = startHour + (slotOffset % rangeHours);
-    target.setHours(assignedHour, Math.floor(Math.random() * 60), 0, 0);
-    return target;
+  // Distribute nudges across days — use a different day for each nudge where possible
+  // Build a shuffled pool of available days (repeat if more nudges than days)
+  const shuffledDays = [...dayNums].sort(() => Math.random() - 0.5);
+  while (shuffledDays.length < types.length) {
+    shuffledDays.push(...[...dayNums].sort(() => Math.random() - 0.5));
+  }
+
+  // Assign each nudge a day, trying to avoid same-day same-type and enforcing min gap
+  const dayAssignments = [];
+  const dayUsageCount = {}; // dayNum -> count of nudges assigned
+  dayNums.forEach(d => { dayUsageCount[d] = 0; });
+
+  types.forEach((type, i) => {
+    // Pick the day with the fewest nudges so far (spread evenly), cycling if needed
+    const sortedDays = [...dayNums].sort((a, b) => (dayUsageCount[a]||0) - (dayUsageCount[b]||0));
+    const pickedDay = sortedDays[i % sortedDays.length];
+    dayUsageCount[pickedDay] = (dayUsageCount[pickedDay]||0) + 1;
+    dayAssignments.push(pickedDay);
+  });
+
+  // For each day, assign random times with MIN_GAP_HOURS between them
+  const daySlots = {}; // dayNum -> array of assigned minutes-from-midnight
+  dayNums.forEach(d => { daySlots[d] = []; });
+
+  const rangeHours = Math.max(1, endHour - startHour);
+  const rangeMinutes = rangeHours * 60;
+
+  function pickTimeForDay(dayNum) {
+    const existing = daySlots[dayNum]; // in minutes from startHour
+    const minGapMins = MIN_GAP_HOURS * 60;
+    let attempts = 0;
+    while (attempts < 200) {
+      const candidate = Math.floor(Math.random() * rangeMinutes); // 0 to rangeMinutes-1
+      const conflict = existing.some(t => Math.abs(t - candidate) < minGapMins);
+      if (!conflict) {
+        existing.push(candidate);
+        return candidate;
+      }
+      attempts++;
+    }
+    // Fallback: place after last slot + MIN_GAP_HOURS
+    const lastSlot = existing.length > 0 ? Math.max(...existing) : 0;
+    const fallback = Math.min(lastSlot + minGapMins, rangeMinutes - 1);
+    existing.push(fallback);
+    return fallback;
   }
 
   return types.map((type, i) => {
-    const dayNum = dayNums[i % dayNums.length];
-    const slotOffset = types.slice(0, i).filter((_, j) => dayNums[j % dayNums.length] === dayNum).length;
-    const target = nextOccurrence(dayNum, slotOffset);
+    const dayNum = dayAssignments[i];
+    const slotMins = pickTimeForDay(dayNum);
+    const assignedHour = startHour + Math.floor(slotMins / 60);
+    const assignedMin = slotMins % 60;
+
+    let ahead = (dayNum - nowDay + 7) % 7;
+    if (ahead === 0 && nowHour >= endHour) ahead = 7;
+    const target = new Date(now);
+    target.setDate(target.getDate() + ahead);
+    target.setHours(assignedHour, assignedMin, 0, 0);
+    // If this slot is in the past today, push to next week
+    if (target <= now) target.setDate(target.getDate() + 7);
     return { type, fireAt: target.toISOString() };
   });
 }
@@ -2111,6 +2173,9 @@ function resetApp() {
 }
 
 function doResetApp() {
+  // Read userId BEFORE clearing localStorage, so Supabase cleanup still works
+  let _resetUserId = null;
+  try { _resetUserId = localStorage.getItem('ln_user_id'); } catch(e) {}
   try { localStorage.clear(); } catch(e) {}
   people = [];
   isAddingPerson = false;
@@ -2141,10 +2206,9 @@ function doResetApp() {
   updateUI();
   // Also reset Supabase nudge schedules — fire-and-forget, ignore network errors
   try {
-    const userId = localStorage.getItem('ln_user_id');
-    if (userId) {
-      sbFetch('nudge_schedules?user_id=eq.' + userId, { method: 'DELETE' }).catch(() => {});
-      sbFetch('push_subscriptions?user_id=eq.' + userId, { method: 'DELETE' }).catch(() => {});
+    if (_resetUserId) {
+      sbFetch('nudge_schedules?user_id=eq.' + _resetUserId, { method: 'DELETE' }).catch(() => {});
+      sbFetch('push_subscriptions?user_id=eq.' + _resetUserId, { method: 'DELETE' }).catch(() => {});
     }
   } catch(e) {}
 }
@@ -2378,6 +2442,9 @@ function updateFreqSummary() {
 function saveFreqPanel() {
   savePeople();
   updateSettingsValues();
+  // Re-schedule with new frequency
+  const p = people[freqPanelIdx];
+  if (p) scheduleNudgesForPerson(p).catch(() => {});
   showToast('toast-freq', 'Saved ♡');
   setTimeout(() => { closePanel('frequency'); renderDashboard(); openPanel('settings'); }, 800);
 }
@@ -3300,6 +3367,55 @@ async function checkDueDateNotifs() {
   } catch(e) {}
 }
 
+// ── Check Supabase nudge_schedules for any due nudges and fire them ──
+// This is the main mechanism that actually delivers reminders.
+// It runs on app open and every 60 seconds while the app is open.
+async function checkDueNudges() {
+  try {
+    const userId = localStorage.getItem('ln_user_id');
+    if (!userId) return;
+    const now = new Date().toISOString();
+    // Fetch unfired nudges whose fire_at is in the past
+    const rows = await sbFetch(
+      `nudge_schedules?user_id=eq.${userId}&fired=eq.false&fire_at=lte.${encodeURIComponent(now)}&select=id,person_name,nudge_type,fire_at`
+    ).catch(() => null);
+    if (!rows || !rows.length) return;
+
+    // De-duplicate using localStorage (guards against multiple rapid opens)
+    const firedKey = 'ln_fired_nudges';
+    let firedSet;
+    try { firedSet = new Set(JSON.parse(localStorage.getItem(firedKey) || '[]')); } catch(e) { firedSet = new Set(); }
+
+    for (const row of rows) {
+      if (firedSet.has(row.id)) continue;
+      firedSet.add(row.id);
+
+      const typeLabel = row.nudge_type === 'call' ? 'call \uD83D\uDCDE' : 'text \uD83D\uDCAC';
+      await sendPush({
+        title: 'Gr\u00E0 \uD83D\uDC9B',
+        body: `Time to ${typeLabel} ${row.person_name} \u2014 a little love goes a long way`,
+        tag: `nudge-${row.id}`
+      });
+
+      // Mark as fired in Supabase so the server-side cron (if added later) won't double-fire
+      sbFetch(`nudge_schedules?id=eq.${row.id}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': '' },
+        body: JSON.stringify({ fired: true })
+      }).catch(() => {});
+    }
+
+    // Persist fired set (cap at 200 to avoid unbounded growth)
+    localStorage.setItem(firedKey, JSON.stringify([...firedSet].slice(-200)));
+  } catch(e) { console.warn('checkDueNudges:', e); }
+}
+
+// Poll for due nudges every 60 seconds while app is open
+function startNudgePoller() {
+  checkDueNudges(); // immediate check on open
+  setInterval(checkDueNudges, 60 * 1000);
+}
+
 /* ══════════════════════════════════
    SCREEN 4 — CONFIRM & ACTIVATE
 ══════════════════════════════════ */
@@ -3467,6 +3583,10 @@ async function grantPermissionAndActivate() {
 
 function skipPermissionAndActivate() {
   try { localStorage.setItem('ln_notif_prompted', String(Date.now())); } catch(e) {}
+  // Still schedule nudges in Supabase even without push permission yet —
+  // fire-due-nudges will deliver them once permission is granted
+  const person = people[activePersonIdx];
+  if (person) scheduleNudgesForPerson(person).catch(() => {});
   goTo(6);
   if (shouldShowTutorial()) setTimeout(() => { ensureTutorialIds(); startTutorialAtDashboard(); }, 500);
 }
@@ -3542,6 +3662,8 @@ function resumeActivePerson() {
   if (!p) return;
   p.paused = false;
   savePeople();
+  // Re-schedule nudges now that person is unpaused
+  scheduleNudgesForPerson(p).catch(() => {});
   renderPeopleList();
   renderDashboard();
 }
@@ -3606,11 +3728,45 @@ function renderWeeklySummary() {
   card.style.display = 'block';
 }
 
+function checkAutoWeeklyReset() {
+  // Automatically reset stats/nudge state at the start of each new week,
+  // independent of whether the user opens the app on Monday and sees the summary card.
+  try {
+    const lastReset = localStorage.getItem('ln_last_week_reset');
+    const now = new Date();
+    // Calculate the most recent Monday midnight
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
+    const daysSinceMon = (dayOfWeek + 6) % 7; // Mon=0, Tue=1 ... Sun=6
+    const lastMonday = new Date(now);
+    lastMonday.setDate(now.getDate() - daysSinceMon);
+    lastMonday.setHours(0, 0, 0, 0);
+    const lastMondayStr = lastMonday.toDateString();
+    if (lastReset === lastMondayStr) return; // already reset this week
+    // Only reset if there's actually something to reset (don't wipe first-time users)
+    const hasActivity = people.some(p => (p.stats && ((p.stats.texts || 0) + (p.stats.calls || 0) > 0)) || (p.nudges && Object.keys(p.nudges).length > 0));
+    if (!hasActivity) return;
+    // Perform the reset
+    people.forEach(p => {
+      p.lastWeekTexts = p.stats.texts || 0;
+      p.lastWeekCalls = p.stats.calls || 0;
+      p.stats.texts = 0;
+      p.stats.calls = 0;
+      p.stats.streak = 0;
+      p.nudges = {};
+      p._nudgeHours = {};
+    });
+    localStorage.setItem('ln_last_week_reset', lastMondayStr);
+    // Reschedule fresh nudges for all active people
+    people.forEach(p => { if (!p.paused) scheduleNudgesForPerson(p).catch(() => {}); });
+    savePeople();
+  } catch(e) {}
+}
+
 function dismissWeeklySummary() {
   const card = document.getElementById('weekly-summary');
   if (card) card.style.display = 'none';
   try { localStorage.setItem('ln_summary_dismissed', new Date().toDateString()); } catch(e) {}
-  // Reset weekly stats for new week
+  // Reset weekly stats and scheduling cache for new week
   people.forEach(p => {
     p.lastWeekTexts = p.stats.texts || 0;
     p.lastWeekCalls = p.stats.calls || 0;
@@ -3618,6 +3774,7 @@ function dismissWeeklySummary() {
     p.stats.calls = 0;
     p.stats.streak = 0;
     p.nudges = {};
+    p._nudgeHours = {}; // clear cached display hours so fresh random times are shown
   });
   savePeople();
   renderDashboard();
@@ -3690,16 +3847,24 @@ function handleNudgeAction(personIdx, nudgeIdx, action) {
     savePeople();
     showToast('toast-dash', '⏰ Reminder snoozed for 1 hour');
     renderDashboard();
-    // Schedule a real push notification after 1 hour (3600000ms)
+    // Schedule snooze via Supabase so it fires even if app closes
     const personName = person.name;
     const nudgeType = person.nudges['type_' + nudgeIdx] || 'text';
+    const snoozeFireAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour from now
+    ensureUser().then(userId => {
+      if (userId) {
+        sbFetch('nudge_schedules', {
+          method: 'POST',
+          body: JSON.stringify([{ user_id: userId, person_name: personName, nudge_type: nudgeType, fire_at: snoozeFireAt }]),
+        }).catch(() => {});
+      }
+    });
+    // Also keep the in-app fallback in case app stays open
+    const verb = nudgeType === 'call' ? 'call' : 'text';
     setTimeout(() => {
-      // Re-mark as notified (shows action buttons again in-app)
       markNotified(personIdx, nudgeIdx);
-      // Also send a push so it appears on lock screen
-      const verb = nudgeType === 'call' ? 'call' : 'text';
       sendPush({
-        title: 'Gra — snoozed reminder',
+        title: 'Grà — snoozed reminder',
         body: `Still time to ${verb} ${personName} ♡`,
         tag: `heartline-snooze-${personIdx}-${nudgeIdx}`,
         data: { personIdx, nudgeIdx }
