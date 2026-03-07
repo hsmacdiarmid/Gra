@@ -1575,6 +1575,11 @@ function init() {
     renderDashboard();
     renderSuggestions();
     updateUI();
+    // Also sync from remote in the background so nudge states stay fresh across devices.
+    // Store the promise so startNudgePoller can wait for it before marking notified states.
+    window._remoteLoadPromise = loadPeopleRemote().then(loaded => {
+      if (loaded) { renderDashboard(); }
+    }).catch(() => {});
   } else {
     // Check Supabase for existing data (handles reinstall / new device)
     loadPeopleRemote().then(loaded => {
@@ -1974,7 +1979,30 @@ async function loadPeopleRemote() {
     const rows = await sbFetch(`users?id=eq.${userId}&select=people_data`);
     if (rows?.[0]?.people_data) {
       const loaded = JSON.parse(rows[0].people_data);
-      if (Array.isArray(loaded) && loaded.length > 0) { people = loaded; return true; }
+      if (Array.isArray(loaded) && loaded.length > 0) {
+        // Merge: preserve any in-memory nudge states (notified/snoozed) that the
+        // remote copy may not have yet (savePeopleRemote is async and can lag).
+        // This prevents the race where checkDueNudges marks a slot 'notified' but
+        // loadPeopleRemote then overwrites people[] with a stale remote snapshot.
+        loaded.forEach((remotePerson, i) => {
+          const localPerson = people[i];
+          if (!localPerson || localPerson.name !== remotePerson.name) return;
+          if (!localPerson.nudges) return;
+          if (!remotePerson.nudges) remotePerson.nudges = {};
+          // For each key in local nudges, if remote is missing it or has a lesser state, keep local
+          const stateRank = { notified: 1, snoozed: 1, sent: 2, skipped: 2 };
+          Object.keys(localPerson.nudges).forEach(key => {
+            const localVal = localPerson.nudges[key];
+            const remoteVal = remotePerson.nudges[key];
+            // Always keep local if remote is missing or local is a pending action state
+            if (!remoteVal || (stateRank[localVal] !== undefined && !stateRank[remoteVal])) {
+              remotePerson.nudges[key] = localVal;
+            }
+          });
+        });
+        people = loaded;
+        return true;
+      }
     }
   } catch(e) {}
   return false;
@@ -3387,32 +3415,41 @@ async function checkDueNudges() {
     try { firedSet = new Set(JSON.parse(localStorage.getItem(firedKey) || '[]')); } catch(e) { firedSet = new Set(); }
 
     for (const row of rows) {
-      if (firedSet.has(row.id)) continue;
-      firedSet.add(row.id);
+      const alreadyPushed = firedSet.has(row.id);
 
-      const typeLabel = row.nudge_type === 'call' ? 'call \uD83D\uDCDE' : 'text \uD83D\uDCAC';
-      await sendPush({
-        title: 'Gr\u00E0 \uD83D\uDC9B',
-        body: `Time to ${typeLabel} ${row.person_name} \u2014 a little love goes a long way`,
-        tag: `nudge-${row.id}`
-      });
-
-      // Mark as fired in Supabase so the server-side cron (if added later) won't double-fire
-      sbFetch(`nudge_schedules?id=eq.${row.id}`, {
-        method: 'PATCH',
-        headers: { 'Prefer': '' },
-        body: JSON.stringify({ fired: true })
-      }).catch(() => {});
-
-      // Flip the matching nudge to 'notified' in the dashboard so
-      // the ✓ Done / ✗ Didn't / ⏰ Snooze action buttons appear.
-      // Match by person name + nudge type (nudge_index isn't stored in the DB row).
+      // ALWAYS update in-app notified state, even if we already sent the push for this row.
+      // The Supabase PATCH to fired=true can fail silently, leaving fired=false in the DB
+      // so the row comes back on the next poll. The old code skipped the whole row when
+      // alreadyPushed=true, meaning markNotified never ran and the buttons never appeared.
       const personIdx = people.findIndex(p => p && p.name === row.person_name);
       if (personIdx >= 0) {
         const person = people[personIdx];
+        const nudges = person.nudges || {};
         const types = [...Array(person.freq.text || 0).fill('text'), ...Array(person.freq.call || 0).fill('call')];
-        const nudgeIdx = types.findIndex((t, i) => t === row.nudge_type && !(person.nudges && person.nudges['w_' + i]));
+        // Re-use an existing 'notified' or 'snoozed' slot of this type (idempotent)
+        let nudgeIdx = types.findIndex((t, i) => t === row.nudge_type && (nudges['w_' + i] === 'notified' || nudges['w_' + i] === 'snoozed'));
+        // Otherwise find the first pending (unresolved) slot of this type
+        if (nudgeIdx < 0) {
+          nudgeIdx = types.findIndex((t, i) => t === row.nudge_type && nudges['w_' + i] !== 'sent' && nudges['w_' + i] !== 'skipped');
+        }
         if (nudgeIdx >= 0) markNotified(personIdx, nudgeIdx);
+      }
+
+      // Only send the OS push notification once per row
+      if (!alreadyPushed) {
+        firedSet.add(row.id);
+        const typeLabel = row.nudge_type === 'call' ? 'call \uD83D\uDCDE' : 'text \uD83D\uDCAC';
+        await sendPush({
+          title: 'Gr\u00E0 \uD83D\uDC9B',
+          body: `Time to ${typeLabel} ${row.person_name} \u2014 a little love goes a long way`,
+          tag: `nudge-${row.id}`
+        });
+        // Mark as fired in Supabase
+        sbFetch(`nudge_schedules?id=eq.${row.id}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': '' },
+          body: JSON.stringify({ fired: true })
+        }).catch(() => {});
       }
     }
 
@@ -3423,8 +3460,14 @@ async function checkDueNudges() {
 
 // Poll for due nudges every 60 seconds while app is open
 function startNudgePoller() {
-  checkDueNudges(); // immediate check on open
-  setInterval(checkDueNudges, 60 * 1000);
+  // Wait for any in-progress remote people load to finish before the first check.
+  // This prevents checkDueNudges from marking nudge states that then get
+  // overwritten when loadPeopleRemote resolves with a stale remote snapshot.
+  const ready = window._remoteLoadPromise || Promise.resolve();
+  ready.then(() => {
+    checkDueNudges(); // immediate check after remote data is settled
+    setInterval(checkDueNudges, 60 * 1000);
+  });
 }
 
 /* ══════════════════════════════════
