@@ -1269,6 +1269,11 @@ a { color: inherit; text-decoration: none; }
           <div class="settings-row-label">Show tutorial</div>
           <div class="settings-row-arrow">›</div>
         </div>
+        <div class="settings-row" onclick="sendTestPush()">
+          <div class="settings-row-icon">🔔</div>
+          <div class="settings-row-label">Test notification</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
 
         <div class="settings-section-label" style="margin-top:20px;"></div>
         <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
@@ -1604,7 +1609,7 @@ function getDeviceId() {
 ═══════════════════════════════════════════════════════════ */
 const SUPABASE_URL  = 'https://lnfijupigmsosokpjutj.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuZmlqdXBpZ21zb3Nva3BqdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODExNDcsImV4cCI6MjA4NzY1NzE0N30.J7SEAKL1U__mhSAP5fOh8Bw82F9sHELgcJ7qbVRSY1w';
-const VAPID_PUBLIC  = 'BHl_D6UaYgMx6ksa8ydT2Onga4vc8DuL7j98fg7y-58NATf-QPbpxnVbLnHIB1TpMj69OMo8xu67xinzpn0nVBc';
+const VAPID_PUBLIC  = 'BPvo-7TbK1w3ZRHefJYNtEIfC2J0u5b7jrcF499jr5VaCePMmhv2uAibf3Qk4dh8LM9_OJv8cmMY_0PLfPdR5YY';
 
 async function sbFetch(path, opts = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
