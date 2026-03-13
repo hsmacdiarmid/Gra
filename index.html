@@ -455,6 +455,20 @@ a { color: inherit; text-decoration: none; }
 .nudge-act-btn.snooze { background: var(--card); color: var(--muted); }
 .nudge-act-btn:active { transform: scale(0.96); }
 
+/* Person card quick actions (edit / add date) */
+.pnc-quick-actions {
+  display: flex; gap: 6px; padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+.pnc-quick-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 8px 4px; border-radius: var(--radius-sm);
+  background: var(--cream); border: 1.5px solid var(--border);
+  font-size: 0.7rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.pnc-quick-btn:hover, .pnc-quick-btn:active { border-color: var(--rose); color: var(--rose); background: var(--rose-light); }
+
 /* Empty / paused state */
 .pnc-all-done { padding: 14px; text-align: center; font-size: 0.72rem; color: var(--muted); }
 .pnc-all-done .done-emoji { font-size: 1.4rem; display: block; margin-bottom: 4px; }
@@ -784,8 +798,12 @@ a { color: inherit; text-decoration: none; }
 
 #tutorial-backdrop {
   position: absolute; inset: 0;
-  background: rgba(20, 10, 15, 0.72);
-  backdrop-filter: blur(2px);
+  /* Canvas handles the dimming + cutout — no CSS blur */
+}
+
+#tutorial-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none;
 }
 
 #tutorial-card {
@@ -1017,16 +1035,36 @@ a { color: inherit; text-decoration: none; }
         <button class="add-window-btn" onclick="addWindowFromS3()">+ Add window</button>
       </div>
 
-      <div class="sched-section" id="s3-dates-section">
-        <div class="sched-label">Special dates <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-size:0.68rem;">(optional)</span></div>
-        <p style="font-size:0.68rem;color:var(--muted);line-height:1.6;margin-bottom:8px;">Add birthdays, anniversaries — Grà will remind you 30 days, 7 days, 1 day, and on the day.</p>
-        <div class="date-chips" id="s3-date-chips"></div>
+      <div style="margin-top:20px;">
+        <button class="cta-btn" onclick="saveWindowsAndContinue()" id="s3-save-btn">Next — Special dates →</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-2')">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3.5: SPECIAL DATES ════ -->
+  <div class="screen" id="screen-3.5">
+    <div class="screen-content no-nav">
+      <div class="onb-hero">
+        <div class="onb-emoji">📅</div>
+        <div class="onb-title">Special <em>dates</em></div>
+        <p class="onb-sub">Birthdays, anniversaries, big moments — Grà will remind you 30 days, 7 days, 1 day, and on the day itself.</p>
+      </div>
+
+      <div class="sched-section">
+        <div class="date-chips" id="s35-date-chips"></div>
         <button class="add-date-btn" onclick="openDateModal('s3')">+ Add a date</button>
       </div>
 
+      <div style="margin-top:8px; padding: 12px 14px; background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: var(--radius-md);">
+        <div style="font-size:0.7rem; color: var(--rose-dark); line-height:1.6;">
+          💡 You can always add more dates later from Settings or from any person's card on the dashboard.
+        </div>
+      </div>
+
       <div style="margin-top:20px;">
-        <button class="cta-btn" onclick="saveWindowsAndContinue()" id="s3-save-btn">Save windows →</button>
-        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-2')">← Back</button>
+        <button class="cta-btn" onclick="navigate('screen-4')">Next — Review &amp; activate →</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-3')">← Back</button>
       </div>
     </div>
   </div>
@@ -1123,11 +1161,12 @@ a { color: inherit; text-decoration: none; }
     <!-- GIFTS TAB -->
     <div class="screen-content" id="tab-gifts" style="display:none;">
       <div class="gifts-header">
-        <div class="gifts-title">Gift <em id="gift-name">them</em> something ♡</div>
-        <div class="gifts-sub">Little ideas to show you care</div>
+        <div class="gifts-title">Gift <em>ideas</em> ♡</div>
+        <div class="gifts-sub">Little things to show you care</div>
       </div>
       <button class="gift-region-btn" id="gift-region-btn" onclick="openPanel('region')">🌍 Region: 🇬🇧 UK</button>
       <div id="gift-list"></div>
+      <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn" style="margin-top:16px;">☕ &nbsp;If Grà helped, buy the creator a coffee</a>
     </div>
   </div>
 
@@ -1237,6 +1276,7 @@ a { color: inherit; text-decoration: none; }
           <div class="settings-row-label">Reset all data</div>
           <div class="settings-row-arrow">›</div>
         </div>
+        <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn" style="margin-top:16px;display:block;">☕ &nbsp;If Grà helped, buy the creator a coffee</a>
       </div>
     </div>
   </div>
@@ -1449,6 +1489,7 @@ a { color: inherit; text-decoration: none; }
   <!-- ════ TUTORIAL OVERLAY ════ -->
   <div id="tutorial-overlay" style="display:none;">
     <div id="tutorial-backdrop"></div>
+    <canvas id="tutorial-canvas"></canvas>
     <div id="tutorial-card">
       <div id="tutorial-step-dots"></div>
       <div id="tutorial-emoji"></div>
@@ -1979,8 +2020,11 @@ function navigate(screenId, back = false) {
   from.classList.add('leaving');
 
   setTimeout(() => {
+    from.style.transition = 'none';
     from.style.transform = '';
     from.classList.remove('leaving');
+    // Re-enable transition after a frame so future navigation animates correctly
+    requestAnimationFrame(() => { from.style.transition = ''; });
     _transitioning = false;
   }, 360);
 
@@ -1995,6 +2039,7 @@ function navigate(screenId, back = false) {
   if (screenId === 'screen-1.5') renderRelScreen();
   if (screenId === 'screen-2')   renderFreqScreen();
   if (screenId === 'screen-3')   renderScheduleScreen();
+  if (screenId === 'screen-3.5') renderDatesScreen();
   if (screenId === 'screen-4')   renderConfirmScreen();
   if (screenId === 'screen-6')   { renderDashboard(); renderStreakTab(); }
 }
@@ -2113,7 +2158,7 @@ function startOnboarding() {
 }
 
 function addAnotherPerson() {
-  // Reset onboarding object for a fresh person
+  _navHistory = []; // clear history — we're starting a fresh onboarding flow
   const nameEl = document.getElementById('s1-name');
   if (nameEl) nameEl.value = '';
   onb.name = ''; onb.rel = 'partner'; onb.freq = { text: 3, call: 1 };
@@ -2185,6 +2230,10 @@ function renderFreqSummary(elId, name, freq) {
   el.innerHTML = s;
 }
 
+function renderDatesScreen() {
+  renderDateChips('s35-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderDatesScreen(); });
+}
+
 function renderScheduleScreen() {
   renderWindowChips('s3-window-chips', onb.windows, (idx) => { onb.windows.splice(idx, 1); renderScheduleScreen(); });
   renderDateChips('s3-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderScheduleScreen(); });
@@ -2222,7 +2271,7 @@ function addWindowFromS3() {
 
 function saveWindowsAndContinue() {
   if (!onb.windows.length) { showToast('Add at least one window first'); return; }
-  navigate('screen-4');
+  navigate('screen-3.5');
 }
 
 function renderConfirmScreen() {
@@ -2340,8 +2389,48 @@ const LOVE_QUOTES = [
 ];
 let _quoteIdx = Math.floor(Math.random() * LOVE_QUOTES.length);
 
+function renderNotifReprompt() {
+  const el = document.getElementById('notif-reprompt');
+  if (!el) return;
+  // Don't show if already granted or already running as installed PWA
+  if (!('Notification' in window)) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  if (Notification.permission === 'granted') { el.classList.remove('show'); el.innerHTML = ''; return; }
+  if (Notification.permission === 'denied')  { el.classList.remove('show'); el.innerHTML = ''; return; }
+  // Don't nag immediately — wait until they've been in the app a bit (at least one person set up)
+  if (!STATE.people.length) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  try { if (localStorage.getItem('gra_notif_reprompt_dismissed')) { el.classList.remove('show'); el.innerHTML = ''; return; } } catch(_) {}
+  el.innerHTML = `
+    <span class="nr-text">🔔 Turn on notifications to get your nudge reminders</span>
+    <button class="nr-btn" onclick="requestNotifFromBanner()">Enable</button>
+    <span class="nr-close" onclick="dismissNotifReprompt()">✕</span>`;
+  el.classList.add('show');
+}
+
+async function requestNotifFromBanner() {
+  const ok = await requestPushPermission();
+  if (ok) {
+    showToast('Notifications enabled ♡');
+    STATE.people.forEach(p => { if (p && !p.paused) scheduleNudgesForPerson(p).catch(() => {}); });
+  } else {
+    showToast('Could not enable — check your browser settings');
+  }
+  renderNotifReprompt();
+}
+
+function dismissNotifReprompt() {
+  try { localStorage.setItem('gra_notif_reprompt_dismissed', '1'); } catch(_) {}
+  const el = document.getElementById('notif-reprompt');
+  if (el) { el.classList.remove('show'); el.innerHTML = ''; }
+}
+
 function renderDashboard() {
   expireOldNudges();
+
+  // Show install banner if prompt is waiting
+  showInstallBanner();
+
+  // Notification re-prompt for users who skipped it
+  renderNotifReprompt();
 
   // Greeting
   const hour = new Date().getHours();
@@ -2454,11 +2543,17 @@ function renderPersonCard(person, personIdx) {
     .map(n => renderNudgeItem(n, person, personIdx))
     .join('');
 
+  const quickActions = `
+    <div class="pnc-quick-actions">
+      <button class="pnc-quick-btn" onclick="event.stopPropagation();openPersonEdit(${personIdx})">⚙️ Edit settings</button>
+      <button class="pnc-quick-btn" onclick="event.stopPropagation();openPersonDateAdd(${personIdx})">📅 Add date</button>
+    </div>`;
+
   const expandedContent = nudges.length
     ? (allDone
-        ? `<div class="pnc-body"><div class="pnc-all-done"><span class="done-emoji">🎉</span>All nudges complete this week!</div></div>`
-        : `<div class="pnc-body">${expandedRows}</div>`)
-    : '';
+        ? `<div class="pnc-body"><div class="pnc-all-done"><span class="done-emoji">🎉</span>All nudges complete this week!</div>${quickActions}</div>`
+        : `<div class="pnc-body">${expandedRows}${quickActions}</div>`)
+    : `<div class="pnc-body">${quickActions}</div>`;
 
   const isExpanded = isDue; // auto-expand if due
   return `
@@ -2930,6 +3025,23 @@ function renderProfilesPanel() {
   }).join('');
 }
 
+function openPersonEdit(personIdx) {
+  STATE.activeIdx = personIdx;
+  STATE.freqPanelIdx = personIdx;
+  saveLocal();
+  openPanel('schedule');
+}
+
+function openPersonDateAdd(personIdx) {
+  STATE.activeIdx = personIdx;
+  saveLocal();
+  _dateContext = 'sp';
+  _datePendingType = 'birthday';
+  document.getElementById('date-input-label').value = '';
+  document.getElementById('date-input-date').value  = '';
+  openPanel('date-modal');
+}
+
 function switchActivePerson(idx) {
   STATE.activeIdx = idx;
   saveLocal();
@@ -3162,7 +3274,9 @@ function saveDate() {
 
   if (_dateContext === 's3') {
     onb.dates.push(entry);
-    renderScheduleScreen();
+    // Refresh whichever screen is showing the date chips
+    if (STATE.screen === 'screen-3.5') renderDatesScreen();
+    else renderScheduleScreen();
   } else {
     const person = STATE.people[STATE.activeIdx];
     if (person) {
@@ -3345,12 +3459,24 @@ let _deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstallPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner && STATE.screen === 'screen-6') {
-    banner.innerHTML = `<span class="ib-text">💛 Add Grà to your home screen</span><button class="ib-btn" onclick="installPwa()">Install</button><span class="ib-close" onclick="document.getElementById('install-banner').classList.remove('show')">✕</span>`;
-    banner.classList.add('show');
-  }
+  // Show immediately if already on dashboard, otherwise it'll show on next renderDashboard call
+  showInstallBanner();
 });
+
+function showInstallBanner() {
+  if (!_deferredInstallPrompt) return;
+  try { if (localStorage.getItem('gra_install_dismissed')) return; } catch(_) {}
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  banner.style.flexDirection = '';
+  banner.innerHTML = `<span class="ib-text">💛 Add Grà to your home screen for the best experience</span><button class="ib-btn" onclick="installPwa()">Install</button><span class="ib-close" onclick="dismissInstallBanner()">✕</span>`;
+  banner.classList.add('show');
+}
+
+function dismissInstallBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+  try { localStorage.setItem('gra_install_dismissed', '1'); } catch(_) {}
+}
 
 async function installPwa() {
   if (!_deferredInstallPrompt) return;
@@ -3361,16 +3487,23 @@ async function installPwa() {
 }
 
 function checkIosInstall() {
-  const isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isIos       = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.navigator.standalone;
-  if (isIos && !isStandalone) {
-    const banner = document.getElementById('install-banner');
-    if (banner) {
-      banner.style.flexDirection = 'column';
-      banner.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;width:100%;"><span style="font-weight:600;">💛 Add Grà to your home screen</span><span class="ib-close" onclick="this.closest('#install-banner').classList.remove('show')">✕</span></div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);line-height:1.5;margin-top:6px;">Tap <strong style="color:#fff;">Share</strong> ⎙ at the bottom of Safari, then <strong style="color:#fff;">Add to Home Screen</strong>.</div>`;
-      banner.classList.add('show');
-    }
-  }
+  if (!isIos || isStandalone) return;
+  try { if (localStorage.getItem('gra_ios_install_shown')) return; } catch(_) {}
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  try { localStorage.setItem('gra_ios_install_shown', '1'); } catch(_) {}
+  banner.style.flexDirection = 'column';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <span style="font-weight:600;">💛 Add Grà to your home screen</span>
+      <span class="ib-close" onclick="this.closest('#install-banner').classList.remove('show')">✕</span>
+    </div>
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);line-height:1.6;margin-top:6px;">
+      Tap <strong style="color:#fff;">Share</strong> ⎙ at the bottom of Safari,<br>then tap <strong style="color:#fff;">Add to Home Screen</strong>.
+    </div>`;
+  banner.classList.add('show');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3409,8 +3542,79 @@ function renderTutorialStep() {
   if (nextBtn) nextBtn.textContent = _tutStep === TUTORIAL_STEPS.length - 1 ? '✓ Done' : 'Next →';
   const dots = document.getElementById('tutorial-step-dots');
   if (dots) dots.innerHTML = TUTORIAL_STEPS.map((_,i) => `<div class="tut-dot ${i===_tutStep?'active':''}"></div>`).join('');
+
+  // Remove previous highlight ring
   if (_tutPrevHighlight) { const p = document.getElementById(_tutPrevHighlight); if (p) p.classList.remove('tutorial-highlight'); }
-  if (step.highlight) { const el = document.getElementById(step.highlight); if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; } } else { _tutPrevHighlight = null; }
+
+  // Draw spotlight canvas
+  // Small delay to let tab switch render first
+  requestAnimationFrame(() => drawSpotlight(step.highlight));
+
+  if (step.highlight) {
+    const el = document.getElementById(step.highlight);
+    if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; }
+  } else { _tutPrevHighlight = null; }
+}
+
+function drawSpotlight(targetId) {
+  const canvas = document.getElementById('tutorial-canvas');
+  const app    = document.getElementById('app');
+  if (!canvas || !app) return;
+
+  const appRect = app.getBoundingClientRect();
+  canvas.width  = appRect.width;
+  canvas.height = appRect.height;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Full dark overlay
+  ctx.fillStyle = 'rgba(20, 10, 15, 0.75)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!targetId) return;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  const r    = el.getBoundingClientRect();
+  const pad  = 10;
+  const x    = r.left - appRect.left - pad;
+  const y    = r.top  - appRect.top  - pad;
+  const w    = r.width  + pad * 2;
+  const h    = r.height + pad * 2;
+  const rad  = 12;
+
+  // Cut out a rounded rect hole so the element shows through clearly
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.arcTo(x + w, y, x + w, y + rad, rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx.lineTo(x + rad, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rad, rad);
+  ctx.lineTo(x, y + rad);
+  ctx.arcTo(x, y, x + rad, y, rad);
+  ctx.closePath();
+  ctx.fill();
+
+  // Soft glow ring around the cutout
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(201, 105, 122, 0.9)';
+  ctx.lineWidth   = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.arcTo(x + w, y, x + w, y + rad, rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx.lineTo(x + rad, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rad, rad);
+  ctx.lineTo(x, y + rad);
+  ctx.arcTo(x, y, x + rad, y, rad);
+  ctx.closePath();
+  ctx.stroke();
 }
 
 function nextTutorialStep() {
