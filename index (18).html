@@ -1,0 +1,3348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Grà</title>
+<link rel="manifest" href="/Gra/manifest.json">
+<meta name="theme-color" content="#c9697a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Grà">
+<link rel="icon" href="/Gra/icons/icon-192x192.png">
+<link rel="apple-touch-icon" href="/Gra/icons/icon-192x192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --rose:        #c9697a;
+  --rose-dark:   #a04560;
+  --rose-light:  #fde8ec;
+  --rose-mid:    #f0c0c8;
+  --ink:         #2a1f1f;
+  --body:        #3a2828;
+  --muted:       #907878;
+  --border:      #f0ddd8;
+  --cream:       #fdf6f0;
+  --white:       #ffffff;
+  --bg:          #fdf6f0;
+  --card:        #ffffff;
+  --nav-h:       64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --radius-lg:   20px;
+  --radius-md:   14px;
+  --radius-sm:   10px;
+  --shadow-sm:   0 2px 8px rgba(42,31,31,0.06);
+  --shadow-md:   0 4px 20px rgba(42,31,31,0.10);
+  --shadow-lg:   0 8px 40px rgba(42,31,31,0.16);
+}
+
+.dark-mode {
+  --ink:        #f5e8e0;
+  --body:       #d8c0b8;
+  --muted:      #907878;
+  --border:     #3a2830;
+  --cream:      #1e1218;
+  --white:      #2a1820;
+  --bg:         #1a1014;
+  --card:       #2a1820;
+  --rose-light: #3a1828;
+}
+
+/* ══════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--body); }
+
+button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: 'DM Sans', sans-serif; }
+a { color: inherit; text-decoration: none; }
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#app {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  max-width: 430px; margin: 0 auto;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── Status bar simulation ── */
+.status-bar {
+  height: calc(20px + var(--safe-top));
+  padding: calc(4px + var(--safe-top)) 16px 4px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: transparent;
+}
+.status-bar .time { font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+.status-icons { display: flex; gap: 5px; align-items: center; }
+.s-sig { width: 14px; height: 10px; background: var(--ink); opacity: 0.7; clip-path: polygon(0 100%, 33% 60%, 66% 30%, 100% 0, 100% 100%); }
+.s-wif { width: 14px; height: 10px; background: var(--ink); opacity: 0.7; clip-path: polygon(50% 0%, 0% 60%, 20% 60%, 50% 25%, 80% 60%, 100% 60%); }
+.s-bat { width: 22px; height: 11px; border: 1.5px solid var(--ink); border-radius: 2px; opacity: 0.7; position: relative; }
+.s-bat::after { content: ''; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); width: 2.5px; height: 5px; background: var(--ink); border-radius: 0 1px 1px 0; }
+.s-bat::before { content: ''; position: absolute; inset: 2px; right: 4px; background: var(--ink); border-radius: 1px; }
+
+/* ══════════════════════════════════════
+   SCREENS
+══════════════════════════════════════ */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.screen.active  { transform: translateX(0); }
+.screen.leaving { transform: translateX(-100%); }
+
+.screen-content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 16px 16px calc(var(--nav-h) + 16px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.screen-content.no-nav { padding-bottom: 24px; }
+
+/* ══════════════════════════════════════
+   BOTTOM NAV
+══════════════════════════════════════ */
+#nav {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: none; /* shown after onboarding */
+  align-items: stretch;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(42,31,31,0.06);
+}
+#nav.visible { display: flex; }
+
+.nav-tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px; padding: 8px 4px 4px;
+  color: var(--muted); font-size: 0.58rem; font-weight: 500;
+  letter-spacing: 0.03em; transition: color 0.18s;
+  cursor: pointer; border: none; background: none;
+}
+.nav-tab .nav-icon { font-size: 1.3rem; transition: transform 0.18s; }
+.nav-tab.active { color: var(--rose); }
+.nav-tab.active .nav-icon { transform: scale(1.12); }
+
+/* ══════════════════════════════════════
+   PANELS (slide-up sheets)
+══════════════════════════════════════ */
+.panel-overlay {
+  position: absolute; inset: 0;
+  background: rgba(30,10,20,0.5);
+  backdrop-filter: blur(3px);
+  z-index: 200; display: none;
+  align-items: flex-end;
+}
+.panel-overlay.open { display: flex; }
+
+.panel-sheet {
+  width: 100%; background: var(--card);
+  border-radius: 24px 24px 0 0;
+  padding: 0 0 calc(16px + var(--safe-bottom));
+  max-height: 92vh;
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.panel-overlay.open .panel-sheet { transform: translateY(0); }
+
+.panel-drag { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.panel-header { display: flex; align-items: center; gap: 10px; padding: 16px 16px 8px; flex-shrink: 0; }
+.panel-back { width: 32px; height: 32px; border-radius: 50%; background: var(--rose-light); border: none; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--rose); cursor: pointer; flex-shrink: 0; }
+.panel-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ink); }
+.panel-title em { color: var(--rose); font-style: italic; }
+.panel-sub { font-size: 0.7rem; color: var(--muted); padding: 0 16px 12px; flex-shrink: 0; }
+.panel-body { flex: 1; overflow-y: auto; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
+
+/* ══════════════════════════════════════
+   SNOOZE SHEET (special compact panel)
+══════════════════════════════════════ */
+#snooze-overlay .panel-sheet { max-height: 50vh; }
+.snooze-options { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 16px; }
+.snooze-opt {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--cream); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px 16px;
+  cursor: pointer; transition: all 0.15s;
+}
+.snooze-opt:active, .snooze-opt:hover { border-color: var(--rose); background: var(--rose-light); }
+.snooze-opt-icon { font-size: 1.4rem; flex-shrink: 0; }
+.snooze-opt-label { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+.snooze-opt-sub   { font-size: 0.68rem; color: var(--muted); margin-top: 1px; }
+
+/* ══════════════════════════════════════
+   ONBOARDING SHARED
+══════════════════════════════════════ */
+.onb-hero { text-align: center; padding: 20px 0 24px; }
+.onb-emoji { font-size: 3rem; margin-bottom: 12px; }
+.onb-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; color: var(--ink); line-height: 1.2; margin-bottom: 8px; }
+.onb-title em { color: var(--rose); font-style: italic; }
+.onb-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.6; max-width: 300px; margin: 0 auto; }
+
+.cta-btn {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+  color: #fff; border: none; border-radius: var(--radius-md);
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(201,105,122,0.35);
+  transition: opacity 0.18s, transform 0.12s;
+}
+.cta-btn:active { opacity: 0.88; transform: scale(0.98); }
+.cta-btn.secondary {
+  background: var(--card); color: var(--rose);
+  border: 1.5px solid var(--rose-mid); box-shadow: none;
+}
+.cta-btn.ghost {
+  background: none; color: var(--muted);
+  border: 1.5px solid var(--border); box-shadow: none;
+}
+
+.text-input {
+  width: 100%; padding: 13px 14px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); font-size: 0.9rem; color: var(--ink);
+  outline: none; transition: border-color 0.2s;
+}
+.text-input:focus { border-color: var(--rose); }
+.text-input::placeholder { color: var(--muted); }
+.input-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; display: block; }
+
+/* ══════════════════════════════════════
+   SCREEN 1 — WELCOME
+══════════════════════════════════════ */
+.s1-brand { font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; font-weight: 600; color: var(--rose); text-align: center; margin-bottom: 4px; }
+.s1-tagline { font-size: 0.78rem; color: var(--muted); text-align: center; margin-bottom: 32px; }
+.s1-input-wrap { margin-bottom: 20px; }
+
+/* ══════════════════════════════════════
+   SCREEN 1.5 — RELATIONSHIP
+══════════════════════════════════════ */
+.rel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.rel-card {
+  background: var(--card); border: 2px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; transition: all 0.18s;
+}
+.rel-card.active { border-color: var(--rose); background: var(--rose-light); }
+.rel-card-emoji { font-size: 1.8rem; }
+.rel-card-name  { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.rel-card-desc  { font-size: 0.62rem; color: var(--muted); text-align: center; line-height: 1.4; }
+.msg-preview { background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; }
+.msg-preview-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--rose); font-weight: 600; margin-bottom: 4px; }
+.msg-preview-text  { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; color: var(--ink); line-height: 1.5; }
+
+/* ══════════════════════════════════════
+   SCREEN 2 — FREQUENCY
+══════════════════════════════════════ */
+.freq-counter {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px;
+  margin-bottom: 12px;
+}
+.freq-counter-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.freq-type { display: flex; align-items: center; gap: 8px; }
+.freq-type-icon { font-size: 1.3rem; }
+.freq-type-label { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+.freq-type-sub   { font-size: 0.65rem; color: var(--muted); }
+.freq-ctrl { display: flex; align-items: center; gap: 12px; }
+.freq-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--rose-light); border: 1.5px solid var(--rose-mid);
+  color: var(--rose); font-size: 1.1rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.freq-btn:active { background: var(--rose); color: #fff; }
+.freq-val { font-size: 1.4rem; font-weight: 600; color: var(--ink); min-width: 24px; text-align: center; }
+.freq-dots { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+.freq-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all 0.15s; cursor: pointer; }
+.freq-dot.active   { background: var(--rose); }
+.freq-dot.inactive { background: var(--border); filter: grayscale(1); opacity: 0.5; }
+.freq-summary { font-size: 0.78rem; color: var(--muted); line-height: 1.6; text-align: center; margin-bottom: 20px; }
+.freq-summary strong { color: var(--rose); }
+
+/* ══════════════════════════════════════
+   SCREEN 3 — SCHEDULE
+══════════════════════════════════════ */
+.sched-section { margin-bottom: 20px; }
+.sched-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+
+.day-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-pill {
+  height: 36px; min-width: 36px; padding: 0 10px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 18px; font-size: 0.72rem; font-weight: 600; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.day-pill.active { background: var(--rose); border-color: var(--rose); color: #fff; }
+
+.time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.time-slot {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 4px;
+  font-size: 0.62rem; font-weight: 500; color: var(--muted);
+  text-align: center; cursor: pointer; transition: all 0.15s;
+}
+.time-slot.active { background: var(--rose-light); border-color: var(--rose); color: var(--rose-dark); font-weight: 600; }
+
+.window-chips { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.window-chip {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.chip-days { font-size: 0.78rem; font-weight: 600; color: var(--ink); flex: 1; }
+.chip-time { font-size: 0.68rem; color: var(--muted); }
+.chip-remove { width: 24px; height: 24px; border-radius: 50%; background: var(--border); border: none; color: var(--muted); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.chip-remove:hover { background: #fcc; color: #c05060; }
+
+.add-window-btn {
+  width: 100%; padding: 10px; border: 1.5px dashed var(--rose-mid);
+  border-radius: var(--radius-sm); background: none; color: var(--rose);
+  font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
+}
+.add-window-btn:hover { background: var(--rose-light); border-color: var(--rose); }
+
+/* Special dates */
+.date-chips { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.date-chip {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.date-chip-top { display: flex; align-items: center; gap: 10px; padding: 9px 12px; }
+.date-chip-icon { font-size: 1.1rem; flex-shrink: 0; }
+.date-chip-label { font-size: 0.76rem; font-weight: 600; color: var(--ink); flex: 1; }
+.date-chip-date  { font-size: 0.62rem; color: var(--muted); }
+.date-chip-count { font-size: 0.58rem; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+.date-chip-count.far   { background: #e8f5ee; color: #4a8c5c; }
+.date-chip-count.soon  { background: #fff4dc; color: #8c6a20; }
+.date-chip-count.close { background: var(--rose-light); color: var(--rose); }
+.date-chip-remove { width: 100%; padding: 7px; border-top: 1px solid var(--border); font-size: 0.66rem; color: var(--muted); cursor: pointer; background: none; transition: background 0.15s; }
+.date-chip-remove:hover { background: #fff0f0; color: #c05060; }
+
+.add-date-btn {
+  width: 100%; padding: 10px; border: 1.5px dashed var(--rose-mid);
+  border-radius: var(--radius-sm); background: none; color: var(--rose);
+  font-size: 0.75rem; cursor: pointer; transition: all 0.15s;
+}
+.add-date-btn:hover { background: var(--rose-light); }
+
+/* ══════════════════════════════════════
+   SCREEN 4 — CONFIRM
+══════════════════════════════════════ */
+.confirm-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 16px;
+}
+.confirm-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+}
+.confirm-row:last-child { border-bottom: none; }
+.confirm-row-icon { font-size: 1.2rem; flex-shrink: 0; }
+.confirm-row-label { font-size: 0.68rem; color: var(--muted); margin-bottom: 2px; }
+.confirm-row-value { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+.confirm-person-preview {
+  text-align: center; padding: 20px; margin-bottom: 16px;
+}
+.confirm-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 10px; }
+.confirm-name   { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--ink); }
+.confirm-name em { color: var(--rose); font-style: italic; }
+
+/* ══════════════════════════════════════
+   SCREEN 4.5 — NOTIFICATION PERMISSION
+══════════════════════════════════════ */
+.perm-notif-preview {
+  width: 100%; background: #1c1c1e; border-radius: var(--radius-md);
+  padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 20px;
+}
+.perm-notif-icon { width: 36px; height: 36px; background: var(--rose); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.perm-notif-body { flex: 1; }
+.perm-notif-app  { font-size: 0.7rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.perm-notif-msg  { font-size: 0.78rem; color: rgba(255,255,255,0.85); font-weight: 500; }
+.perm-notif-sub  { font-size: 0.66rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+.perm-notif-actions { display: flex; gap: 8px; margin-top: 8px; }
+.perm-notif-action { padding: 4px 10px; background: rgba(255,255,255,0.12); border-radius: 6px; font-size: 0.62rem; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+/* ══════════════════════════════════════
+   SCREEN 6 — DASHBOARD (HOME TAB)
+══════════════════════════════════════ */
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.dash-greeting { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--ink); }
+.dash-greeting em { color: var(--rose); font-style: italic; }
+.dash-greeting-sub { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+.dash-add-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--rose-light); border: 1.5px solid var(--rose-mid); color: var(--rose); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+
+/* Person nudge card */
+.person-nudge-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  margin-bottom: 10px; transition: box-shadow 0.18s;
+}
+.person-nudge-card.has-due { border-color: var(--rose); box-shadow: 0 0 0 3px rgba(201,105,122,0.12); }
+
+.pnc-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; cursor: pointer;
+}
+.pnc-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.pnc-info { flex: 1; min-width: 0; }
+.pnc-name  { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+.pnc-next  { font-size: 0.68rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pnc-badge { font-size: 0.62rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; flex-shrink: 0; }
+.pnc-badge.due      { background: var(--rose); color: #fff; animation: pulse 1.8s ease-in-out infinite; }
+.pnc-badge.upcoming { background: var(--cream); color: var(--muted); border: 1px solid var(--border); }
+.pnc-badge.done     { background: #e8f5ee; color: #4a8c5c; }
+.pnc-badge.paused   { background: #f5f0e8; color: #b09060; }
+.pnc-chevron { font-size: 0.7rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+.pnc-chevron.open { transform: rotate(180deg); }
+
+/* Expanded nudge list */
+.pnc-body { border-top: 1px solid var(--border); }
+.nudge-item {
+  display: flex; flex-direction: column; gap: 0;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.nudge-item:last-child { border-bottom: none; }
+.nudge-item-top { display: flex; align-items: center; gap: 10px; }
+.nudge-item-icon { font-size: 1.1rem; flex-shrink: 0; }
+.nudge-item-info { flex: 1; min-width: 0; }
+.nudge-item-type   { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.nudge-item-time   { font-size: 0.66rem; color: var(--muted); margin-top: 1px; }
+.nudge-item-badge  { font-size: 0.6rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+.nudge-item-badge.sent    { background: #e8f5ee; color: #4a8c5c; }
+.nudge-item-badge.skipped { background: var(--cream); color: var(--muted); border: 1px solid var(--border); }
+.nudge-item-badge.snoozed { background: #fff4dc; color: #8c6a20; }
+.nudge-item-badge.expired { background: var(--cream); color: var(--muted); border: 1px solid var(--border); opacity: 0.6; }
+.nudge-item-badge.upcoming { background: var(--cream); color: var(--muted); border: 1px solid var(--border); }
+.nudge-item-badge.due      { background: var(--rose); color: #fff; animation: pulse 1.8s ease-in-out infinite; }
+
+/* Action buttons on due nudge */
+.nudge-actions {
+  display: flex; gap: 6px; margin-top: 9px;
+}
+.nudge-act-btn {
+  flex: 1; padding: 9px 4px; border-radius: var(--radius-sm);
+  font-size: 0.72rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.nudge-act-btn.done   { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: #fff; border-color: transparent; box-shadow: 0 3px 10px rgba(201,105,122,0.3); }
+.nudge-act-btn.skip   { background: var(--card); color: var(--muted); }
+.nudge-act-btn.snooze { background: var(--card); color: var(--muted); }
+.nudge-act-btn:active { transform: scale(0.96); }
+
+/* Empty / paused state */
+.pnc-all-done { padding: 14px; text-align: center; font-size: 0.72rem; color: var(--muted); }
+.pnc-all-done .done-emoji { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+/* Quote card */
+.quote-card { background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px; text-align: center; }
+.quote-text { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-style: italic; color: var(--ink); line-height: 1.6; transition: opacity 0.4s; }
+
+/* ══════════════════════════════════════
+   SCREEN 7 — STREAK TAB
+══════════════════════════════════════ */
+.streak-hero {
+  background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+  border-radius: var(--radius-lg); padding: 20px 20px 16px;
+  text-align: center; margin-bottom: 12px; position: relative; overflow: hidden;
+}
+.streak-hero::before { content: ''; position: absolute; top: -30px; right: -30px; width: 110px; height: 110px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+.streak-hero::after  { content: ''; position: absolute; bottom: -40px; right: 20px; width: 90px; height: 90px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+.streak-num   { font-size: 3.5rem; font-weight: 700; color: #fff; line-height: 1; }
+.streak-label { font-size: 0.75rem; color: rgba(255,255,255,0.75); margin-top: 4px; }
+.streak-sub   { font-size: 0.68rem; color: rgba(255,255,255,0.6); margin-top: 8px; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px 12px; text-align: center;
+}
+.stat-card-num   { font-size: 1.8rem; font-weight: 700; color: var(--rose); line-height: 1; }
+.stat-card-label { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+
+.person-stat-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px; margin-bottom: 8px;
+}
+.person-stat-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.person-stat-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.person-stat-name  { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+.person-stat-rel   { font-size: 0.62rem; color: var(--muted); }
+.person-stat-bars  { display: flex; flex-direction: column; gap: 6px; }
+.stat-bar-row { display: flex; align-items: center; gap: 8px; }
+.stat-bar-icon  { font-size: 0.9rem; flex-shrink: 0; }
+.stat-bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.stat-bar-fill  { height: 100%; background: var(--rose); border-radius: 3px; transition: width 0.4s ease; }
+.stat-bar-label { font-size: 0.62rem; color: var(--muted); flex-shrink: 0; min-width: 36px; text-align: right; }
+
+/* Weekly summary card */
+.weekly-summary {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px;
+}
+.weekly-summary-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.weekly-summary-title  { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ink); }
+.weekly-summary-title em { color: var(--rose); font-style: italic; }
+.weekly-summary-close  { width: 24px; height: 24px; border-radius: 50%; background: var(--border); border: none; color: var(--muted); font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.weekly-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.weekly-row:last-child { border-bottom: none; }
+.weekly-row-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.weekly-row-name  { font-size: 0.75rem; font-weight: 600; color: var(--ink); flex: 1; }
+.weekly-row-bar   { width: 60px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.weekly-row-fill  { height: 100%; background: var(--rose); border-radius: 3px; }
+.weekly-row-score { font-size: 0.62rem; color: var(--muted); min-width: 28px; text-align: right; }
+.weekly-row-emoji { font-size: 1rem; flex-shrink: 0; }
+.weekly-footer    { padding: 10px 14px; font-size: 0.68rem; color: var(--muted); font-style: italic; }
+
+/* ══════════════════════════════════════
+   SETTINGS PANEL
+══════════════════════════════════════ */
+.settings-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-icon  { font-size: 1.2rem; flex-shrink: 0; }
+.settings-row-label { font-size: 0.82rem; font-weight: 600; color: var(--ink); flex: 1; }
+.settings-row-value { font-size: 0.72rem; color: var(--muted); }
+.settings-row-arrow { font-size: 0.65rem; color: var(--muted); }
+.settings-section-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; margin: 14px 0 4px; }
+
+/* Toggle switch */
+.toggle-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.toggle-switch input:checked + .toggle-slider { background: var(--rose); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* People list */
+.person-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); overflow: hidden; margin-bottom: 10px;
+}
+.person-card.active-person { border-color: var(--rose); }
+.person-card-top { display: flex; align-items: center; gap: 10px; padding: 12px; }
+.person-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.person-info { flex: 1; }
+.person-name    { font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+.person-rel     { font-size: 0.65rem; color: var(--muted); }
+.person-nudges  { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+.active-badge   { font-size: 0.58rem; font-weight: 600; padding: 2px 8px; background: var(--rose); color: #fff; border-radius: 20px; flex-shrink: 0; }
+.person-card-actions { display: flex; border-top: 1px solid var(--border); }
+.person-action-btn { flex: 1; padding: 10px; font-size: 0.72rem; font-weight: 600; cursor: pointer; background: none; border: none; border-right: 1px solid var(--border); }
+.person-action-btn:last-child { border-right: none; }
+.person-action-btn.switch { color: var(--rose); }
+.person-action-btn.remove { color: #c05060; }
+.person-action-btn:disabled { color: var(--muted); cursor: default; }
+
+/* Pause row inside person card */
+.pause-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.pause-row-text { flex: 1; }
+.pause-row-label { font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+.pause-row-sub   { font-size: 0.62rem; color: var(--muted); }
+
+/* ══════════════════════════════════════
+   GIFTS TAB
+══════════════════════════════════════ */
+.gifts-header { margin-bottom: 12px; }
+.gifts-title   { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ink); }
+.gifts-title em { color: var(--rose); font-style: italic; }
+.gifts-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.gift-region-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; font-size: 0.7rem; color: var(--muted); cursor: pointer; margin-bottom: 12px; }
+.gift-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+}
+.gift-emoji  { font-size: 1.8rem; flex-shrink: 0; }
+.gift-info   { flex: 1; min-width: 0; }
+.gift-name   { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+.gift-desc   { font-size: 0.66rem; color: var(--muted); margin-top: 2px; }
+.gift-price  { font-size: 0.68rem; font-weight: 600; color: var(--rose); margin-top: 3px; }
+.gift-btn    { padding: 7px 14px; background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: 20px; color: var(--rose); font-size: 0.7rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+
+/* ══════════════════════════════════════
+   DATE MODAL
+══════════════════════════════════════ */
+#date-modal .panel-sheet { max-height: 80vh; }
+.date-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
+.date-type-btn {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 8px;
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  font-size: 0.72rem; font-weight: 500; color: var(--ink); transition: all 0.15s;
+}
+.date-type-btn.active { border-color: var(--rose); background: var(--rose-light); color: var(--rose-dark); }
+.date-type-btn .dt-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* ══════════════════════════════════════
+   CONFIRM MODAL
+══════════════════════════════════════ */
+#confirm-modal {
+  position: absolute; inset: 0; background: rgba(30,10,20,0.55);
+  backdrop-filter: blur(3px); z-index: 500;
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+#confirm-modal.open { display: flex; }
+.confirm-modal-box {
+  background: var(--card); border-radius: var(--radius-lg); padding: 24px;
+  width: 100%; max-width: 320px;
+  box-shadow: var(--shadow-lg);
+}
+.confirm-modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--ink); margin-bottom: 8px; }
+.confirm-modal-body  { font-size: 0.78rem; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+.confirm-modal-btns  { display: flex; gap: 8px; }
+.confirm-modal-btns button { flex: 1; padding: 11px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.confirm-modal-cancel { background: var(--card); border: 1.5px solid var(--border); color: var(--muted); }
+.confirm-modal-ok     { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); border: none; color: #fff; }
+
+/* ══════════════════════════════════════
+   ABOUT
+══════════════════════════════════════ */
+.about-hero    { text-align: center; padding: 12px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+.about-heart   { font-size: 2.4rem; margin-bottom: 8px; animation: pulse 2.5s ease-in-out infinite; }
+.about-tagline { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; color: var(--ink); line-height: 1.3; font-style: italic; }
+.about-story p { font-size: 0.72rem; color: var(--body); line-height: 1.7; margin-bottom: 10px; }
+.about-story p em { color: var(--rose); font-style: italic; }
+.about-section-label { font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 10px; }
+.science-card  { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 18px; }
+.science-item  { display: flex; gap: 11px; align-items: flex-start; padding: 12px 14px; }
+.science-item + .science-item { border-top: 1px solid var(--border); }
+.science-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.science-text  { font-size: 0.66rem; color: var(--body); line-height: 1.6; }
+.science-text strong { display: block; font-weight: 600; color: var(--ink); margin-bottom: 2px; font-size: 0.68rem; }
+.coffee-btn    { display: block; text-align: center; padding: 11px; background: #ffdd00; border-radius: var(--radius-md); font-size: 0.78rem; font-weight: 600; color: #3a2000; margin-top: 6px; }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+.toast {
+  position: absolute; bottom: calc(var(--nav-h) + 12px + var(--safe-bottom));
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: #fff; border-radius: 20px;
+  padding: 9px 18px; font-size: 0.75rem; font-weight: 500;
+  white-space: nowrap; z-index: 400; pointer-events: none;
+  opacity: 0; transition: opacity 0.22s, transform 0.22s;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Milestone toast */
+#milestone-toast {
+  position: absolute; top: 60px; left: 50%; transform: translateX(-50%) translateY(-10px);
+  background: linear-gradient(135deg, var(--rose), var(--rose-dark)); color: #fff;
+  border-radius: 20px; padding: 10px 20px; font-size: 0.8rem; font-weight: 600;
+  white-space: nowrap; z-index: 400; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s, transform 0.3s;
+}
+#milestone-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+#confetti-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 600; overflow: hidden; }
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece { position: absolute; top: -10px; animation: confetti-fall linear forwards; }
+
+/* ══════════════════════════════════════
+   PAUSE BANNER
+══════════════════════════════════════ */
+.pause-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: #fff4dc; border: 1.5px solid #f0d890; border-radius: var(--radius-md);
+  padding: 10px 12px; margin-bottom: 10px; font-size: 0.72rem; color: #8c6a20;
+}
+.pause-banner button { margin-left: auto; font-size: 0.68rem; color: var(--rose); font-weight: 600; background: none; border: none; cursor: pointer; }
+
+/* ══════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════ */
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.animate-in { animation: fadeIn 0.25s ease forwards; }
+
+/* ══════════════════════════════════════
+   REGION OPTIONS
+══════════════════════════════════════ */
+.option-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-md); padding: 13px;
+  display: flex; align-items: flex-start; gap: 10px;
+  cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+}
+.option-card.active { border-color: var(--rose); background: var(--rose-light); }
+.opt-icon { font-size: 1.4rem; flex-shrink: 0; }
+.opt-body { flex: 1; }
+.opt-name { font-size: 0.8rem; font-weight: 600; color: var(--ink); }
+.opt-desc { font-size: 0.65rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.opt-check { color: var(--rose); font-size: 0.9rem; display: none; }
+.option-card.active .opt-check { display: block; }
+
+/* ══════════════════════════════════════
+   INSTALL BANNER
+══════════════════════════════════════ */
+#install-banner {
+  position: absolute; bottom: calc(var(--nav-h) + 10px + var(--safe-bottom));
+  left: 12px; right: 12px; background: #2a1f1f; color: #fff;
+  border-radius: var(--radius-md); padding: 14px;
+  font-size: 0.75rem; z-index: 300; display: none;
+  box-shadow: var(--shadow-lg); border: 1px solid rgba(201,105,122,0.3);
+}
+#install-banner.show { display: flex; align-items: center; gap: 10px; }
+#install-banner .ib-text { flex: 1; }
+#install-banner .ib-btn { padding: 7px 14px; background: var(--rose); color: #fff; border-radius: 8px; font-size: 0.72rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+#install-banner .ib-close { color: rgba(255,255,255,0.4); font-size: 1rem; cursor: pointer; flex-shrink: 0; }
+
+/* Notif re-prompt banner */
+#notif-reprompt {
+  background: var(--ink); color: #fff; border-radius: var(--radius-md);
+  padding: 14px; margin-bottom: 10px; display: none;
+  font-size: 0.75rem;
+}
+#notif-reprompt.show { display: flex; align-items: center; gap: 10px; }
+#notif-reprompt .nr-text { flex: 1; line-height: 1.5; }
+#notif-reprompt .nr-btn  { padding: 7px 12px; background: var(--rose); color: #fff; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+#notif-reprompt .nr-close { color: rgba(255,255,255,0.4); cursor: pointer; flex-shrink: 0; }
+
+/* Frequency panel chips */
+.freq-person-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+.freq-person-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 20px;
+  background: var(--card); border: 1.5px solid var(--border);
+  font-size: 0.72rem; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.freq-person-chip.active { border-color: var(--rose); background: var(--rose-light); color: var(--rose-dark); }
+
+/* Settings person chips */
+.settings-person-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.settings-person-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 20px;
+  background: var(--card); border: 1.5px solid var(--border);
+  font-size: 0.72rem; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.settings-person-chip.active { border-color: var(--rose); background: var(--rose-light); color: var(--rose-dark); }
+
+/* Schedule panel pips */
+.schedule-pips { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; }
+.schedule-pip {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; cursor: pointer; transition: all 0.15s;
+  border: 2.5px solid transparent;
+}
+.schedule-pip.active { border-color: var(--rose); box-shadow: 0 0 0 1px var(--rose); }
+
+/* ══════════════════════════════════════
+   MISC
+══════════════════════════════════════ */
+.section-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; margin-top: 16px; }
+.section-label:first-child { margin-top: 0; }
+.empty-state { text-align: center; padding: 30px 20px; }
+.empty-state .es-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.empty-state p { font-size: 0.75rem; color: var(--muted); line-height: 1.6; }
+
+/* iOS safe area padding on screens with nav */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .screen-content { padding-bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); }
+  .screen-content.no-nav { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Status bar -->
+  <div class="status-bar" id="status-bar">
+    <span class="time" id="status-time">9:41</span>
+    <div class="status-icons"><div class="s-sig"></div><div class="s-wif"></div><div class="s-bat"></div></div>
+  </div>
+
+  <!-- ════ SCREEN 1: WELCOME ════ -->
+  <div class="screen active" id="screen-1">
+    <div class="screen-content no-nav" style="display:flex;flex-direction:column;padding-top:32px;">
+      <div class="onb-hero" style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+        <div class="s1-brand">Grà</div>
+        <div class="s1-tagline">Small reminders. Big love.</div>
+        <div style="font-size:3.5rem;margin-bottom:20px;text-align:center;animation:bounce 2.5s ease-in-out infinite;">💛</div>
+        <p style="font-size:0.8rem;color:var(--muted);text-align:center;line-height:1.7;max-width:280px;margin:0 auto 28px;">Who do you want to stay in better touch with?<br>A partner, parent, friend — someone who matters.</p>
+      </div>
+      <div class="s1-input-wrap">
+        <label class="input-label" for="s1-name">Their name</label>
+        <input class="text-input" id="s1-name" type="text" placeholder="e.g. Sarah" autocomplete="off" autocapitalize="words" maxlength="30"
+          oninput="onb.name=this.value.trim()" onkeydown="if(event.key==='Enter'&&this.value.trim())startOnboarding()">
+        <div style="margin-top:14px;">
+          <button class="cta-btn" onclick="startOnboarding()">Let's go →</button>
+        </div>
+        <p style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5;">🔒 Gra never contacts anyone directly.<br>Your data stays private.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 1.5: RELATIONSHIP ════ -->
+  <div class="screen" id="screen-1.5">
+    <div class="screen-content no-nav">
+      <div class="onb-hero">
+        <div class="onb-title">Your relationship<br>with <em id="s15-name">them</em></div>
+        <p class="onb-sub">This shapes the tone of message suggestions you'll see.</p>
+      </div>
+      <div class="rel-grid" id="rel-grid">
+        <div class="rel-card active" data-rel="partner" onclick="selectRel(this)">
+          <div class="rel-card-emoji">💑</div>
+          <div class="rel-card-name">Partner</div>
+          <div class="rel-card-desc">Romantic relationship</div>
+        </div>
+        <div class="rel-card" data-rel="spouse" onclick="selectRel(this)">
+          <div class="rel-card-emoji">💍</div>
+          <div class="rel-card-name">Spouse</div>
+          <div class="rel-card-desc">Married or civil partnership</div>
+        </div>
+        <div class="rel-card" data-rel="family" onclick="selectRel(this)">
+          <div class="rel-card-emoji">👨‍👩‍👧</div>
+          <div class="rel-card-name">Family</div>
+          <div class="rel-card-desc">Parent, sibling, child</div>
+        </div>
+        <div class="rel-card" data-rel="friend" onclick="selectRel(this)">
+          <div class="rel-card-emoji">🫂</div>
+          <div class="rel-card-name">Friend</div>
+          <div class="rel-card-desc">Close friend</div>
+        </div>
+      </div>
+      <div class="msg-preview">
+        <div class="msg-preview-label">Example message tone</div>
+        <div class="msg-preview-text" id="s15-msg-preview">Just thinking about you ♡</div>
+      </div>
+      <button class="cta-btn" onclick="navigate('screen-2')">Next →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 2: FREQUENCY ════ -->
+  <div class="screen" id="screen-2">
+    <div class="screen-content no-nav">
+      <div class="onb-hero">
+        <div class="onb-title">How often?</div>
+        <p class="onb-sub">Set how many times per week you want to be nudged to text or call.</p>
+      </div>
+
+      <div class="freq-counter">
+        <div class="freq-counter-top">
+          <div class="freq-type">
+            <div class="freq-type-icon">💬</div>
+            <div>
+              <div class="freq-type-label">Text reminders</div>
+              <div class="freq-type-sub">per week</div>
+            </div>
+          </div>
+          <div class="freq-ctrl">
+            <button class="freq-btn" onclick="changeFreq('text',-1)">−</button>
+            <div class="freq-val" id="freq-text-val">3</div>
+            <button class="freq-btn" onclick="changeFreq('text',1)">+</button>
+          </div>
+        </div>
+        <div class="freq-dots" id="freq-text-dots"></div>
+      </div>
+
+      <div class="freq-counter">
+        <div class="freq-counter-top">
+          <div class="freq-type">
+            <div class="freq-type-icon">📞</div>
+            <div>
+              <div class="freq-type-label">Call reminders</div>
+              <div class="freq-type-sub">per week</div>
+            </div>
+          </div>
+          <div class="freq-ctrl">
+            <button class="freq-btn" onclick="changeFreq('call',-1)">−</button>
+            <div class="freq-val" id="freq-call-val">1</div>
+            <button class="freq-btn" onclick="changeFreq('call',1)">+</button>
+          </div>
+        </div>
+        <div class="freq-dots" id="freq-call-dots"></div>
+      </div>
+
+      <div class="freq-summary" id="freq-summary"></div>
+      <button class="cta-btn" onclick="navigate('screen-3')">Next — Set your windows →</button>
+      <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-1.5')">← Back</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3: SCHEDULE ════ -->
+  <div class="screen" id="screen-3">
+    <div class="screen-content no-nav" id="s3-content">
+      <div class="onb-hero">
+        <div class="onb-title">Your windows</div>
+        <p class="onb-sub">When are you free to reach out? Reminders fire randomly within these slots.</p>
+      </div>
+
+      <div class="sched-section">
+        <div class="sched-label">Days</div>
+        <div class="day-row" id="s3-day-row">
+          <div class="day-pill active" data-day="Mo" onclick="toggleDay(this)">Mo</div>
+          <div class="day-pill active" data-day="Tu" onclick="toggleDay(this)">Tu</div>
+          <div class="day-pill active" data-day="We" onclick="toggleDay(this)">We</div>
+          <div class="day-pill active" data-day="Th" onclick="toggleDay(this)">Th</div>
+          <div class="day-pill active" data-day="Fr" onclick="toggleDay(this)">Fr</div>
+          <div class="day-pill" data-day="Sa" onclick="toggleDay(this)">Sa</div>
+          <div class="day-pill" data-day="Su" onclick="toggleDay(this)">Su</div>
+        </div>
+      </div>
+
+      <div class="sched-section">
+        <div class="sched-label">Time slots</div>
+        <div class="time-grid" id="s3-time-grid">
+          <div class="time-slot" data-h="7" onclick="toggleSlot(this)">7–8am</div>
+          <div class="time-slot" data-h="8" onclick="toggleSlot(this)">8–9am</div>
+          <div class="time-slot active" data-h="9" onclick="toggleSlot(this)">9–10am</div>
+          <div class="time-slot active" data-h="10" onclick="toggleSlot(this)">10–11am</div>
+          <div class="time-slot active" data-h="11" onclick="toggleSlot(this)">11am–12</div>
+          <div class="time-slot active" data-h="12" onclick="toggleSlot(this)">12–1pm</div>
+          <div class="time-slot active" data-h="13" onclick="toggleSlot(this)">1–2pm</div>
+          <div class="time-slot active" data-h="14" onclick="toggleSlot(this)">2–3pm</div>
+          <div class="time-slot active" data-h="15" onclick="toggleSlot(this)">3–4pm</div>
+          <div class="time-slot active" data-h="16" onclick="toggleSlot(this)">4–5pm</div>
+          <div class="time-slot" data-h="17" onclick="toggleSlot(this)">5–6pm</div>
+          <div class="time-slot" data-h="18" onclick="toggleSlot(this)">6–7pm</div>
+          <div class="time-slot" data-h="19" onclick="toggleSlot(this)">7–8pm</div>
+          <div class="time-slot" data-h="20" onclick="toggleSlot(this)">8–9pm</div>
+        </div>
+      </div>
+
+      <div class="sched-section" id="s3-windows-section">
+        <div class="sched-label">Your windows</div>
+        <div class="window-chips" id="s3-window-chips"></div>
+        <button class="add-window-btn" onclick="addWindowFromS3()">+ Add window</button>
+      </div>
+
+      <div class="sched-section" id="s3-dates-section">
+        <div class="sched-label">Special dates <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-size:0.68rem;">(optional)</span></div>
+        <p style="font-size:0.68rem;color:var(--muted);line-height:1.6;margin-bottom:8px;">Add birthdays, anniversaries — Grà will remind you 30 days, 7 days, 1 day, and on the day.</p>
+        <div class="date-chips" id="s3-date-chips"></div>
+        <button class="add-date-btn" onclick="openDateModal('s3')">+ Add a date</button>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="cta-btn" onclick="saveWindowsAndContinue()" id="s3-save-btn">Save windows →</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-2')">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 4: CONFIRM ════ -->
+  <div class="screen" id="screen-4">
+    <div class="screen-content no-nav">
+      <div class="onb-hero">
+        <div class="onb-title">Ready to <em>activate?</em></div>
+      </div>
+      <div class="confirm-person-preview">
+        <div class="confirm-avatar" id="confirm-avatar" style="background:#fde8ec;">💑</div>
+        <div class="confirm-name">Nudging <em id="confirm-name">–</em></div>
+      </div>
+      <div class="confirm-card">
+        <div class="confirm-row">
+          <div class="confirm-row-icon">💬</div>
+          <div><div class="confirm-row-label">Text reminders</div><div class="confirm-row-value" id="confirm-texts">–</div></div>
+        </div>
+        <div class="confirm-row">
+          <div class="confirm-row-icon">📞</div>
+          <div><div class="confirm-row-label">Call reminders</div><div class="confirm-row-value" id="confirm-calls">–</div></div>
+        </div>
+        <div class="confirm-row">
+          <div class="confirm-row-icon">🗓</div>
+          <div><div class="confirm-row-label">Schedule</div><div class="confirm-row-value" id="confirm-windows">–</div></div>
+        </div>
+        <div class="confirm-row" id="confirm-dates-row" style="display:none;">
+          <div class="confirm-row-icon">⭐</div>
+          <div><div class="confirm-row-label">Special dates</div><div class="confirm-row-value" id="confirm-dates-count">–</div></div>
+        </div>
+      </div>
+      <div id="s4-confirm-state">
+        <button class="cta-btn" id="activate-btn" onclick="activate()">♡ &nbsp;Activate</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-3')">← Back</button>
+      </div>
+      <div id="s4-activated-state" style="display:none;text-align:center;padding:10px 0;">
+        <div style="font-size:3rem;margin-bottom:12px;animation:bounce 1.5s ease-in-out 3;">💛</div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--ink);margin-bottom:8px;">You're all set!</h2>
+        <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:6px;" id="s4-first-nudge-text">Your first nudge will arrive during your window this week.</p>
+        <button class="cta-btn" style="margin-top:12px;" onclick="navigate('screen-6')">Go to my dashboard →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 4.5: NOTIFICATION PERMISSION ════ -->
+  <div class="screen" id="screen-4.5">
+    <div class="screen-content no-nav" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:40px;">
+      <div style="font-size:3rem;margin-bottom:16px;">🔔</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.55rem;color:var(--ink);margin-bottom:10px;">One last thing</h2>
+      <p style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:24px;max-width:260px;">Grà needs permission to send you reminders. Only during the windows you set — nothing else, ever.</p>
+      <div class="perm-notif-preview">
+        <div class="perm-notif-icon">💛</div>
+        <div class="perm-notif-body">
+          <div class="perm-notif-app">Grà</div>
+          <div class="perm-notif-msg" id="perm-notif-msg">Time to text Sarah 💛</div>
+          <div class="perm-notif-sub">Just a little love goes a long way</div>
+          <div class="perm-notif-actions">
+            <div class="perm-notif-action">✓ Done it</div>
+            <div class="perm-notif-action">✗ Didn't</div>
+            <div class="perm-notif-action">⏰ Remind me</div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:0.68rem;color:var(--muted);margin:0 0 20px;">Your reminders will look like this ♡</p>
+      <button class="cta-btn" style="width:100%;margin-bottom:10px;" onclick="grantPermission()">🔔 &nbsp;Allow notifications</button>
+      <button onclick="skipPermission()" style="background:none;border:none;font-size:0.75rem;color:var(--muted);cursor:pointer;padding:8px;">Not now — I'll enable later</button>
+      <p style="font-size:0.62rem;color:var(--muted);margin-top:20px;line-height:1.5;max-width:240px;">🔒 No spam. No marketing.<br>Just your reminders, at your times.</p>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 6: DASHBOARD ════ -->
+  <div class="screen" id="screen-6">
+    <!-- HOME TAB -->
+    <div class="screen-content" id="tab-home" style="display:flex;flex-direction:column;">
+      <div id="notif-reprompt" class="animate-in"></div>
+      <div class="dash-header">
+        <div>
+          <div class="dash-greeting" id="dash-greeting">Good morning <em>♡</em></div>
+          <div class="dash-greeting-sub" id="dash-greeting-sub">Let's spread some love</div>
+        </div>
+        <button class="dash-add-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
+      </div>
+      <div id="dash-pause-banner"></div>
+      <div id="dash-person-cards"></div>
+      <div class="quote-card" id="quote-card" style="margin-top:4px;">
+        <div class="quote-text" id="quote-text"></div>
+      </div>
+    </div>
+    <!-- STREAK TAB -->
+    <div class="screen-content" id="tab-streak" style="display:none;">
+      <div id="streak-content"></div>
+    </div>
+    <!-- GIFTS TAB -->
+    <div class="screen-content" id="tab-gifts" style="display:none;">
+      <div class="gifts-header">
+        <div class="gifts-title">Gift <em id="gift-name">them</em> something ♡</div>
+        <div class="gifts-sub">Little ideas to show you care</div>
+      </div>
+      <button class="gift-region-btn" id="gift-region-btn" onclick="openPanel('region')">🌍 Region: 🇬🇧 UK</button>
+      <div id="gift-list"></div>
+    </div>
+  </div>
+
+  <!-- ════ BOTTOM NAV ════ -->
+  <nav id="nav">
+    <button class="nav-tab active" id="nav-home" onclick="switchTab('home')">
+      <span class="nav-icon">🏠</span>Home
+    </button>
+    <button class="nav-tab" id="nav-streak" onclick="switchTab('streak')">
+      <span class="nav-icon">🔥</span>Streak
+    </button>
+    <button class="nav-tab" id="nav-gifts" onclick="switchTab('gifts')">
+      <span class="nav-icon">🎁</span>Gifts
+    </button>
+    <button class="nav-tab" id="nav-settings" onclick="openPanel('settings')">
+      <span class="nav-icon">⚙️</span>Settings
+    </button>
+  </nav>
+
+  <!-- ════ SNOOZE SHEET ════ -->
+  <div class="panel-overlay" id="snooze-overlay" onclick="if(event.target===this)closeSnooze()">
+    <div class="panel-sheet">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-title">Remind me <em>later</em></div>
+      </div>
+      <div class="snooze-options">
+        <div class="snooze-opt" onclick="doSnooze(60)">
+          <div class="snooze-opt-icon">⏰</div>
+          <div><div class="snooze-opt-label">In 1 hour</div><div class="snooze-opt-sub" id="snooze-sub-1h"></div></div>
+        </div>
+        <div class="snooze-opt" onclick="doSnooze(180)">
+          <div class="snooze-opt-icon">⏳</div>
+          <div><div class="snooze-opt-label">In 3 hours</div><div class="snooze-opt-sub" id="snooze-sub-3h"></div></div>
+        </div>
+        <div class="snooze-opt" onclick="doSnooze('tomorrow')">
+          <div class="snooze-opt-icon">🌅</div>
+          <div><div class="snooze-opt-label">Tomorrow</div><div class="snooze-opt-sub" id="snooze-sub-tmr"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SETTINGS PANEL ════ -->
+  <div class="panel-overlay" id="settings-overlay" onclick="if(event.target===this)closePanel('settings')">
+    <div class="panel-sheet" style="max-height:92vh;">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-title">Settings</div>
+      </div>
+      <div class="panel-body">
+        <div class="settings-section-label">People</div>
+        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('profiles'),300)">
+          <div class="settings-row-icon">👥</div>
+          <div class="settings-row-label">Manage people</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+        <div class="settings-row" onclick="openFreqPanel()">
+          <div class="settings-row-icon">💬</div>
+          <div class="settings-row-label">Frequency</div>
+          <div class="settings-row-value" id="s-freq-val">–</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+        <div class="settings-row" onclick="openSchedulePanelFromSettings()">
+          <div class="settings-row-icon">🗓</div>
+          <div class="settings-row-label">Schedule windows</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+
+        <div class="settings-section-label">Notifications</div>
+        <div class="settings-row" onclick="sendTestPush()">
+          <div class="settings-row-icon">🔔</div>
+          <div class="settings-row-label">Send test notification</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+
+        <div class="settings-section-label">App</div>
+        <div class="settings-row">
+          <div class="settings-row-icon">🌙</div>
+          <div class="settings-row-label">Dark mode</div>
+          <label class="toggle-switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('region'),300)">
+          <div class="settings-row-icon">🌍</div>
+          <div class="settings-row-label">Region</div>
+          <div class="settings-row-value" id="s-region-val">🇬🇧 UK</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('about'),300)">
+          <div class="settings-row-icon">💛</div>
+          <div class="settings-row-label">About Grà</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+
+        <div class="settings-section-label" style="margin-top:20px;"></div>
+        <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
+          <div class="settings-row-icon">🗑</div>
+          <div class="settings-row-label">Reset all data</div>
+          <div class="settings-row-arrow">›</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PROFILES PANEL ════ -->
+  <div class="panel-overlay" id="profiles-overlay" onclick="if(event.target===this)closePanel('profiles')">
+    <div class="panel-sheet">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('profiles')">←</div>
+        <div class="panel-title">Your <em>people</em></div>
+      </div>
+      <div class="panel-sub">Each person has their own frequency, windows and message tone.</div>
+      <div class="panel-body">
+        <div id="profiles-list"></div>
+        <button class="cta-btn secondary" style="margin-top:8px;" onclick="closePanel('profiles');addAnotherPerson()">+ Add another person</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ FREQUENCY PANEL ════ -->
+  <div class="panel-overlay" id="frequency-overlay" onclick="if(event.target===this)closePanel('frequency')">
+    <div class="panel-sheet">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('frequency')">←</div>
+        <div class="panel-title">Frequency</div>
+      </div>
+      <div class="panel-sub" id="freq-panel-sub">How often do you want to nudge?</div>
+      <div class="panel-body">
+        <div class="freq-person-chips" id="freq-person-chips"></div>
+        <div class="freq-counter">
+          <div class="freq-counter-top">
+            <div class="freq-type"><div class="freq-type-icon">💬</div><div><div class="freq-type-label">Text reminders</div><div class="freq-type-sub">per week</div></div></div>
+            <div class="freq-ctrl">
+              <button class="freq-btn" onclick="changeFreqPanel('text',-1)">−</button>
+              <div class="freq-val" id="fp-text-val">3</div>
+              <button class="freq-btn" onclick="changeFreqPanel('text',1)">+</button>
+            </div>
+          </div>
+          <div class="freq-dots" id="fp-text-dots"></div>
+        </div>
+        <div class="freq-counter">
+          <div class="freq-counter-top">
+            <div class="freq-type"><div class="freq-type-icon">📞</div><div><div class="freq-type-label">Call reminders</div><div class="freq-type-sub">per week</div></div></div>
+            <div class="freq-ctrl">
+              <button class="freq-btn" onclick="changeFreqPanel('call',-1)">−</button>
+              <div class="freq-val" id="fp-call-val">1</div>
+              <button class="freq-btn" onclick="changeFreqPanel('call',1)">+</button>
+            </div>
+          </div>
+          <div class="freq-dots" id="fp-call-dots"></div>
+        </div>
+        <div class="freq-summary" id="fp-summary"></div>
+        <button class="cta-btn" onclick="saveFreqPanel()">Save →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCHEDULE PANEL ════ -->
+  <div class="panel-overlay" id="schedule-overlay" onclick="if(event.target===this)closePanel('schedule')">
+    <div class="panel-sheet" style="max-height:92vh;">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('schedule')">←</div>
+        <div class="panel-title">Schedule</div>
+      </div>
+      <div class="panel-sub">When are you free to reach out?</div>
+      <div class="panel-body">
+        <div class="schedule-pips" id="schedule-pips"></div>
+
+        <div class="sched-section">
+          <div class="sched-label">Days</div>
+          <div class="day-row" id="sp-day-row">
+            <div class="day-pill active" data-day="Mo" onclick="toggleDay(this,'sp')">Mo</div>
+            <div class="day-pill active" data-day="Tu" onclick="toggleDay(this,'sp')">Tu</div>
+            <div class="day-pill active" data-day="We" onclick="toggleDay(this,'sp')">We</div>
+            <div class="day-pill active" data-day="Th" onclick="toggleDay(this,'sp')">Th</div>
+            <div class="day-pill active" data-day="Fr" onclick="toggleDay(this,'sp')">Fr</div>
+            <div class="day-pill" data-day="Sa" onclick="toggleDay(this,'sp')">Sa</div>
+            <div class="day-pill" data-day="Su" onclick="toggleDay(this,'sp')">Su</div>
+          </div>
+        </div>
+
+        <div class="sched-section">
+          <div class="sched-label">Time slots</div>
+          <div class="time-grid" id="sp-time-grid">
+            <div class="time-slot" data-h="7"  onclick="toggleSlot(this,'sp')">7–8am</div>
+            <div class="time-slot" data-h="8"  onclick="toggleSlot(this,'sp')">8–9am</div>
+            <div class="time-slot active" data-h="9"  onclick="toggleSlot(this,'sp')">9–10am</div>
+            <div class="time-slot active" data-h="10" onclick="toggleSlot(this,'sp')">10–11am</div>
+            <div class="time-slot active" data-h="11" onclick="toggleSlot(this,'sp')">11am–12</div>
+            <div class="time-slot active" data-h="12" onclick="toggleSlot(this,'sp')">12–1pm</div>
+            <div class="time-slot active" data-h="13" onclick="toggleSlot(this,'sp')">1–2pm</div>
+            <div class="time-slot active" data-h="14" onclick="toggleSlot(this,'sp')">2–3pm</div>
+            <div class="time-slot active" data-h="15" onclick="toggleSlot(this,'sp')">3–4pm</div>
+            <div class="time-slot active" data-h="16" onclick="toggleSlot(this,'sp')">4–5pm</div>
+            <div class="time-slot" data-h="17" onclick="toggleSlot(this,'sp')">5–6pm</div>
+            <div class="time-slot" data-h="18" onclick="toggleSlot(this,'sp')">6–7pm</div>
+            <div class="time-slot" data-h="19" onclick="toggleSlot(this,'sp')">7–8pm</div>
+            <div class="time-slot" data-h="20" onclick="toggleSlot(this,'sp')">8–9pm</div>
+          </div>
+        </div>
+
+        <div class="sched-section">
+          <div class="sched-label">Your windows</div>
+          <div class="window-chips" id="sp-window-chips"></div>
+          <button class="add-window-btn" onclick="addWindowFromPanel()">+ Add window</button>
+        </div>
+
+        <div class="sched-section">
+          <div class="sched-label">Special dates</div>
+          <div class="date-chips" id="sp-date-chips"></div>
+          <button class="add-date-btn" onclick="openDateModal('sp')">+ Add a date</button>
+        </div>
+
+        <button class="cta-btn" style="margin-top:8px;" onclick="saveSchedulePanel()">Save schedule →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ DATE MODAL ════ -->
+  <div class="panel-overlay" id="date-modal" onclick="if(event.target===this)closePanel('date-modal')">
+    <div class="panel-sheet" style="max-height:80vh;">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('date-modal')">←</div>
+        <div class="panel-title">Add a <em>date</em></div>
+      </div>
+      <div class="panel-sub">We'll remind you as it approaches ♡</div>
+      <div class="panel-body">
+        <div class="date-type-grid" id="date-type-grid"></div>
+        <div style="margin-bottom:14px;">
+          <label class="input-label" for="date-input-label">Label (optional)</label>
+          <input class="text-input" id="date-input-label" type="text" placeholder="e.g. Mum's birthday" maxlength="40">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="input-label" for="date-input-date">Date</label>
+          <input class="text-input" id="date-input-date" type="date">
+        </div>
+        <button class="cta-btn" onclick="saveDate()">Add date →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ REGION PANEL ════ -->
+  <div class="panel-overlay" id="region-overlay" onclick="if(event.target===this)closePanel('region')">
+    <div class="panel-sheet">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('region')">←</div>
+        <div class="panel-title">Your <em>region</em></div>
+      </div>
+      <div class="panel-sub">Shapes gift suggestions and date formats.</div>
+      <div class="panel-body">
+        <div id="region-options">
+          <div class="option-card active" data-region="uk" onclick="selectRegion(this)"><div class="opt-icon">🇬🇧</div><div class="opt-body"><div class="opt-name">United Kingdom</div></div><div class="opt-check">✓</div></div>
+          <div class="option-card" data-region="us" onclick="selectRegion(this)"><div class="opt-icon">🇺🇸</div><div class="opt-body"><div class="opt-name">United States</div></div><div class="opt-check">✓</div></div>
+          <div class="option-card" data-region="au" onclick="selectRegion(this)"><div class="opt-icon">🇦🇺</div><div class="opt-body"><div class="opt-name">Australia</div></div><div class="opt-check">✓</div></div>
+          <div class="option-card" data-region="eu" onclick="selectRegion(this)"><div class="opt-icon">🇪🇺</div><div class="opt-body"><div class="opt-name">Europe</div></div><div class="opt-check">✓</div></div>
+          <div class="option-card" data-region="ca" onclick="selectRegion(this)"><div class="opt-icon">🇨🇦</div><div class="opt-body"><div class="opt-name">Canada</div></div><div class="opt-check">✓</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ABOUT PANEL ════ -->
+  <div class="panel-overlay" id="about-overlay" onclick="if(event.target===this)closePanel('about')">
+    <div class="panel-sheet" style="max-height:92vh;">
+      <div class="panel-drag"></div>
+      <div class="panel-header">
+        <div class="panel-back" onclick="closePanel('about')">←</div>
+        <div class="panel-title">About <em>Grà</em></div>
+      </div>
+      <div class="panel-body">
+        <div class="about-hero">
+          <div class="about-heart">💛</div>
+          <div class="about-tagline">Small reminders.<br>Big love.</div>
+        </div>
+        <div class="about-story">
+          <div class="about-section-label">Why I built this</div>
+          <p>A while back I realised something uncomfortable: I was genuinely bad at keeping in touch with the people I love most. Not because I didn't care — I thought about my partner, my family, my close friends constantly. But life gets busy, and somehow days would pass without a single message.</p>
+          <p>I noticed that when I did reach out — even just a quick "thinking of you" — it changed everything. The conversation would light up. The relationship felt warmer. And I felt better too.</p>
+          <p>So I started setting phone reminders. Clunky, but it worked. I wanted something more intentional — something that understood <em>who</em> I was nudging and <em>when</em> I was free. <em>Grà</em> is the Scottish Gaelic word for love. This is what I built for myself. I hope it helps you too.</p>
+        </div>
+        <div class="about-section-label">The science bit</div>
+        <div class="science-card">
+          <div class="science-item"><div class="science-icon">🔬</div><div class="science-text"><strong>Micro-moments matter</strong>Psychologist Barbara Fredrickson's research shows that brief positive interactions — even a short text — build lasting emotional bonds over time.</div></div>
+          <div class="science-item"><div class="science-icon">🧠</div><div class="science-text"><strong>Habits need cues</strong>BJ Fogg's Tiny Habits research shows that good intentions alone aren't enough. External prompts are what turn caring feelings into consistent behaviour.</div></div>
+          <div class="science-item"><div class="science-icon">📈</div><div class="science-text"><strong>Consistency compounds</strong>Relationship researcher John Gottman found that couples who maintain small, regular gestures of affection report significantly higher long-term relationship satisfaction.</div></div>
+        </div>
+        <div style="font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:12px;">Grà · From the Scottish Gaelic for love · v2.0</div>
+        <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">☕ &nbsp;If this helped, buy me a coffee</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CONFIRM MODAL ════ -->
+  <div id="confirm-modal">
+    <div class="confirm-modal-box">
+      <div class="confirm-modal-title" id="cm-title">Are you sure?</div>
+      <div class="confirm-modal-body"  id="cm-body"></div>
+      <div class="confirm-modal-btns">
+        <button class="confirm-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+        <button class="confirm-modal-ok" id="cm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ OVERLAYS ════ -->
+  <div id="confetti-overlay"></div>
+  <div class="toast" id="toast"></div>
+  <div id="milestone-toast"></div>
+  <div id="install-banner"></div>
+
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ██████╗ ██████╗  █████╗
+   ██╔════╝ ██╔══██╗██╔══██╗
+   ██║  ███╗██████╔╝███████║
+   ██║   ██║██╔══██╗██╔══██║
+   ╚██████╔╝██║  ██║██║  ██║
+   STATE — single source of truth
+═══════════════════════════════════════════════════════════ */
+
+const STATE = {
+  people:       [],   // Person[]
+  activeIdx:    0,    // index into people[]
+  screen:       'screen-1',
+  openPanels:   [],   // stack
+  activeTab:    'home',
+  region:       'uk',
+  darkMode:     false,
+  onboarding:   null, // temp object during onboarding
+  freqPanelIdx: 0,    // which person freq panel is editing
+  _snoozePending: null, // { personId, nudgeId, nudgeType, personName }
+  _datePendingContext: 's3', // 's3' | 'sp'
+  _datePendingType: 'birthday',
+};
+
+// Lightweight subscriber map — key → Set of callbacks
+const _subs = {};
+function subscribe(key, fn) {
+  if (!_subs[key]) _subs[key] = new Set();
+  _subs[key].add(fn);
+}
+function _emit(key) {
+  if (_subs[key]) _subs[key].forEach(fn => fn());
+}
+
+function setState(patch) {
+  Object.assign(STATE, patch);
+  // Always save to localStorage on any mutation
+  saveLocal();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════════════════ */
+const LS = {
+  PEOPLE:      'gra_people',
+  ACTIVE_IDX:  'gra_active_idx',
+  REGION:      'gra_region',
+  DARK:        'gra_dark',
+  USER_ID:     'gra_user_id',
+  DEVICE_ID:   'gra_device_id',
+  PUSH_SUB:    'gra_push_sub',
+  FIRED:       'gra_fired_nudges',
+  WEEK_RESET:  'gra_week_reset',
+  SUMMARY_DIS: 'gra_summary_dismissed',
+  DATE_NOTIFS: 'gra_date_notifs',
+  NOTIF_ASKED: 'gra_notif_asked',
+};
+
+function saveLocal() {
+  try {
+    localStorage.setItem(LS.PEOPLE,     JSON.stringify(STATE.people));
+    localStorage.setItem(LS.ACTIVE_IDX, String(STATE.activeIdx));
+    localStorage.setItem(LS.REGION,     STATE.region);
+    localStorage.setItem(LS.DARK,       STATE.darkMode ? '1' : '0');
+  } catch(_) {}
+}
+
+function loadLocal() {
+  try {
+    const p = localStorage.getItem(LS.PEOPLE);
+    if (p) STATE.people = JSON.parse(p);
+    const idx = localStorage.getItem(LS.ACTIVE_IDX);
+    if (idx !== null) STATE.activeIdx = Math.max(0, parseInt(idx, 10) || 0);
+    STATE.region   = localStorage.getItem(LS.REGION) || 'uk';
+    STATE.darkMode = localStorage.getItem(LS.DARK) === '1';
+  } catch(_) {}
+}
+
+function getDeviceId() {
+  let id = localStorage.getItem(LS.DEVICE_ID);
+  if (!id) {
+    id = (crypto?.randomUUID?.()) || (Math.random().toString(36).slice(2) + Date.now());
+    localStorage.setItem(LS.DEVICE_ID, id);
+  }
+  return id;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://lnfijupigmsosokpjutj.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuZmlqdXBpZ21zb3Nva3BqdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODExNDcsImV4cCI6MjA4NzY1NzE0N30.J7SEAKL1U__mhSAP5fOh8Bw82F9sHELgcJ7qbVRSY1w';
+const VAPID_PUBLIC  = 'BHl_D6UaYgMx6ksa8ydT2Onga4vc8DuL7j98fg7y-58NATf-QPbpxnVbLnHIB1TpMj69OMo8xu67xinzpn0nVBc';
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(opts.headers || {}),
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`sbFetch ${path}: ${res.status} ${text}`);
+  return text ? JSON.parse(text) : null;
+}
+
+async function ensureUser() {
+  const deviceId = getDeviceId();
+  let userId = localStorage.getItem(LS.USER_ID);
+  if (userId) return userId;
+  try {
+    const rows = await sbFetch(`users?device_id=eq.${encodeURIComponent(deviceId)}&select=id`);
+    if (rows?.length) {
+      userId = rows[0].id;
+    } else {
+      const created = await sbFetch('users', { method: 'POST', body: JSON.stringify({ device_id: deviceId }) });
+      userId = created[0].id;
+    }
+    localStorage.setItem(LS.USER_ID, userId);
+    return userId;
+  } catch(e) { console.error('ensureUser:', e); return null; }
+}
+
+async function savePeopleRemote() {
+  try {
+    const userId = await ensureUser();
+    if (!userId) return;
+    await sbFetch(`users?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': '' },
+      body: JSON.stringify({ people_data: JSON.stringify(STATE.people) }),
+    });
+  } catch(e) { console.warn('savePeopleRemote:', e); }
+}
+
+async function loadPeopleRemote() {
+  try {
+    const userId = localStorage.getItem(LS.USER_ID);
+    if (!userId) return false;
+    const rows = await sbFetch(`users?id=eq.${userId}&select=people_data`);
+    if (rows?.[0]?.people_data) {
+      const loaded = JSON.parse(rows[0].people_data);
+      if (Array.isArray(loaded) && loaded.length > 0) {
+        // Merge: prefer local nudge states over remote (local is more recent)
+        loaded.forEach((remote, i) => {
+          const local = STATE.people[i];
+          if (!local || local.name !== remote.name) return;
+          if (local.nudges && remote.nudges) {
+            Object.assign(remote.nudges, local.nudges);
+          }
+        });
+        STATE.people = loaded;
+        if (STATE.activeIdx >= STATE.people.length) STATE.activeIdx = 0;
+        saveLocal();
+        return true;
+      }
+    }
+  } catch(e) {}
+  return false;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PUSH NOTIFICATIONS
+═══════════════════════════════════════════════════════════ */
+function urlBase64ToUint8Array(b) {
+  const pad = '='.repeat((4 - b.length % 4) % 4);
+  const raw = atob((b + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function ensurePushSubscription(reg) {
+  try {
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+    }
+    window._pushSub = sub;
+    localStorage.setItem(LS.PUSH_SUB, JSON.stringify(sub));
+    const userId = await ensureUser();
+    if (userId) {
+      const j = sub.toJSON();
+      await sbFetch('push_subscriptions?on_conflict=user_id', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify({ user_id: userId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+      }).catch(() => {});
+    }
+    return sub;
+  } catch(e) { return null; }
+}
+
+async function requestPushPermission() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return false;
+  if (Notification.permission === 'denied') return false;
+  let perm = Notification.permission;
+  if (perm !== 'granted') perm = await Notification.requestPermission();
+  if (perm !== 'granted') return false;
+  let reg = window._swReg;
+  if (!reg) { try { reg = await navigator.serviceWorker.ready; window._swReg = reg; } catch(e) { return false; } }
+  return !!(await ensurePushSubscription(reg));
+}
+
+async function sendPush(notification) {
+  let sub = window._pushSub;
+  if (!sub) {
+    try { const s = localStorage.getItem(LS.PUSH_SUB); if (s) sub = JSON.parse(s); } catch(_) {}
+  }
+  if (!sub) return false;
+  try {
+    const j = (typeof sub.toJSON === 'function') ? sub.toJSON() : sub;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
+      body: JSON.stringify({ subscription: { endpoint: j.endpoint, keys: j.keys }, notification }),
+    });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+async function sendTestPush() {
+  const ok = await requestPushPermission();
+  if (!ok) { showToast('Notifications blocked — check browser settings'); return; }
+  const sent = await sendPush({ title: 'Grà 💛', body: 'Notifications are working! ♡', tag: 'gra-test' });
+  showToast(sent ? 'Test notification sent! ♡' : 'Could not send — check Supabase logs');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCHEDULING ENGINE
+═══════════════════════════════════════════════════════════ */
+function buildWeeklyNudgeTimes(person) {
+  // Read windows from DATA, never from DOM
+  const windows = person.windows || [];
+  if (!windows.length) return [];
+
+  // Parse day and hour ranges from stored window objects
+  let startHour = 9, endHour = 17;
+  const daySet = new Set();
+  const ALL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const parseHour = s => {
+    const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i);
+    if (!m) return null;
+    let h = +m[1];
+    if (/pm/i.test(m[3]) && h !== 12) h += 12;
+    if (/am/i.test(m[3]) && h === 12) h = 0;
+    return h;
+  };
+
+  windows.forEach((w, wi) => {
+    const daysText = w.days || '';
+    const rangeMatch = daysText.match(/(\w+)\s*[–\-]\s*(\w+)/);
+    if (rangeMatch) {
+      const from = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[1].toLowerCase().slice(0,3)));
+      const to   = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[2].toLowerCase().slice(0,3)));
+      if (from !== -1 && to !== -1) for (let i = from; i <= to; i++) {
+        const jsDay = i === 6 ? 0 : i + 1;
+        daySet.add(jsDay);
+      }
+    } else {
+      ALL_DAYS.forEach((d, i) => {
+        if (daysText.includes(d)) daySet.add(i === 6 ? 0 : i + 1);
+      });
+    }
+    if (wi === 0) {
+      const parts = (w.time || '').split(/[–\-]/).map(s => s.trim());
+      startHour = parseHour(parts[0]) ?? 9;
+      endHour   = parseHour(parts[1]) ?? 17;
+    }
+  });
+
+  const dayNums = daySet.size ? [...daySet].sort() : [1,2,3,4,5];
+  const totalText = person.freq?.text || 0;
+  const totalCall = person.freq?.call || 0;
+  const total = totalText + totalCall;
+  if (!total) return [];
+
+  // Build interleaved type list
+  const types = [];
+  let ti = 0, ci = 0;
+  for (let k = 0; k < total; k++) {
+    const callDue = totalCall > 0 && Math.round(ci * total / totalCall) <= k && ci < totalCall;
+    if (callDue) { types.push('call'); ci++; } else { types.push('text'); ti++; }
+  }
+
+  // Monday of current week
+  const now = new Date();
+  const daysSinceMon = (now.getDay() + 6) % 7;
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - daysSinceMon);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  function dayToDateThisWeek(jsDay) {
+    const offset = (jsDay + 6) % 7;
+    const d = new Date(thisMonday);
+    d.setDate(thisMonday.getDate() + offset);
+    return d;
+  }
+
+  // Spread nudges across days
+  const dayUsage = {};
+  dayNums.forEach(d => dayUsage[d] = 0);
+  const dayAssignments = types.map((_, i) => {
+    const sorted = [...dayNums].sort((a,b) => (dayUsage[a]||0) - (dayUsage[b]||0));
+    const picked = sorted[i % sorted.length];
+    dayUsage[picked]++;
+    return picked;
+  });
+
+  // Pick random times with 6h minimum gap
+  const MIN_GAP_MINS = 6 * 60;
+  const rangeMinutes = Math.max(60, (endHour - startHour) * 60);
+  const daySlots = {};
+  dayNums.forEach(d => daySlots[d] = []);
+
+  function pickTime(dayNum) {
+    const existing = daySlots[dayNum];
+    for (let attempts = 0; attempts < 300; attempts++) {
+      const candidate = Math.floor(Math.random() * rangeMinutes);
+      if (!existing.some(t => Math.abs(t - candidate) < MIN_GAP_MINS)) {
+        existing.push(candidate);
+        return candidate;
+      }
+    }
+    const last = existing.length ? Math.max(...existing) : 0;
+    const fallback = Math.min(last + MIN_GAP_MINS, rangeMinutes - 1);
+    existing.push(fallback);
+    return fallback;
+  }
+
+  return types.map((type, i) => {
+    const dayNum   = dayAssignments[i];
+    const slotMins = pickTime(dayNum);
+    const hour     = startHour + Math.floor(slotMins / 60);
+    const min      = slotMins % 60;
+    const target   = dayToDateThisWeek(dayNum);
+    target.setHours(hour, min, 0, 0);
+    if (target <= now) target.setDate(target.getDate() + 7);
+    return {
+      id:     crypto.randomUUID(),   // ← stable UUID, no index matching needed
+      type,
+      fireAt: target.toISOString(),
+    };
+  }).sort((a,b) => new Date(a.fireAt) - new Date(b.fireAt));
+}
+
+async function scheduleNudgesForPerson(person) {
+  try {
+    const nudges = buildWeeklyNudgeTimes(person);
+    if (!nudges.length) return;
+    person._scheduledNudges = nudges;
+    person.nudges = {};
+    saveLocal();
+    savePeopleRemote().catch(() => {});
+
+    const userId = await ensureUser();
+    if (!userId) return;
+    // Delete existing unfire rows for this person
+    await sbFetch(
+      `nudge_schedules?user_id=eq.${userId}&person_name=eq.${encodeURIComponent(person.name)}&fired=eq.false`,
+      { method: 'DELETE', headers: { 'Prefer': '' } }
+    ).catch(() => {});
+    // Insert new rows with stable nudge_id
+    await sbFetch('nudge_schedules', {
+      method: 'POST',
+      body: JSON.stringify(nudges.map(n => ({
+        user_id:     userId,
+        person_name: person.name,
+        nudge_id:    n.id,        // ← UUID stored on row
+        nudge_type:  n.type,
+        fire_at:     n.fireAt,
+      }))),
+    });
+  } catch(e) { console.error('scheduleNudgesForPerson:', e); }
+}
+
+async function checkDueNudges() {
+  try {
+    const userId = localStorage.getItem(LS.USER_ID);
+    if (!userId) return;
+    const now = new Date().toISOString();
+    const rows = await sbFetch(
+      `nudge_schedules?user_id=eq.${userId}&fired=eq.false&fire_at=lte.${encodeURIComponent(now)}&select=id,person_name,nudge_id,nudge_type,fire_at`
+    ).catch(() => null);
+    if (!rows?.length) return;
+
+    let firedSet;
+    try { firedSet = new Set(JSON.parse(localStorage.getItem(LS.FIRED) || '[]')); } catch(_) { firedSet = new Set(); }
+
+    let changed = false;
+    for (const row of rows) {
+      if (firedSet.has(row.id)) continue;
+
+      // Find person
+      const personIdx = STATE.people.findIndex(p => p?.name === row.person_name);
+      if (personIdx >= 0) {
+        const person = STATE.people[personIdx];
+        if (!person.nudges) person.nudges = {};
+        // Find nudge by UUID — exact match, no fuzzing
+        if (person._scheduledNudges) {
+          const nudge = person._scheduledNudges.find(n => n.id === row.nudge_id);
+          if (nudge) {
+            const key = 'n_' + nudge.id;
+            if (!person.nudges[key]) {
+              person.nudges[key] = { state: 'notified', firedAt: Date.now() };
+              changed = true;
+            }
+          }
+        }
+      }
+
+      // Send push
+      const typeLabel = row.nudge_type === 'call' ? 'call 📞' : 'text 💬';
+      await sendPush({
+        title:      'Grà 💛',
+        body:       `Time to ${typeLabel} ${row.person_name} — a little love goes a long way`,
+        tag:        `nudge-${row.nudge_id}`,
+        nudgeId:    row.nudge_id,
+        personName: row.person_name,
+        nudgeType:  row.nudge_type,
+      });
+
+      // Mark fired
+      sbFetch(`nudge_schedules?id=eq.${row.id}`, {
+        method: 'PATCH', headers: { 'Prefer': '' },
+        body: JSON.stringify({ fired: true }),
+      }).catch(() => {});
+
+      firedSet.add(row.id);
+    }
+
+    localStorage.setItem(LS.FIRED, JSON.stringify([...firedSet].slice(-200)));
+    if (changed) {
+      saveLocal();
+      savePeopleRemote().catch(() => {});
+      renderDashboard();
+    }
+  } catch(e) { console.warn('checkDueNudges:', e); }
+}
+
+// ── 24-hour nudge expiry ──
+function expireOldNudges() {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  let changed = false;
+  STATE.people.forEach(p => {
+    if (!p?.nudges || !p._scheduledNudges) return;
+    p._scheduledNudges.forEach(n => {
+      const key = 'n_' + n.id;
+      const entry = p.nudges[key];
+      if (entry?.state === 'notified' && entry.firedAt < cutoff) {
+        p.nudges[key] = { ...entry, state: 'expired' };
+        changed = true;
+      }
+    });
+  });
+  if (changed) { saveLocal(); savePeopleRemote().catch(() => {}); }
+  return changed;
+}
+
+function startNudgePoller() {
+  const ready = window._remoteLoadPromise || Promise.resolve();
+  ready.then(() => {
+    expireOldNudges();
+    checkDueNudges();
+    setInterval(() => {
+      expireOldNudges();
+      checkDueNudges();
+    }, 60 * 1000);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+let _navHistory = [];
+let _transitioning = false;
+
+function navigate(screenId, back = false) {
+  if (_transitioning) return;
+  const from = document.getElementById(STATE.screen);
+  const to   = document.getElementById(screenId);
+  if (!from || !to || STATE.screen === screenId) return;
+
+  _transitioning = true;
+  const dir = back ? -1 : 1;
+
+  to.style.transition = 'none';
+  to.style.transform  = dir > 0 ? 'translateX(100%)' : 'translateX(-100%)';
+  to.classList.remove('active', 'leaving');
+  to.offsetHeight; // force reflow
+
+  to.style.transition = '';
+  to.style.transform  = 'translateX(0)';
+  to.classList.add('active');
+  from.style.transform = dir > 0 ? 'translateX(-100%)' : 'translateX(100%)';
+  from.classList.remove('active');
+  from.classList.add('leaving');
+
+  setTimeout(() => {
+    from.style.transform = '';
+    from.classList.remove('leaving');
+    _transitioning = false;
+  }, 360);
+
+  if (!back) _navHistory.push(STATE.screen);
+  STATE.screen = screenId;
+
+  // Show/hide nav
+  const inApp = ['screen-6'].includes(screenId);
+  document.getElementById('nav').classList.toggle('visible', inApp);
+
+  // Screen-specific setup
+  if (screenId === 'screen-1.5') renderRelScreen();
+  if (screenId === 'screen-2')   renderFreqScreen();
+  if (screenId === 'screen-3')   renderScheduleScreen();
+  if (screenId === 'screen-4')   renderConfirmScreen();
+  if (screenId === 'screen-6')   { renderDashboard(); renderStreakTab(); }
+}
+
+function goBack() {
+  if (_navHistory.length) navigate(_navHistory.pop(), true);
+}
+
+function openPanel(name) {
+  const overlay = document.getElementById(name + '-overlay');
+  if (!overlay) return;
+  closeAllPanels();
+
+  // Pre-render panel content
+  if (name === 'profiles')  renderProfilesPanel();
+  if (name === 'frequency') renderFreqPanel();
+  if (name === 'schedule')  renderSchedulePanel();
+  if (name === 'settings')  renderSettingsPanel();
+  if (name === 'date-modal') renderDateModal();
+
+  overlay.classList.add('open');
+  STATE.openPanels.push(name);
+}
+
+function closePanel(name) {
+  const overlay = document.getElementById(name + '-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  STATE.openPanels = STATE.openPanels.filter(p => p !== name);
+}
+
+function closeAllPanels() {
+  [...STATE.openPanels].forEach(p => {
+    const el = document.getElementById(p + '-overlay');
+    if (el) el.classList.remove('open');
+  });
+  STATE.openPanels = [];
+}
+
+// Hardware back button
+try {
+  if (!location.hash) history.replaceState(null, '', location.pathname + '#app');
+  window.addEventListener('popstate', () => {
+    try { history.pushState(null, '', location.pathname + '#app'); } catch(_) {}
+    if (STATE.openPanels.length) {
+      closePanel(STATE.openPanels[STATE.openPanels.length - 1]);
+    } else if (_navHistory.length) {
+      goBack();
+    }
+  });
+} catch(_) {}
+
+/* ═══════════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════════ */
+function switchTab(tab) {
+  STATE.activeTab = tab;
+  ['home','streak','gifts'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.getElementById('nav-' + t)?.classList.toggle('active', t === tab);
+    if (t === 'gifts') document.getElementById('nav-gifts')?.classList.toggle('active', t === tab);
+  });
+  document.getElementById('nav-settings').classList.remove('active');
+
+  if (tab === 'streak') renderStreakTab();
+  if (tab === 'gifts')  renderGiftsTab();
+  if (tab === 'home')   { renderDashboard(); document.getElementById('tab-home').style.display = 'flex'; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ONBOARDING STATE
+═══════════════════════════════════════════════════════════ */
+// In-progress onboarding values (committed only on activate())
+const onb = {
+  name:    '',
+  rel:     'partner',
+  freq:    { text: 3, call: 1 },
+  windows: [], // Window[] — always data, never DOM
+  dates:   [],
+};
+
+const REL_META = {
+  partner: { label: 'Partner',  emoji: '💑', bg: '#fde8ec' },
+  spouse:  { label: 'Spouse',   emoji: '💍', bg: '#fde8ec' },
+  family:  { label: 'Family',   emoji: '👨‍👩‍👧', bg: '#e8f0fa' },
+  friend:  { label: 'Friend',   emoji: '🫂', bg: '#e8f5ee' },
+};
+
+const REL_MESSAGES = {
+  partner: 'Just thinking about you ♡',
+  spouse:  'You make every day better 💛',
+  family:  'Just thinking of you — hope you\'re doing well!',
+  friend:  'Haven\'t spoken in a while — hope all\'s good!',
+};
+
+const FREQ_MAX = { text: 7, call: 3 };
+const FREQ_MIN = { text: 1, call: 0 };
+
+function startOnboarding() {
+  const nameEl = document.getElementById('s1-name');
+  const name   = nameEl?.value.trim();
+  if (!name) {
+    if (nameEl) { nameEl.style.borderColor = 'var(--rose)'; nameEl.focus(); }
+    return;
+  }
+  if (nameEl) nameEl.style.borderColor = '';
+  onb.name = name;
+  onb.rel  = 'partner';
+  onb.freq = { text: 3, call: 1 };
+  onb.windows = [{ days: 'Mon – Fri', time: '9:00am – 5:00pm' }];
+  onb.dates = [];
+  navigate('screen-1.5');
+}
+
+function addAnotherPerson() {
+  // Reset onboarding object for a fresh person
+  const nameEl = document.getElementById('s1-name');
+  if (nameEl) nameEl.value = '';
+  onb.name = ''; onb.rel = 'partner'; onb.freq = { text: 3, call: 1 };
+  onb.windows = [{ days: 'Mon – Fri', time: '9:00am – 5:00pm' }];
+  onb.dates = [];
+  navigate('screen-1');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN RENDERS
+═══════════════════════════════════════════════════════════ */
+function renderRelScreen() {
+  const nameEl = document.getElementById('s15-name');
+  if (nameEl) nameEl.textContent = onb.name || 'them';
+  document.querySelectorAll('.rel-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.rel === onb.rel);
+  });
+  const previewEl = document.getElementById('s15-msg-preview');
+  if (previewEl) previewEl.textContent = REL_MESSAGES[onb.rel] || '';
+}
+
+function selectRel(el) {
+  onb.rel = el.dataset.rel;
+  document.querySelectorAll('.rel-card').forEach(c => c.classList.toggle('active', c === el));
+  const previewEl = document.getElementById('s15-msg-preview');
+  if (previewEl) previewEl.textContent = REL_MESSAGES[onb.rel] || '';
+}
+
+function renderFreqScreen() {
+  renderFreqDots('freq-text-dots', 'text', onb.freq.text, (v) => { onb.freq.text = v; renderFreqScreen(); });
+  renderFreqDots('freq-call-dots', 'call', onb.freq.call, (v) => { onb.freq.call = v; renderFreqScreen(); });
+  document.getElementById('freq-text-val').textContent = onb.freq.text;
+  document.getElementById('freq-call-val').textContent = onb.freq.call;
+  renderFreqSummary('freq-summary', onb.name || 'them', onb.freq);
+}
+
+function changeFreq(type, delta) {
+  const next = onb.freq[type] + delta;
+  if (next < FREQ_MIN[type] || next > FREQ_MAX[type]) return;
+  onb.freq[type] = next;
+  renderFreqScreen();
+}
+
+function renderFreqDots(containerId, type, val, onChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < FREQ_MAX[type]; i++) {
+    const dot = document.createElement('div');
+    dot.className = `freq-dot ${type}-dot ${i < val ? 'active' : 'inactive'}`;
+    dot.textContent = type === 'text' ? '💬' : '📞';
+    dot.addEventListener('click', () => {
+      const newVal = val === i + 1 && i + 1 > FREQ_MIN[type] ? i : i + 1;
+      onChange(Math.max(FREQ_MIN[type], Math.min(FREQ_MAX[type], newVal)));
+    });
+    container.appendChild(dot);
+  }
+}
+
+function renderFreqSummary(elId, name, freq) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const t = freq.text, c = freq.call;
+  const tw = t === 1 ? 'once' : `${t} times`;
+  const cw = c === 0 ? null : c === 1 ? 'once' : `${c} times`;
+  let s = `I'll remind you <strong>${tw}</strong> to text ${name}`;
+  if (cw) s += `<br>and <strong>${cw}</strong> to call`;
+  s += ' this week ♡';
+  el.innerHTML = s;
+}
+
+function renderScheduleScreen() {
+  renderWindowChips('s3-window-chips', onb.windows, (idx) => { onb.windows.splice(idx, 1); renderScheduleScreen(); });
+  renderDateChips('s3-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderScheduleScreen(); });
+}
+
+function toggleDay(el, ctx) {
+  el.classList.toggle('active');
+  // ctx is 'sp' for schedule panel — no need to update onb here, handled on save
+}
+
+function toggleSlot(el, ctx) {
+  el.classList.toggle('active');
+}
+
+function readDaysAndSlots(dayRowId, timeGridId) {
+  const days = [...document.querySelectorAll(`#${dayRowId} .day-pill.active`)].map(d => d.dataset.day);
+  const slots = [...document.querySelectorAll(`#${timeGridId} .time-slot.active`)].map(s => parseInt(s.dataset.h));
+  if (!days.length || !slots.length) return null;
+  const DAY_MAP = { Mo:'Mon', Tu:'Tue', We:'Wed', Th:'Thu', Fr:'Fri', Sa:'Sat', Su:'Sun' };
+  const dayNames = days.map(d => DAY_MAP[d]);
+  const dayStr  = days.length >= 5 ? `${dayNames[0]} – ${dayNames[dayNames.length-1]}` : dayNames.join(', ');
+  slots.sort((a,b) => a-b);
+  const FMT = h => h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h-12}pm`;
+  const timeStr = `${FMT(slots[0])} – ${FMT(slots[slots.length-1]+1)}`;
+  return { days: dayStr, time: timeStr };
+}
+
+function addWindowFromS3() {
+  const win = readDaysAndSlots('s3-day-row', 's3-time-grid');
+  if (!win) { showToast('Select days and time slots first'); return; }
+  onb.windows.push(win);
+  renderScheduleScreen();
+  showToast('Window added ♡');
+}
+
+function saveWindowsAndContinue() {
+  if (!onb.windows.length) { showToast('Add at least one window first'); return; }
+  navigate('screen-4');
+}
+
+function renderConfirmScreen() {
+  const meta = REL_META[onb.rel] || REL_META.partner;
+  const av = document.getElementById('confirm-avatar');
+  if (av) { av.textContent = meta.emoji; av.style.background = meta.bg; }
+  const cn = document.getElementById('confirm-name');
+  if (cn) cn.textContent = onb.name;
+  const ct = document.getElementById('confirm-texts');
+  if (ct) ct.textContent = `${onb.freq.text} per week`;
+  const cc = document.getElementById('confirm-calls');
+  if (cc) cc.textContent = onb.freq.call === 0 ? 'None' : `${onb.freq.call} per week`;
+  const cw = document.getElementById('confirm-windows');
+  if (cw) cw.textContent = onb.windows.length === 1 ? `${onb.windows[0].days} · ${onb.windows[0].time}` : `${onb.windows.length} windows`;
+  const dr = document.getElementById('confirm-dates-row');
+  const dc = document.getElementById('confirm-dates-count');
+  if (onb.dates.length) {
+    if (dr) dr.style.display = '';
+    if (dc) dc.textContent = `${onb.dates.length} date${onb.dates.length !== 1 ? 's' : ''} added`;
+  } else {
+    if (dr) dr.style.display = 'none';
+  }
+  // Activate btn text
+  const ab = document.getElementById('activate-btn');
+  if (ab) {
+    const texts = { partner:'♡  Activate my love plan', spouse:'♡  Activate my love plan', family:'♡  Start keeping in touch', friend:'♡  Start keeping in touch' };
+    ab.textContent = texts[onb.rel] || texts.partner;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVATE
+═══════════════════════════════════════════════════════════ */
+async function activate() {
+  const meta = REL_META[onb.rel] || REL_META.partner;
+  const newPerson = {
+    name:     onb.name,
+    rel:      onb.rel,
+    relLabel: meta.label,
+    emoji:    meta.emoji,
+    bg:       meta.bg,
+    freq:     { ...onb.freq },
+    windows:  [...onb.windows],
+    dates:    [...onb.dates],
+    nudges:   {},
+    stats:    { textsSent: 0, callsMade: 0, streakWeeks: 0, allTimeTexts: 0, allTimeCalls: 0, currentStreak: 0, weekHasDone: false },
+    paused:   false,
+    _scheduledNudges: null,
+  };
+
+  STATE.people.push(newPerson);
+  STATE.activeIdx = STATE.people.length - 1;
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+
+  // Show activated state
+  document.getElementById('s4-confirm-state').style.display    = 'none';
+  document.getElementById('s4-activated-state').style.display  = '';
+
+  // Show first nudge time
+  const nudgeTimes = buildWeeklyNudgeTimes(newPerson);
+  if (nudgeTimes.length) {
+    const first = new Date(nudgeTimes[0].fireAt);
+    const now   = new Date();
+    const daysAway = Math.round((new Date(first).setHours(0,0,0,0) - new Date(now).setHours(0,0,0,0)) / 86400000);
+    const dayLabel = daysAway === 0 ? 'Today' : daysAway === 1 ? 'Tomorrow' : first.toLocaleDateString('en-GB', { weekday: 'long' });
+    const hr = first.getHours();
+    const hrLabel = hr === 0 ? '12am' : hr === 12 ? '12pm' : hr < 12 ? `${hr}am` : `${hr-12}pm`;
+    const el = document.getElementById('s4-first-nudge-text');
+    if (el) el.innerHTML = `Next reminder: <strong>${dayLabel}, around ${hrLabel}</strong> ♡`;
+  }
+
+  // Request permissions
+  if (Notification.permission === 'granted') {
+    await requestPushPermission();
+    scheduleNudgesForPerson(newPerson).catch(() => {});
+    setTimeout(() => navigate('screen-6'), 1400);
+  } else {
+    const permMsg = document.getElementById('perm-notif-msg');
+    if (permMsg) permMsg.textContent = `Time to text ${onb.name} 💛`;
+    setTimeout(() => navigate('screen-4.5'), 1400);
+  }
+}
+
+async function grantPermission() {
+  const ok = await requestPushPermission();
+  const person = STATE.people[STATE.activeIdx];
+  if (ok && person) scheduleNudgesForPerson(person).catch(() => {});
+  navigate('screen-6');
+}
+
+function skipPermission() {
+  try { localStorage.setItem(LS.NOTIF_ASKED, String(Date.now())); } catch(_) {}
+  const person = STATE.people[STATE.activeIdx];
+  if (person) scheduleNudgesForPerson(person).catch(() => {});
+  navigate('screen-6');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DASHBOARD RENDER
+═══════════════════════════════════════════════════════════ */
+const LOVE_QUOTES = [
+  '"Small gestures, repeated with love, build something unbreakable."',
+  '"The most precious gift we can offer anyone is our attention."',
+  '"Love is not something you feel — it\'s something you do."',
+  '"A single text sent with care can change someone\'s whole day."',
+  '"Staying close takes intention, and that intention is love."',
+  '"We don\'t need grand gestures. We need consistent ones."',
+  '"To be truly seen by someone is its own kind of miracle."',
+  '"The little moments between us — that\'s where love actually lives."',
+  '"Reach out. You never know how much someone needed to hear from you."',
+  '"One message. One call. One moment. It adds up to a lifetime."',
+];
+let _quoteIdx = Math.floor(Math.random() * LOVE_QUOTES.length);
+
+function renderDashboard() {
+  expireOldNudges();
+
+  // Greeting
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const gEl = document.getElementById('dash-greeting');
+  if (gEl) gEl.innerHTML = `${greet} <em>♡</em>`;
+
+  // Quote
+  const qEl = document.getElementById('quote-text');
+  if (qEl) qEl.textContent = LOVE_QUOTES[_quoteIdx];
+
+  // Cards
+  const container = document.getElementById('dash-person-cards');
+  if (!container) return;
+
+  if (!STATE.people.length) {
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">💌</div><p>No one added yet.<br>Tap the + to get started.</p></div>`;
+    return;
+  }
+
+  // Sort people: those with due/notified nudges first, then by next fire time
+  const now = new Date();
+  const sorted = [...STATE.people].map((p, origIdx) => ({ p, origIdx })).sort((a, b) => {
+    const aDue = hasDueNudge(a.p);
+    const bDue = hasDueNudge(b.p);
+    if (aDue && !bDue) return -1;
+    if (!aDue && bDue) return 1;
+    const aNext = nextFireTime(a.p);
+    const bNext = nextFireTime(b.p);
+    if (aNext && bNext) return aNext - bNext;
+    if (aNext) return -1;
+    if (bNext) return 1;
+    return 0;
+  });
+
+  container.innerHTML = sorted.map(({ p, origIdx }) => renderPersonCard(p, origIdx)).join('');
+}
+
+function hasDueNudge(person) {
+  if (!person?._scheduledNudges || person.paused) return false;
+  const now = new Date();
+  return person._scheduledNudges.some(n => {
+    const key = 'n_' + n.id;
+    const entry = person.nudges?.[key];
+    const state = entry?.state || null;
+    if (state === 'sent' || state === 'skipped' || state === 'expired') return false;
+    return state === 'notified' || new Date(n.fireAt) <= now;
+  });
+}
+
+function nextFireTime(person) {
+  if (!person?._scheduledNudges) return null;
+  const now = new Date();
+  const upcoming = person._scheduledNudges
+    .filter(n => {
+      const key = 'n_' + n.id;
+      const state = person.nudges?.[key]?.state || null;
+      return !state || state === 'snoozed';
+    })
+    .map(n => new Date(n.fireAt))
+    .filter(d => d > now)
+    .sort((a, b) => a - b);
+  return upcoming[0] || null;
+}
+
+function renderPersonCard(person, personIdx) {
+  if (!person) return '';
+  const now       = new Date();
+  const nudges    = person._scheduledNudges || [];
+  const isDue     = hasDueNudge(person);
+  const allDone   = nudges.length > 0 && nudges.every(n => {
+    const s = person.nudges?.['n_' + n.id]?.state;
+    return s === 'sent' || s === 'skipped' || s === 'expired';
+  });
+
+  // Badge
+  let badgeClass, badgeText;
+  if (person.paused) { badgeClass = 'paused'; badgeText = '⏸ Paused'; }
+  else if (isDue)    { badgeClass = 'due'; badgeText = 'Now!'; }
+  else if (allDone)  { badgeClass = 'done'; badgeText = 'All done ♡'; }
+  else               { badgeClass = 'upcoming'; badgeText = 'Coming up'; }
+
+  // Next nudge summary
+  let nextText = 'No schedule set';
+  if (person.paused) nextText = 'Reminders paused';
+  else if (allDone)  nextText = 'Great week! ♡';
+  else {
+    const next = nextFireTime(person);
+    if (next) {
+      const isToday    = next.toDateString() === now.toDateString();
+      const isTomorrow = next.toDateString() === new Date(now.getTime() + 86400000).toDateString();
+      const dayLabel   = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : next.toLocaleDateString('en-GB', { weekday: 'short' });
+      nextText = `${dayLabel} · ${next.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (isDue) nextText = 'Due now — respond below';
+  }
+
+  // Expanded nudge rows
+  const expandedRows = nudges
+    .slice()
+    .sort((a,b) => {
+      // Due/notified first, then by fire time
+      const sa = person.nudges?.['n_'+a.id]?.state || '';
+      const sb = person.nudges?.['n_'+b.id]?.state || '';
+      const aDue2 = sa === 'notified' || (!sa && new Date(a.fireAt) <= now);
+      const bDue2 = sb === 'notified' || (!sb && new Date(b.fireAt) <= now);
+      if (aDue2 && !bDue2) return -1;
+      if (!aDue2 && bDue2) return 1;
+      return new Date(a.fireAt) - new Date(b.fireAt);
+    })
+    .map(n => renderNudgeItem(n, person, personIdx))
+    .join('');
+
+  const expandedContent = nudges.length
+    ? (allDone
+        ? `<div class="pnc-body"><div class="pnc-all-done"><span class="done-emoji">🎉</span>All nudges complete this week!</div></div>`
+        : `<div class="pnc-body">${expandedRows}</div>`)
+    : '';
+
+  const isExpanded = isDue; // auto-expand if due
+  return `
+    <div class="person-nudge-card${isDue ? ' has-due' : ''}" id="pnc-${personIdx}">
+      <div class="pnc-header" onclick="toggleCard(${personIdx})">
+        <div class="pnc-avatar" style="background:${person.bg};">${person.emoji}</div>
+        <div class="pnc-info">
+          <div class="pnc-name">${person.name}</div>
+          <div class="pnc-next">${nextText}</div>
+        </div>
+        <div class="pnc-badge ${badgeClass}">${badgeText}</div>
+        <div class="pnc-chevron ${isExpanded ? 'open' : ''}" id="chev-${personIdx}">▾</div>
+      </div>
+      <div id="pnc-body-${personIdx}" style="display:${isExpanded ? 'block' : 'none'};">
+        ${expandedContent}
+      </div>
+    </div>`;
+}
+
+function toggleCard(personIdx) {
+  const body  = document.getElementById('pnc-body-' + personIdx);
+  const chev  = document.getElementById('chev-' + personIdx);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.classList.toggle('open', !open);
+}
+
+function renderNudgeItem(nudge, person, personIdx) {
+  const key    = 'n_' + nudge.id;
+  const entry  = person.nudges?.[key];
+  const state  = entry?.state || null;
+  const now    = new Date();
+  const fireAt = new Date(nudge.fireAt);
+
+  const isToday    = fireAt.toDateString() === now.toDateString();
+  const isTomorrow = fireAt.toDateString() === new Date(now.getTime() + 86400000).toDateString();
+  const dayLabel   = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : fireAt.toLocaleDateString('en-GB', { weekday: 'short' });
+  const timeLabel  = fireAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const isDue = state === 'notified' || (!state && fireAt <= now);
+  const showActions = isDue && state !== 'sent' && state !== 'skipped' && state !== 'expired';
+
+  let badge = '';
+  if (state === 'sent')    badge = `<div class="nudge-item-badge sent">✓ Done it</div>`;
+  else if (state === 'skipped') badge = `<div class="nudge-item-badge skipped">Didn't</div>`;
+  else if (state === 'snoozed') {
+    const snoozeUntil = entry?.snoozeUntil ? new Date(entry.snoozeUntil) : null;
+    const snoozeLabel = snoozeUntil ? snoozeUntil.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+    badge = `<div class="nudge-item-badge snoozed">⏰ ${snoozeLabel}</div>`;
+  }
+  else if (state === 'expired') badge = `<div class="nudge-item-badge expired">Expired</div>`;
+  else if (showActions)         badge = `<div class="nudge-item-badge due">Now!</div>`;
+  else                          badge = `<div class="nudge-item-badge upcoming">Coming up</div>`;
+
+  const actions = showActions ? `
+    <div class="nudge-actions">
+      <button class="nudge-act-btn done"   onclick="handleNudgeAction(${personIdx},'${nudge.id}','done')">✓ Done it</button>
+      <button class="nudge-act-btn skip"   onclick="handleNudgeAction(${personIdx},'${nudge.id}','skip')">✗ Didn't</button>
+      <button class="nudge-act-btn snooze" onclick="openSnooze(${personIdx},'${nudge.id}','${nudge.type}','${person.name}')">⏰ Remind me</button>
+    </div>` : '';
+
+  return `
+    <div class="nudge-item">
+      <div class="nudge-item-top">
+        <div class="nudge-item-icon">${nudge.type === 'text' ? '💬' : '📞'}</div>
+        <div class="nudge-item-info">
+          <div class="nudge-item-type">${nudge.type === 'text' ? 'Text' : 'Call'} reminder</div>
+          <div class="nudge-item-time">${dayLabel} · ${timeLabel}</div>
+        </div>
+        ${badge}
+      </div>
+      ${actions}
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NUDGE ACTIONS
+═══════════════════════════════════════════════════════════ */
+function handleNudgeAction(personIdx, nudgeId, action) {
+  const person = STATE.people[personIdx];
+  if (!person) return;
+  if (!person.nudges) person.nudges = {};
+  const key = 'n_' + nudgeId;
+
+  if (action === 'done') {
+    person.nudges[key] = { state: 'sent', firedAt: person.nudges[key]?.firedAt || Date.now() };
+    // Find nudge type
+    const nudge = person._scheduledNudges?.find(n => n.id === nudgeId);
+    const type  = nudge?.type || 'text';
+    if (type === 'call') person.stats.callsMade  = (person.stats.callsMade  || 0) + 1;
+    else                 person.stats.textsSent  = (person.stats.textsSent  || 0) + 1;
+    person.stats.allTimeTexts = (person.stats.allTimeTexts || 0) + (type === 'text' ? 1 : 0);
+    person.stats.allTimeCalls = (person.stats.allTimeCalls || 0) + (type === 'call' ? 1 : 0);
+    person.stats.weekHasDone  = true;
+    checkAndUpdateStreak(person);
+    const total = (person.stats.textsSent || 0) + (person.stats.callsMade || 0);
+    checkMilestone(total);
+  } else if (action === 'skip') {
+    person.nudges[key] = { state: 'skipped', firedAt: person.nudges[key]?.firedAt || Date.now() };
+  }
+
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+  renderDashboard();
+  renderStreakTab();
+}
+
+// Handle action coming from SW (notification button)
+function handleSwNudgeAction(data) {
+  const { action, nudgeId, personName } = data;
+  const personIdx = STATE.people.findIndex(p => p?.name === personName);
+  if (personIdx < 0) return;
+
+  if (action === 'done' || action === 'skip') {
+    handleNudgeAction(personIdx, nudgeId, action === 'done' ? 'done' : 'skip');
+  } else if (action === 'snooze') {
+    const person = STATE.people[personIdx];
+    const nudge  = person?._scheduledNudges?.find(n => n.id === nudgeId);
+    openSnooze(personIdx, nudgeId, nudge?.type || 'text', personName);
+  }
+  // 'open' — just opening the app, no action
+  if (STATE.screen !== 'screen-6') navigate('screen-6');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SNOOZE
+═══════════════════════════════════════════════════════════ */
+let _snoozePending = null;
+
+function openSnooze(personIdx, nudgeId, nudgeType, personName) {
+  _snoozePending = { personIdx, nudgeId, nudgeType, personName };
+  // Update sub-labels with actual times
+  const now = new Date();
+  const fmt = d => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const t1 = new Date(now.getTime() + 60 * 60 * 1000);
+  const t3 = new Date(now.getTime() + 3  * 60 * 60 * 1000);
+  const tmr = new Date(now); tmr.setDate(tmr.getDate() + 1); tmr.setHours(9, 0, 0, 0);
+  document.getElementById('snooze-sub-1h').textContent  = `Around ${fmt(t1)}`;
+  document.getElementById('snooze-sub-3h').textContent  = `Around ${fmt(t3)}`;
+  document.getElementById('snooze-sub-tmr').textContent = `Tomorrow at 9:00am`;
+  document.getElementById('snooze-overlay').classList.add('open');
+}
+
+function closeSnooze() {
+  document.getElementById('snooze-overlay').classList.remove('open');
+  _snoozePending = null;
+}
+
+async function doSnooze(duration) {
+  if (!_snoozePending) return;
+  const { personIdx, nudgeId, nudgeType, personName } = _snoozePending;
+  const person = STATE.people[personIdx];
+  if (!person) { closeSnooze(); return; }
+  if (!person.nudges) person.nudges = {};
+
+  const now = new Date();
+  let snoozeUntil;
+  if (duration === 'tomorrow') {
+    snoozeUntil = new Date(now); snoozeUntil.setDate(snoozeUntil.getDate() + 1); snoozeUntil.setHours(9, 0, 0, 0);
+  } else {
+    snoozeUntil = new Date(now.getTime() + duration * 60 * 1000);
+  }
+
+  const key = 'n_' + nudgeId;
+  person.nudges[key] = {
+    state: 'snoozed',
+    firedAt: person.nudges[key]?.firedAt || Date.now(),
+    snoozeUntil: snoozeUntil.getTime(),
+  };
+
+  // Create a new Supabase schedule row for the snoozed time
+  const newId = crypto.randomUUID();
+  const userId = await ensureUser();
+  if (userId) {
+    sbFetch('nudge_schedules', {
+      method: 'POST',
+      body: JSON.stringify([{
+        user_id: userId, person_name: personName,
+        nudge_id: newId, nudge_type: nudgeType,
+        fire_at: snoozeUntil.toISOString(),
+      }]),
+    }).catch(() => {});
+    // Also add to _scheduledNudges so it shows on the dashboard
+    if (!person._scheduledNudges) person._scheduledNudges = [];
+    person._scheduledNudges.push({ id: newId, type: nudgeType, fireAt: snoozeUntil.toISOString() });
+  }
+
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+  closeSnooze();
+  showToast(`⏰ Snoozed until ${snoozeUntil.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
+  renderDashboard();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STREAK TAB
+═══════════════════════════════════════════════════════════ */
+function checkAndUpdateStreak(person) {
+  // Streak counts weeks — increments once per week on first 'done' action
+  // (weekHasDone is reset each Monday)
+  if (!person.stats.weekHasDone) return;
+  // This flag was already set by handleNudgeAction — streak tracked on weekly reset
+}
+
+function renderStreakTab() {
+  const container = document.getElementById('streak-content');
+  if (!container || STATE.activeTab !== 'streak') return;
+
+  const totalStreak = computeOverallStreak();
+  const allTimeSent = STATE.people.reduce((s, p) => s + (p?.stats?.allTimeTexts || 0) + (p?.stats?.allTimeCalls || 0), 0);
+
+  let html = '';
+
+  // Weekly summary card (Mondays only, or if forced)
+  if (shouldShowWeeklySummary()) {
+    html += renderWeeklySummaryCard();
+  }
+
+  // Streak hero
+  html += `
+    <div class="streak-hero">
+      <div class="streak-num">${totalStreak}</div>
+      <div class="streak-label">${totalStreak === 1 ? 'week streak' : 'week streak'}</div>
+      <div class="streak-sub">${totalStreak === 0 ? 'Mark a nudge done to start your streak!' : 'Keep it going ♡'}</div>
+    </div>`;
+
+  // Stat grid
+  html += `<div class="stat-grid">
+    <div class="stat-card"><div class="stat-card-num">${allTimeSent}</div><div class="stat-card-label">Total nudges sent</div></div>
+    <div class="stat-card"><div class="stat-card-num">${STATE.people.length}</div><div class="stat-card-label">${STATE.people.length === 1 ? 'Person' : 'People'} being nudged</div></div>
+  </div>`;
+
+  // Per-person stats
+  if (STATE.people.length) {
+    html += `<div class="section-label">This week</div>`;
+    STATE.people.forEach(p => {
+      if (!p) return;
+      const texts  = p.stats?.textsSent  || 0;
+      const calls  = p.stats?.callsMade  || 0;
+      const tTarget = p.freq?.text || 0;
+      const cTarget = p.freq?.call || 0;
+      const tPct = tTarget ? Math.min(100, Math.round(texts / tTarget * 100)) : 0;
+      const cPct = cTarget ? Math.min(100, Math.round(calls / cTarget * 100)) : 0;
+      html += `
+        <div class="person-stat-card">
+          <div class="person-stat-top">
+            <div class="person-stat-avatar" style="background:${p.bg};">${p.emoji}</div>
+            <div><div class="person-stat-name">${p.name}</div><div class="person-stat-rel">${p.relLabel}</div></div>
+          </div>
+          <div class="person-stat-bars">
+            <div class="stat-bar-row">
+              <div class="stat-bar-icon">💬</div>
+              <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${tPct}%"></div></div>
+              <div class="stat-bar-label">${texts}/${tTarget}</div>
+            </div>
+            <div class="stat-bar-row">
+              <div class="stat-bar-icon">📞</div>
+              <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${cPct}%"></div></div>
+              <div class="stat-bar-label">${calls}/${cTarget}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+function computeOverallStreak() {
+  // Simple: count the highest streak across all people
+  return STATE.people.reduce((max, p) => Math.max(max, p?.stats?.currentStreak || 0), 0);
+}
+
+function shouldShowWeeklySummary() {
+  const day = new Date().getDay();
+  if (day !== 1) return false; // only Mondays
+  try {
+    const dismissed = localStorage.getItem(LS.SUMMARY_DIS);
+    if (dismissed === new Date().toDateString()) return false;
+  } catch(_) {}
+  return STATE.people.some(p => (p?.stats?.textsSent || 0) + (p?.stats?.callsMade || 0) > 0);
+}
+
+function renderWeeklySummaryCard() {
+  const rows = STATE.people.filter(Boolean).map(p => {
+    const sent   = (p.stats?.textsSent || 0) + (p.stats?.callsMade || 0);
+    const target = (p.freq?.text || 0) + (p.freq?.call || 0);
+    const pct    = target ? Math.min(100, Math.round(sent / target * 100)) : 0;
+    const emoji  = pct >= 100 ? '🔥' : pct >= 75 ? '💛' : pct >= 50 ? '😊' : pct >= 25 ? '😐' : '💪';
+    return `<div class="weekly-row">
+      <div class="weekly-row-avatar" style="background:${p.bg};">${p.emoji}</div>
+      <div class="weekly-row-name">${p.name}</div>
+      <div class="weekly-row-bar"><div class="weekly-row-fill" style="width:${pct}%"></div></div>
+      <div class="weekly-row-score">${sent}/${target}</div>
+      <div class="weekly-row-emoji">${emoji}</div>
+    </div>`;
+  }).join('');
+
+  const totalSent   = STATE.people.reduce((s, p) => s + (p?.stats?.textsSent || 0) + (p?.stats?.callsMade || 0), 0);
+  const totalTarget = STATE.people.reduce((s, p) => s + (p?.freq?.text || 0) + (p?.freq?.call || 0), 0);
+  const pct         = totalTarget ? Math.round(totalSent / totalTarget * 100) : 0;
+  const msg         = pct >= 100 ? 'Perfect week!' : pct >= 75 ? 'Really good week!' : pct >= 50 ? 'Good effort' : 'Keep building the habit ♡';
+
+  return `<div class="weekly-summary">
+    <div class="weekly-summary-header">
+      <div class="weekly-summary-title">Last week's <em>nudges</em> ♡</div>
+      <button class="weekly-summary-close" onclick="dismissWeeklySummary()">✕</button>
+    </div>
+    ${rows}
+    <div class="weekly-footer">${msg} — fresh schedule starts today ♡</div>
+  </div>`;
+}
+
+function dismissWeeklySummary() {
+  try { localStorage.setItem(LS.SUMMARY_DIS, new Date().toDateString()); } catch(_) {}
+  doWeeklyReset();
+  renderStreakTab();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WEEKLY RESET — single entry point
+═══════════════════════════════════════════════════════════ */
+function checkAutoWeeklyReset() {
+  try {
+    const lastReset = localStorage.getItem(LS.WEEK_RESET);
+    const now       = new Date();
+    const daysSinceMon = (now.getDay() + 6) % 7;
+    const thisMonday   = new Date(now);
+    thisMonday.setDate(now.getDate() - daysSinceMon);
+    thisMonday.setHours(0, 0, 0, 0);
+    const mondayStr = thisMonday.toDateString();
+    if (lastReset === mondayStr) return;
+    const hasActivity = STATE.people.some(p => (p?.stats?.textsSent || 0) + (p?.stats?.callsMade || 0) > 0);
+    if (!hasActivity) return;
+    doWeeklyReset();
+  } catch(_) {}
+}
+
+function doWeeklyReset() {
+  try {
+    const now        = new Date();
+    const daysSinceMon = (now.getDay() + 6) % 7;
+    const thisMonday = new Date(now);
+    thisMonday.setDate(now.getDate() - daysSinceMon);
+    thisMonday.setHours(0, 0, 0, 0);
+
+    STATE.people.forEach(p => {
+      if (!p) return;
+      // Archive last week
+      p.stats.lastWeekTexts = p.stats.textsSent || 0;
+      p.stats.lastWeekCalls = p.stats.callsMade || 0;
+      // Update streak: if had a done this week, increment; else reset
+      if (p.stats.weekHasDone) {
+        p.stats.currentStreak = (p.stats.currentStreak || 0) + 1;
+      } else {
+        p.stats.currentStreak = 0;
+      }
+      // Reset weekly counters
+      p.stats.textsSent  = 0;
+      p.stats.callsMade  = 0;
+      p.stats.weekHasDone = false;
+      p.nudges           = {};
+      p._scheduledNudges = null;
+    });
+
+    localStorage.setItem(LS.WEEK_RESET, thisMonday.toDateString());
+    saveLocal();
+    savePeopleRemote().catch(() => {});
+    // Reschedule for all active people
+    STATE.people.forEach(p => { if (p && !p.paused) scheduleNudgesForPerson(p).catch(() => {}); });
+  } catch(_) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GIFTS TAB
+═══════════════════════════════════════════════════════════ */
+const GIFTS = {
+  uk: [{emoji:'💐',name:'Fresh flower delivery',desc:'Bloom & Wild — letterbox bouquets',price:'From £25',url:'https://www.bloomandwild.com'},{emoji:'🍫',name:'Artisan chocolates',desc:'Hotel Chocolat — luxury monthly box',price:'From £22/mo',url:'https://www.hotelchocolat.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Treatwell — book local spas online',price:'From £40',url:'https://www.treatwell.co.uk'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal, beautiful paper',price:'~£18',url:'https://www.amazon.co.uk'},{emoji:'🕯️',name:'Luxury candle set',desc:'Jo Malone style — romantic ambience',price:'~£28',url:'https://www.amazon.co.uk'}],
+  us: [{emoji:'💐',name:'Fresh flower delivery',desc:'1-800-Flowers — same-day delivery',price:'From $35',url:'https://www.1800flowers.com'},{emoji:'🍫',name:'Artisan chocolates',desc:"Compartés — LA chocolatier, ships nationwide",price:'From $28',url:'https://compartes.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Spafinder — 20,000+ US spas',price:'From $50',url:'https://www.spafinder.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & writing prompts',price:'~$24',url:'https://www.amazon.com'},{emoji:'🕯️',name:'Luxury candle set',desc:'Homesick — free shipping over $50',price:'~$34',url:'https://www.homesick.com'}],
+  au: [{emoji:'💐',name:'Fresh flower delivery',desc:'Floraly — same-day Melb/Syd/Bris',price:'From A$55',url:'https://floraly.com.au'},{emoji:'🍫',name:'Artisan chocolates',desc:'Koko Black — Australian bean-to-bar',price:'From A$30',url:'https://kokoblack.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Spahive — find & book spas Australia',price:'From A$60',url:'https://spahive.com.au'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~A$32',url:'https://www.amazon.com.au'},{emoji:'🕯️',name:'Luxury candle set',desc:'Lumira — Australian luxury fragrance',price:'~A$55',url:'https://www.lumira.com'}],
+  eu: [{emoji:'💐',name:'Fresh flower delivery',desc:'Euroflorist — 150+ European countries',price:'From €30',url:'https://www.euroflorist.com'},{emoji:'🍫',name:'Artisan chocolates',desc:'Leonidas Belgian chocolates',price:'From €22',url:'https://www.leonidas.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Smartbox — spa experiences across Europe',price:'From €49',url:'https://www.smartbox.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~€20',url:'https://www.amazon.de'},{emoji:'🕯️',name:'Luxury candle set',desc:'Diptyque — Parisian candles, EU shipping',price:'~€45',url:'https://www.diptyqueparis.com'}],
+  ca: [{emoji:'💐',name:'Fresh flower delivery',desc:'FTD Canada — nationwide delivery',price:'From CA$45',url:'https://www.ftd.com/canada'},{emoji:'🍫',name:'Artisan chocolates',desc:'Bernard Callebaut — Canadian chocolate',price:'From CA$30',url:'https://www.bernardc.com'},{emoji:'🌿',name:'Spa day voucher',desc:'SpaFinder — Canada locations',price:'From CA$60',url:'https://www.spafinder.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~CA$28',url:'https://www.amazon.ca'},{emoji:'🕯️',name:'Luxury candle set',desc:'P.F. Candle Co',price:'~CA$38',url:'https://pfcandleco.com'}],
+};
+const REGION_FLAGS = { uk:'🇬🇧', us:'🇺🇸', au:'🇦🇺', eu:'🇪🇺', ca:'🇨🇦' };
+const REGION_NAMES = { uk:'UK', us:'US', au:'AU', eu:'EU', ca:'CA' };
+
+function renderGiftsTab() {
+  const list = document.getElementById('gift-list');
+  if (!list) return;
+  const person = STATE.people[STATE.activeIdx];
+  const nameEl = document.getElementById('gift-name');
+  if (nameEl) nameEl.textContent = person?.name || 'them';
+  list.innerHTML = (GIFTS[STATE.region] || GIFTS.uk).map(g => `
+    <div class="gift-card">
+      <div class="gift-emoji">${g.emoji}</div>
+      <div class="gift-info">
+        <div class="gift-name">${g.name}</div>
+        <div class="gift-desc">${g.desc}</div>
+        <div class="gift-price">${g.price}</div>
+      </div>
+      <button class="gift-btn" onclick="window.open('${g.url}','_blank')">View ♡</button>
+    </div>`).join('');
+  const rb = document.getElementById('gift-region-btn');
+  if (rb) rb.textContent = `🌍 Region: ${REGION_FLAGS[STATE.region] || ''} ${REGION_NAMES[STATE.region] || STATE.region}`;
+}
+
+function selectRegion(el) {
+  document.querySelectorAll('#region-options .option-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  STATE.region = el.dataset.region;
+  saveLocal();
+  renderGiftsTab();
+  const sv = document.getElementById('s-region-val');
+  if (sv) sv.textContent = `${REGION_FLAGS[STATE.region]} ${REGION_NAMES[STATE.region]}`;
+  const rb = document.getElementById('gift-region-btn');
+  if (rb) rb.textContent = `🌍 Region: ${REGION_FLAGS[STATE.region] || ''} ${REGION_NAMES[STATE.region] || STATE.region}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PANELS
+═══════════════════════════════════════════════════════════ */
+function renderSettingsPanel() {
+  const person = STATE.people[STATE.activeIdx];
+  const fv = document.getElementById('s-freq-val');
+  if (fv && person) fv.textContent = `${person.freq.text}t + ${person.freq.call}c /wk`;
+  const rv = document.getElementById('s-region-val');
+  if (rv) rv.textContent = `${REGION_FLAGS[STATE.region]} ${REGION_NAMES[STATE.region]}`;
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (toggle) toggle.checked = STATE.darkMode;
+}
+
+function renderProfilesPanel() {
+  const list = document.getElementById('profiles-list');
+  if (!list) return;
+  if (!STATE.people.length) {
+    list.innerHTML = `<div class="empty-state"><div class="es-icon">👥</div><p>No people added yet.</p></div>`;
+    return;
+  }
+  list.innerHTML = STATE.people.map((p, i) => {
+    if (!p) return '';
+    return `<div class="person-card ${i === STATE.activeIdx ? 'active-person' : ''}">
+      <div class="person-card-top">
+        <div class="person-avatar" style="background:${p.bg};">${p.emoji}</div>
+        <div class="person-info">
+          <div class="person-name">${p.name}</div>
+          <div class="person-rel">${p.relLabel}</div>
+          <div class="person-nudges">${p.paused ? '⏸ Paused' : `${p.freq.text}t + ${p.freq.call}c / week`}</div>
+        </div>
+        ${i === STATE.activeIdx ? '<div class="active-badge">Active</div>' : ''}
+      </div>
+      <div class="pause-row">
+        <div class="pause-row-text">
+          <div class="pause-row-label">⏸ Pause reminders</div>
+          <div class="pause-row-sub">Temporarily stop nudges for ${p.name}</div>
+        </div>
+        <label class="toggle-switch" onclick="event.stopPropagation()">
+          <input type="checkbox" ${p.paused ? 'checked' : ''} onchange="togglePause(${i},this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="person-card-actions">
+        ${i === STATE.activeIdx
+          ? `<button class="person-action-btn switch" disabled>✓ Active</button>`
+          : `<button class="person-action-btn switch" onclick="switchActivePerson(${i})">Switch to ${p.name}</button>`}
+        <button class="person-action-btn remove" onclick="confirmRemovePerson(${i})">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchActivePerson(idx) {
+  STATE.activeIdx = idx;
+  saveLocal();
+  renderProfilesPanel();
+  renderDashboard();
+}
+
+function togglePause(idx, paused) {
+  const p = STATE.people[idx];
+  if (!p) return;
+  p.paused = paused;
+  if (!paused) scheduleNudgesForPerson(p).catch(() => {});
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+  renderProfilesPanel();
+  renderDashboard();
+}
+
+function confirmRemovePerson(idx) {
+  const p = STATE.people[idx];
+  if (!p) return;
+  showConfirm(`Remove ${p.name}?`, "This can't be undone.", 'Remove', () => doRemovePerson(idx));
+}
+
+function doRemovePerson(idx) {
+  const p = STATE.people[idx];
+  STATE.people.splice(idx, 1);
+  if (STATE.activeIdx >= STATE.people.length) STATE.activeIdx = Math.max(0, STATE.people.length - 1);
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+  if (p) {
+    ensureUser().then(userId => {
+      if (userId) sbFetch(`nudge_schedules?user_id=eq.${userId}&person_name=eq.${encodeURIComponent(p.name)}`, { method: 'DELETE', headers: { 'Prefer': '' } }).catch(() => {});
+    });
+  }
+  if (!STATE.people.length) { closeAllPanels(); navigate('screen-1'); return; }
+  renderProfilesPanel();
+  renderDashboard();
+}
+
+/* ── Frequency Panel ── */
+function openFreqPanel() {
+  STATE.freqPanelIdx = STATE.activeIdx;
+  closePanel('settings');
+  setTimeout(() => openPanel('frequency'), 300);
+}
+
+function openSchedulePanelFromSettings() {
+  closePanel('settings');
+  setTimeout(() => openPanel('schedule'), 300);
+}
+
+function renderFreqPanel() {
+  const chips = document.getElementById('freq-person-chips');
+  if (chips) {
+    chips.innerHTML = STATE.people.map((p, i) =>
+      `<div class="freq-person-chip ${i === STATE.freqPanelIdx ? 'active' : ''}" onclick="switchFreqPanelPerson(${i})">${p.emoji} ${p.name}</div>`
+    ).join('');
+  }
+  const person = STATE.people[STATE.freqPanelIdx];
+  if (!person) return;
+  const sub = document.getElementById('freq-panel-sub');
+  if (sub) sub.textContent = `How often to nudge ${person.name}?`;
+  document.getElementById('fp-text-val').textContent = person.freq.text;
+  document.getElementById('fp-call-val').textContent = person.freq.call;
+  renderFreqDots('fp-text-dots', 'text', person.freq.text, v => { person.freq.text = v; renderFreqPanel(); });
+  renderFreqDots('fp-call-dots', 'call', person.freq.call, v => { person.freq.call = v; renderFreqPanel(); });
+  renderFreqSummary('fp-summary', person.name, person.freq);
+}
+
+function switchFreqPanelPerson(idx) {
+  STATE.freqPanelIdx = idx;
+  renderFreqPanel();
+}
+
+function changeFreqPanel(type, delta) {
+  const person = STATE.people[STATE.freqPanelIdx];
+  if (!person) return;
+  const next = person.freq[type] + delta;
+  if (next < FREQ_MIN[type] || next > FREQ_MAX[type]) return;
+  person.freq[type] = next;
+  renderFreqPanel();
+}
+
+function saveFreqPanel() {
+  const person = STATE.people[STATE.freqPanelIdx];
+  if (person) {
+    saveLocal();
+    savePeopleRemote().catch(() => {});
+    scheduleNudgesForPerson(person).catch(() => {});
+    showToast('Saved ♡');
+  }
+  setTimeout(() => { closePanel('frequency'); renderDashboard(); renderSettingsPanel(); }, 600);
+}
+
+/* ── Schedule Panel ── */
+function renderSchedulePanel() {
+  const person = STATE.people[STATE.activeIdx];
+  if (!person) return;
+
+  // Person pips
+  const pips = document.getElementById('schedule-pips');
+  if (pips && STATE.people.length > 1) {
+    pips.innerHTML = STATE.people.map((p, i) =>
+      `<div class="schedule-pip ${i === STATE.activeIdx ? 'active' : ''}" style="background:${p.bg};" onclick="switchSchedulePerson(${i})" title="${p.name}">${p.emoji}</div>`
+    ).join('') + `<span style="font-size:0.72rem;color:var(--ink);font-weight:600;">Editing: ${person.name}</span>`;
+  } else if (pips) {
+    pips.innerHTML = '';
+  }
+
+  // Sync day/slot state from stored windows
+  const days  = person.windows?.[0]?.days  || '';
+  const time  = person.windows?.[0]?.time  || '';
+  const DAY_ABBR = { Mon:'Mo', Tue:'Tu', Wed:'We', Thu:'Th', Fri:'Fr', Sat:'Sa', Sun:'Su' };
+  document.querySelectorAll('#sp-day-row .day-pill').forEach(pill => {
+    const d = pill.dataset.day;
+    const full = Object.entries(DAY_ABBR).find(([,v]) => v === d)?.[0] || '';
+    pill.classList.toggle('active', days.includes(full));
+  });
+
+  // Parse time range for active slots
+  const parseHour = s => { const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i); if (!m) return null; let h = +m[1]; if (/pm/i.test(m[3]) && h !== 12) h += 12; if (/am/i.test(m[3]) && h === 12) h = 0; return h; };
+  const timeParts = time.split(/[–\-]/).map(s => s.trim());
+  const startH = parseHour(timeParts[0]) ?? 9;
+  const endH   = (parseHour(timeParts[1]) ?? 17) - 1;
+  document.querySelectorAll('#sp-time-grid .time-slot').forEach(slot => {
+    const h = parseInt(slot.dataset.h);
+    slot.classList.toggle('active', h >= startH && h <= endH);
+  });
+
+  // Windows and dates
+  renderWindowChips('sp-window-chips', person.windows || [], (idx) => {
+    person.windows.splice(idx, 1);
+    saveLocal();
+    renderWindowChips('sp-window-chips', person.windows || [], () => {});
+  });
+  renderDateChips('sp-date-chips', person.dates || [], (idx) => {
+    person.dates.splice(idx, 1);
+    saveLocal();
+    renderSchedulePanel();
+  });
+}
+
+function switchSchedulePerson(idx) {
+  STATE.activeIdx = idx;
+  saveLocal();
+  renderSchedulePanel();
+}
+
+function addWindowFromPanel() {
+  const win = readDaysAndSlots('sp-day-row', 'sp-time-grid');
+  if (!win) { showToast('Select days and time slots first'); return; }
+  const person = STATE.people[STATE.activeIdx];
+  if (!person) return;
+  if (!person.windows) person.windows = [];
+  person.windows.push(win);
+  saveLocal();
+  renderWindowChips('sp-window-chips', person.windows, (idx) => { person.windows.splice(idx, 1); saveLocal(); renderWindowChips('sp-window-chips', person.windows, () => {}); });
+  showToast('Window added ♡');
+}
+
+function saveSchedulePanel() {
+  const person = STATE.people[STATE.activeIdx];
+  if (!person) return;
+  saveLocal();
+  savePeopleRemote().catch(() => {});
+  if (Notification.permission === 'granted') scheduleNudgesForPerson(person).catch(() => {});
+  showToast('Schedule saved ♡');
+  setTimeout(() => { closePanel('schedule'); renderDashboard(); }, 700);
+}
+
+/* ── Window chip renderer (shared) ── */
+function renderWindowChips(containerId, windows, onRemove) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = windows.map((w, i) => `
+    <div class="window-chip">
+      <div class="chip-days">${w.days}</div>
+      <div class="chip-time">${w.time}</div>
+      <button class="chip-remove" onclick="(${onRemove.toString()})(${i})">✕</button>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SPECIAL DATES
+═══════════════════════════════════════════════════════════ */
+const DATE_TYPES = {
+  partner: [{type:'birthday',icon:'🎂',label:'Birthday'},{type:'anniversary',icon:'💍',label:'Anniversary'},{type:'date-night',icon:'🌹',label:'Date night'},{type:'trip',icon:'✈️',label:'Trip away'},{type:'other',icon:'⭐',label:'Other…'}],
+  spouse:  [{type:'birthday',icon:'🎂',label:'Birthday'},{type:'anniversary',icon:'💍',label:'Anniversary'},{type:'date-night',icon:'🌹',label:'Date night'},{type:'trip',icon:'✈️',label:'Trip away'},{type:'other',icon:'⭐',label:'Other…'}],
+  family:  [{type:'birthday',icon:'🎂',label:'Birthday'},{type:'exam',icon:'📝',label:'Exam'},{type:'graduation',icon:'🎓',label:'Graduation'},{type:'surgery',icon:'🏥',label:'Surgery'},{type:'sports',icon:'🏆',label:'Big game'},{type:'other',icon:'⭐',label:'Other…'}],
+  friend:  [{type:'birthday',icon:'🎂',label:'Birthday'},{type:'exam',icon:'📝',label:'Exam'},{type:'sports',icon:'🏆',label:'Big game'},{type:'trip',icon:'✈️',label:'Trip away'},{type:'job',icon:'💼',label:'New job'},{type:'other',icon:'⭐',label:'Other…'}],
+};
+
+let _dateContext   = 's3'; // 's3' | 'sp'
+let _datePendingType = 'birthday';
+
+function openDateModal(ctx) {
+  _dateContext     = ctx;
+  _datePendingType = 'birthday';
+  document.getElementById('date-input-label').value = '';
+  document.getElementById('date-input-date').value  = '';
+  openPanel('date-modal');
+}
+
+function renderDateModal() {
+  const rel   = _dateContext === 's3' ? (onb.rel || 'partner') : (STATE.people[STATE.activeIdx]?.rel || 'partner');
+  const types = DATE_TYPES[rel] || DATE_TYPES.partner;
+  const grid  = document.getElementById('date-type-grid');
+  if (!grid) return;
+  grid.innerHTML = types.map(t => `
+    <div class="date-type-btn ${t.type === _datePendingType ? 'active' : ''}" data-type="${t.type}" onclick="selectDateType(this)">
+      <span class="dt-icon">${t.icon}</span>${t.label}
+    </div>`).join('');
+}
+
+function selectDateType(el) {
+  document.querySelectorAll('.date-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  _datePendingType = el.dataset.type;
+}
+
+function saveDate() {
+  const dateVal  = document.getElementById('date-input-date').value;
+  const labelVal = document.getElementById('date-input-label').value.trim();
+  if (!dateVal) { showToast('Please pick a date'); return; }
+  const rel    = _dateContext === 's3' ? (onb.rel || 'partner') : (STATE.people[STATE.activeIdx]?.rel || 'partner');
+  const types  = DATE_TYPES[rel] || DATE_TYPES.partner;
+  const typeObj = types.find(t => t.type === _datePendingType) || types[0];
+  const entry  = { id: Date.now(), type: typeObj.type, icon: typeObj.icon, label: labelVal || typeObj.label, date: dateVal };
+
+  if (_dateContext === 's3') {
+    onb.dates.push(entry);
+    renderScheduleScreen();
+  } else {
+    const person = STATE.people[STATE.activeIdx];
+    if (person) {
+      if (!person.dates) person.dates = [];
+      person.dates.push(entry);
+      saveLocal();
+      savePeopleRemote().catch(() => {});
+      renderSchedulePanel();
+    }
+  }
+  closePanel('date-modal');
+  showToast('Date added ♡');
+  scheduleNotificationsForDate(entry);
+}
+
+function renderDateChips(containerId, dates, onRemove) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!dates.length) { el.innerHTML = ''; return; }
+  const now = new Date(); now.setHours(0,0,0,0);
+  el.innerHTML = dates.map((d, i) => {
+    const date = new Date(d.date + 'T00:00:00');
+    const thisYear = new Date(now.getFullYear(), date.getMonth(), date.getDate());
+    const target   = thisYear >= now ? thisYear : new Date(now.getFullYear() + 1, date.getMonth(), date.getDate());
+    const days     = Math.round((target - now) / 86400000);
+    const cls      = days <= 7 ? 'close' : days <= 30 ? 'soon' : 'far';
+    const countTxt = days === 0 ? 'Today!' : days === 1 ? 'Tomorrow' : `${days}d`;
+    return `<div class="date-chip">
+      <div class="date-chip-top">
+        <div class="date-chip-icon">${d.icon}</div>
+        <div class="date-chip-label">${d.label}</div>
+        <div class="date-chip-date">${d.date}</div>
+        <div class="date-chip-count ${cls}">${countTxt}</div>
+      </div>
+      <button class="date-chip-remove" onclick="(${onRemove.toString()})(${i})">Remove</button>
+    </div>`;
+  }).join('');
+}
+
+async function scheduleNotificationsForDate(entry) {
+  try {
+    const stored   = JSON.parse(localStorage.getItem(LS.DATE_NOTIFS) || '[]');
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const d        = new Date(entry.date + 'T09:00:00');
+    const thisYear = new Date(today.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0);
+    const target   = thisYear >= today ? thisYear : new Date(today.getFullYear() + 1, d.getMonth(), d.getDate(), 9, 0, 0);
+    const milestones = [
+      { days: 30, msg: `${entry.label} is in 1 month — start thinking about something special ♡` },
+      { days: 7,  msg: `${entry.label} is in 1 week — time to get organised ♡` },
+      { days: 1,  msg: `${entry.label} is tomorrow — have you got something planned? ♡` },
+      { days: 0,  msg: `Today is ${entry.label} — make it unforgettable ♡` },
+    ];
+    milestones.forEach(({ days, msg }) => {
+      const fireAt = new Date(target.getTime() - days * 86400000);
+      const key    = `gra-date-${entry.id}-${days}`;
+      if (!stored.find(n => n.tag === key)) stored.push({ tag: key, fireAt: fireAt.getTime(), msg, sent: false });
+    });
+    localStorage.setItem(LS.DATE_NOTIFS, JSON.stringify(stored));
+  } catch(_) {}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE
+═══════════════════════════════════════════════════════════ */
+function toggleDarkMode(on) {
+  STATE.darkMode = on;
+  document.documentElement.classList.toggle('dark-mode', on);
+  saveLocal();
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (toggle) toggle.checked = on;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MILESTONES & CONFETTI
+═══════════════════════════════════════════════════════════ */
+const MILESTONES = { 10:'10 nudges sent! 🎉', 20:'20 nudges! You\'re on fire! 🔥', 50:'50 nudges! Incredible! 💛', 100:'100 nudges! Legend! ✨' };
+
+function checkMilestone(total) {
+  if (!MILESTONES[total]) return;
+  launchConfetti();
+  showMilestoneToast(MILESTONES[total]);
+}
+
+function launchConfetti() {
+  const overlay = document.getElementById('confetti-overlay');
+  if (!overlay) return;
+  const colors = ['#c9697a','#f0a0b0','#ffd700','#90c0ff','#b0e090','#ff9060'];
+  overlay.innerHTML = '';
+  for (let i = 0; i < 52; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const size = 5 + Math.random() * 7;
+    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[i % colors.length]};border-radius:${Math.random()>.5?'50%':'2px'};animation:confetti-fall ${1.2+Math.random()*1.8}s linear ${Math.random()*.6}s forwards;`;
+    overlay.appendChild(p);
+  }
+  setTimeout(() => { overlay.innerHTML = ''; }, 4000);
+}
+
+function showMilestoneToast(text) {
+  const t = document.getElementById('milestone-toast');
+  if (!t) return;
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST & CONFIRM MODAL
+═══════════════════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showConfirm(title, body, okLabel, onOk) {
+  document.getElementById('cm-title').textContent = title;
+  document.getElementById('cm-body').textContent  = body;
+  const ok = document.getElementById('cm-ok');
+  ok.textContent = okLabel;
+  ok.onclick = () => { closeConfirmModal(); onOk(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════════════════ */
+function updateTime() {
+  const now = new Date();
+  const h   = now.getHours().toString().padStart(2,'0');
+  const m   = now.getMinutes().toString().padStart(2,'0');
+  const el  = document.getElementById('status-time');
+  if (el) el.textContent = `${h}:${m}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   QUOTE ROTATION
+═══════════════════════════════════════════════════════════ */
+function startQuoteRotation() {
+  setInterval(() => {
+    _quoteIdx = (_quoteIdx + 1) % LOVE_QUOTES.length;
+    const el = document.getElementById('quote-text');
+    if (el && STATE.screen === 'screen-6') {
+      el.style.opacity = '0';
+      setTimeout(() => { el.textContent = LOVE_QUOTES[_quoteIdx]; el.style.opacity = '1'; }, 400);
+    }
+  }, 12000);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════ */
+function resetApp() {
+  closeAllPanels();
+  showConfirm('Reset all data?', 'This will delete all your people, schedules and stats. Cannot be undone.', 'Reset everything', async () => {
+    const userId = localStorage.getItem(LS.USER_ID);
+    if (userId) {
+      sbFetch(`nudge_schedules?user_id=eq.${userId}`, { method: 'DELETE' }).catch(() => {});
+      sbFetch(`push_subscriptions?user_id=eq.${userId}`, { method: 'DELETE' }).catch(() => {});
+    }
+    Object.values(LS).forEach(k => { try { localStorage.removeItem(k); } catch(_) {} });
+    STATE.people = []; STATE.activeIdx = 0; STATE.region = 'uk'; STATE.darkMode = false;
+    document.documentElement.classList.remove('dark-mode');
+    navigate('screen-1');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PWA INSTALL
+═══════════════════════════════════════════════════════════ */
+let _deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  const banner = document.getElementById('install-banner');
+  if (banner && STATE.screen === 'screen-6') {
+    banner.innerHTML = `<span class="ib-text">💛 Add Grà to your home screen</span><button class="ib-btn" onclick="installPwa()">Install</button><span class="ib-close" onclick="document.getElementById('install-banner').classList.remove('show')">✕</span>`;
+    banner.classList.add('show');
+  }
+});
+
+async function installPwa() {
+  if (!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  await _deferredInstallPrompt.userChoice;
+  _deferredInstallPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+}
+
+function checkIosInstall() {
+  const isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone;
+  if (isIos && !isStandalone) {
+    const banner = document.getElementById('install-banner');
+    if (banner) {
+      banner.style.flexDirection = 'column';
+      banner.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;width:100%;"><span style="font-weight:600;">💛 Add Grà to your home screen</span><span class="ib-close" onclick="this.closest('#install-banner').classList.remove('show')">✕</span></div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);line-height:1.5;margin-top:6px;">Tap <strong style="color:#fff;">Share</strong> ⎙ at the bottom of Safari, then <strong style="color:#fff;">Add to Home Screen</strong>.</div>`;
+      banner.classList.add('show');
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+function init() {
+  loadLocal();
+
+  // Apply dark mode before any render
+  if (STATE.darkMode) document.documentElement.classList.add('dark-mode');
+
+  // Clock
+  updateTime();
+  setInterval(updateTime, 30000);
+
+  // Quote rotation
+  startQuoteRotation();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/Gra/sw.js');
+        window._swReg = reg;
+        // Listen for messages from SW (notification button actions)
+        navigator.serviceWorker.addEventListener('message', event => {
+          const data = event.data;
+          if (data?.type === 'nudge-action') handleSwNudgeAction(data);
+        });
+      } catch(e) { console.warn('SW registration failed:', e); }
+    });
+  }
+
+  // Weekly reset
+  checkAutoWeeklyReset();
+
+  // Route
+  if (STATE.people.length > 0) {
+    if (STATE.activeIdx >= STATE.people.length) STATE.activeIdx = 0;
+    // Jump straight to dashboard
+    document.getElementById('screen-1').classList.remove('active');
+    document.getElementById('screen-6').classList.add('active');
+    STATE.screen = 'screen-6';
+    document.getElementById('nav').classList.add('visible');
+    renderDashboard();
+    renderStreakTab();
+    renderGiftsTab();
+    // Load remote in background
+    window._remoteLoadPromise = loadPeopleRemote().then(loaded => {
+      if (loaded) { renderDashboard(); renderStreakTab(); }
+    }).catch(() => {});
+    startNudgePoller();
+  } else {
+    // Try remote recovery (reinstall / new device)
+    loadPeopleRemote().then(loaded => {
+      if (loaded && STATE.people.length > 0) {
+        document.getElementById('screen-1').classList.remove('active');
+        document.getElementById('screen-6').classList.add('active');
+        STATE.screen = 'screen-6';
+        document.getElementById('nav').classList.add('visible');
+        renderDashboard();
+        renderStreakTab();
+        renderGiftsTab();
+        startNudgePoller();
+      }
+    }).catch(() => {});
+  }
+
+  // iOS install hint
+  setTimeout(checkIosInstall, 2000);
+
+  // Init region option UI
+  document.querySelectorAll('#region-options .option-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.region === STATE.region);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
