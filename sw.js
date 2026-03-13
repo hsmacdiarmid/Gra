@@ -1,25 +1,28 @@
 /* ═══════════════════════════════════════════════════════════
-   Grà — Service Worker  v1.0
-   Cache strategy: network-first, cache fallback
-   Push: delivers nudge notifications with 3 action buttons
+   Grà — Service Worker  v1.1
+   Paths are derived from self.location so the SW works on any
+   host — GitHub Pages, localhost, or a preview environment.
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE   = 'gra-v1';
-const ASSETS  = [
-  '/Gra/',
-  '/Gra/index.html',
-  '/Gra/manifest.json',
-  '/Gra/sw.js',
-  '/Gra/icons/icon-192x192.png',
-  '/Gra/icons/icon-512x512.png',
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap',
+const CACHE   = 'gra-v1.1';
+const BASE    = self.location.pathname.replace(/sw\.js$/, ''); // e.g. '/Gra/'
+const APP_URL = self.location.origin + BASE;
+
+const ASSETS = [
+  APP_URL,
+  APP_URL + 'index.html',
+  APP_URL + 'manifest.json',
+  APP_URL + 'sw.js',
 ];
 
 /* ── Install ── */
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE)
-      .then(cache => cache.addAll(ASSETS))
+      .then(cache =>
+        // Promise.allSettled so missing icons don't abort SW install
+        Promise.allSettled(ASSETS.map(url => cache.add(url)))
+      )
       .then(() => self.skipWaiting())
   );
 });
@@ -35,7 +38,7 @@ self.addEventListener('activate', e => {
   );
 });
 
-/* ── Fetch ── */
+/* ── Fetch: network-first, cache fallback ── */
 self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith('http')) return;
   e.respondWith(
@@ -48,7 +51,8 @@ self.addEventListener('fetch', e => {
         return res;
       })
       .catch(() =>
-        caches.match(e.request).then(cached => cached || caches.match('/Gra/index.html'))
+        caches.match(e.request)
+          .then(cached => cached || caches.match(APP_URL + 'index.html'))
       )
   );
 });
@@ -56,36 +60,27 @@ self.addEventListener('fetch', e => {
 /* ── Push ── */
 self.addEventListener('push', e => {
   let data = {
-    title:      'Grà 💛',
-    body:       'Time to send some love ♡',
-    tag:        'gra-nudge',
-    nudgeId:    null,
-    personId:   null,
-    personName: null,
-    nudgeType:  'text',
+    title: 'Grà 💛', body: 'Time to send some love ♡',
+    tag: 'gra-nudge', nudgeId: null, personId: null,
+    personName: null, nudgeType: 'text', url: APP_URL,
   };
-
   try { if (e.data) data = { ...data, ...e.data.json() }; } catch (_) {}
-
-  const typeVerb = data.nudgeType === 'call' ? 'call' : 'text';
 
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body:    data.body,
       tag:     data.tag,
-      icon:    '/Gra/icons/icon-192x192.png',
-      badge:   '/Gra/icons/icon-72x72.png',
+      icon:    APP_URL + 'icons/icon-192x192.png',
+      badge:   APP_URL + 'icons/icon-72x72.png',
       vibrate: [200, 100, 200],
       data: {
-        nudgeId:    data.nudgeId,
-        personId:   data.personId,
-        personName: data.personName,
-        nudgeType:  data.nudgeType,
-        url:        '/Gra/',
+        nudgeId: data.nudgeId, personId: data.personId,
+        personName: data.personName, nudgeType: data.nudgeType,
+        url: data.url || APP_URL,
       },
       actions: [
         { action: 'done',   title: '✓ Done it' },
-        { action: 'skip',   title: '✗ Didn\'t' },
+        { action: 'skip',   title: "✗ Didn't" },
         { action: 'snooze', title: '⏰ Remind me' },
       ],
       requireInteraction: true,
@@ -96,40 +91,22 @@ self.addEventListener('push', e => {
 /* ── Notification click ── */
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-
   const { nudgeId, personId, personName, nudgeType, url } = e.notification.data || {};
-  const action = e.action; // 'done' | 'skip' | 'snooze' | '' (body tap)
+  const action = e.action;
+  const appUrl = url || APP_URL;
+
+  const postAction = client => client.postMessage({
+    type: 'nudge-action', action: action || 'open',
+    nudgeId, personId, personName, nudgeType,
+  });
 
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
-        // Post action to any open app window
-        const postAction = (client) => {
-          client.postMessage({
-            type:       'nudge-action',
-            action:     action || 'open',
-            nudgeId,
-            personId,
-            personName,
-            nudgeType,
-          });
-        };
-
-        // If app is already open — focus it and post
-        const existing = clients.find(c => c.url.includes('/Gra/') && 'focus' in c);
-        if (existing) {
-          existing.focus();
-          postAction(existing);
-          return;
-        }
-
-        // Otherwise open app, then post once ready
-        // The app listens for this message on load via navigator.serviceWorker.addEventListener('message')
-        self.clients.openWindow(url || '/Gra/').then(client => {
-          if (client) {
-            // Short delay to let the app initialise before posting
-            setTimeout(() => postAction(client), 800);
-          }
+        const existing = clients.find(c => c.url.startsWith(APP_URL) && 'focus' in c);
+        if (existing) { existing.focus(); postAction(existing); return; }
+        self.clients.openWindow(appUrl).then(client => {
+          if (client) setTimeout(() => postAction(client), 800);
         });
       })
   );
