@@ -277,8 +277,8 @@ a { color: inherit; text-decoration: none; }
 .freq-val { font-size: 1.4rem; font-weight: 600; color: var(--ink); min-width: 24px; text-align: center; }
 .freq-dots { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
 .freq-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all 0.15s; cursor: pointer; }
-.freq-dot.active   { background: var(--rose); }
-.freq-dot.inactive { background: var(--border); filter: grayscale(1); opacity: 0.5; }
+.freq-dot.active   { background: var(--rose-light); border: 1.5px solid var(--rose-mid); }
+.freq-dot.inactive { background: var(--border); filter: grayscale(1); opacity: 0.4; }
 .freq-summary { font-size: 0.78rem; color: var(--muted); line-height: 1.6; text-align: center; margin-bottom: 20px; }
 .freq-summary strong { color: var(--rose); }
 
@@ -1269,11 +1269,6 @@ a { color: inherit; text-decoration: none; }
           <div class="settings-row-label">Show tutorial</div>
           <div class="settings-row-arrow">›</div>
         </div>
-        <div class="settings-row" onclick="sendTestPush()">
-          <div class="settings-row-icon">🔔</div>
-          <div class="settings-row-label">Test notification</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
 
         <div class="settings-section-label" style="margin-top:20px;"></div>
         <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
@@ -1404,7 +1399,7 @@ a { color: inherit; text-decoration: none; }
   </div>
 
   <!-- ════ DATE MODAL ════ -->
-  <div class="panel-overlay" id="date-modal" onclick="if(event.target===this)closePanel('date-modal')">
+  <div class="panel-overlay" id="date-modal-overlay" onclick="if(event.target===this)closePanel('date-modal')">
     <div class="panel-sheet" style="max-height:80vh;">
       <div class="panel-drag"></div>
       <div class="panel-header">
@@ -1742,6 +1737,20 @@ async function sendPush(notification) {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
       body: JSON.stringify({ subscription: { endpoint: j.endpoint, keys: j.keys }, notification }),
     });
+    // 403/410 = subscription is stale (wrong VAPID key or expired) — re-subscribe silently
+    if (res.status === 403 || res.status === 410) {
+      console.warn('Push subscription stale, re-subscribing...');
+      window._pushSub = null;
+      localStorage.removeItem(LS.PUSH_SUB);
+      const reg = window._swReg || await navigator.serviceWorker.ready.catch(() => null);
+      if (reg) {
+        // Unsubscribe old, then re-subscribe fresh
+        const oldSub = await reg.pushManager.getSubscription().catch(() => null);
+        if (oldSub) await oldSub.unsubscribe().catch(() => {});
+        await ensurePushSubscription(reg);
+      }
+      return false;
+    }
     return res.ok;
   } catch(e) { return false; }
 }
@@ -2026,10 +2035,8 @@ function navigate(screenId, back = false) {
 
   setTimeout(() => {
     from.style.transition = 'none';
-    from.style.transform = '';
+    from.style.transform  = 'translateX(100%)'; // explicitly off-screen, prevents CSS re-transition
     from.classList.remove('leaving');
-    // Re-enable transition after a frame so future navigation animates correctly
-    requestAnimationFrame(() => { from.style.transition = ''; });
     _transitioning = false;
   }, 360);
 
@@ -3515,128 +3522,114 @@ function checkIosInstall() {
    TUTORIAL
 ═══════════════════════════════════════════════════════════ */
 const TUTORIAL_STEPS = [
-  { emoji:'🏠', title:'Your people, at a glance', body:'The Home tab shows one card per person. Tap a card to expand it and see all their nudges for the week.', highlight:'tab-home', tab:'home' },
-  { emoji:'💬', title:'When a nudge is due', body:"Three buttons appear right on the card — Done it to log it and grow your streak, Didn't if you missed it, or Remind me for a snooze.", highlight:'dash-person-cards', tab:'home' },
-  { emoji:'🔔', title:'Notifications come to you', body:"On Android the three buttons appear on the notification itself. On iPhone, tap the notification and they appear here on the card. Both paths log to the same streak.", highlight:null, tab:'home' },
-  { emoji:'🔥', title:'Your streak lives here', body:"Every week you mark at least one nudge Done it, your streak grows. Check your progress and see how you're doing per person.", highlight:'nav-streak', tab:'streak' },
-  { emoji:'🎁', title:'Gift ideas when you need them', body:'The Gifts tab has curated ideas based on your region and relationship type — for birthdays, anniversaries, or just-because moments.', highlight:'nav-gifts', tab:null },
-  { emoji:'⚙️', title:'Everything is adjustable', body:'In Settings you can change frequency, schedule windows, add special dates, toggle dark mode, and manage multiple people — each with their own setup.', highlight:'nav-settings', tab:null },
+  { screen:'screen-1',   emoji:'👋', title:'Welcome to Grà',             body:'Grà is Irish for love. Start by typing the name of someone important — a partner, parent, friend, whoever you want to stay closer to.', highlight:'s1-name' },
+  { screen:'screen-1.5', emoji:'💑', title:'Pick the relationship',       body:'This shapes the nudge language and the special dates Grà suggests. You can change it any time from Settings.', highlight:null },
+  { screen:'screen-2',   emoji:'📅', title:'How often to reach out?',     body:'Set how many texts and calls you want reminding about each week. Tap the emoji dots to increase or decrease the count.', highlight:null },
+  { screen:'screen-3',   emoji:'🕐', title:'Your free windows',           body:"Pick days and time slots when you're free. Nudges fire randomly inside these slots so they feel natural, not robotic.", highlight:null },
+  { screen:'screen-3.5', emoji:'⭐',   title:'Special dates',               body:"Add birthdays and anniversaries. Grà reminds you 30 days out, 7 days, 1 day, and on the day itself. You can skip this and add dates later.", highlight:null },
+  { screen:'screen-4',   emoji:'✅',   title:'Activate your nudges',        body:"Check everything looks right then tap Activate. You'll be asked to allow notifications — that's how your nudges arrive.", highlight:'activate-btn' },
+  { screen:'screen-6',   emoji:'🏠', title:'Your dashboard',              body:"One card per person. Tap a card to expand it and see your nudges for the week. Tap Done it once you've reached out.", highlight:'dash-person-cards', tab:'home' },
+  { screen:'screen-6',   emoji:'🔥', title:'Build your streak',           body:'Every week you mark at least one nudge Done it, your streak grows. Check your progress on the Streak tab.', highlight:'nav-streak', tab:'streak' },
 ];
 
 let _tutStep = 0;
 let _tutPrevHighlight = null;
+let _tutActive = false;
 
 function startTutorial() {
-  _tutStep = 0;
+  _tutStep   = 0;
+  _tutActive = true;
   const overlay = document.getElementById('tutorial-overlay');
   if (!overlay) return;
   overlay.style.display = 'block';
   overlay.classList.add('active');
-  renderTutorialStep();
+  _advanceTutorialToStep();
 }
 
-function renderTutorialStep() {
+function _advanceTutorialToStep() {
   const step = TUTORIAL_STEPS[_tutStep];
   if (!step) { endTutorial(); return; }
-  if (step.tab) switchTab(step.tab);
+
+  const goRender = () => setTimeout(() => _renderTutCard(step), 100);
+
+  if (step.screen && step.screen !== STATE.screen) {
+    if (step.screen === 'screen-6') {
+      if (STATE.people.length > 0) {
+        _navHistory = [];
+        document.querySelectorAll('.screen').forEach(s => {
+          s.classList.remove('active', 'leaving');
+          s.style.transition = 'none';
+          s.style.transform  = 'translateX(100%)';
+        });
+        const s6 = document.getElementById('screen-6');
+        if (s6) { s6.style.transform = 'translateX(0)'; s6.classList.add('active'); }
+        STATE.screen = 'screen-6';
+        document.getElementById('nav').classList.add('visible');
+        renderDashboard(); renderStreakTab(); renderGiftsTab();
+      }
+      if (step.tab) switchTab(step.tab);
+      goRender();
+    } else {
+      navigate(step.screen);
+      goRender();
+    }
+  } else {
+    if (step.tab) switchTab(step.tab);
+    goRender();
+  }
+}
+
+function _renderTutCard(step) {
+  if (!_tutActive) return;
   document.getElementById('tutorial-emoji').textContent = step.emoji;
   document.getElementById('tutorial-title').textContent = step.title;
   document.getElementById('tutorial-body').textContent  = step.body;
-  document.getElementById('tutorial-progress').textContent = `${_tutStep + 1} of ${TUTORIAL_STEPS.length}`;
+  document.getElementById('tutorial-progress').textContent = (_tutStep + 1) + ' of ' + TUTORIAL_STEPS.length;
   const nextBtn = document.getElementById('tutorial-next');
   if (nextBtn) nextBtn.textContent = _tutStep === TUTORIAL_STEPS.length - 1 ? '✓ Done' : 'Next →';
   const dots = document.getElementById('tutorial-step-dots');
-  if (dots) dots.innerHTML = TUTORIAL_STEPS.map((_,i) => `<div class="tut-dot ${i===_tutStep?'active':''}"></div>`).join('');
+  if (dots) dots.innerHTML = TUTORIAL_STEPS.map(function(_,i){ return '<div class="tut-dot ' + (i===_tutStep?'active':'') + '"></div>'; }).join('');
 
-  // Remove previous highlight ring
-  if (_tutPrevHighlight) { const p = document.getElementById(_tutPrevHighlight); if (p) p.classList.remove('tutorial-highlight'); }
-
-  // Draw spotlight canvas
-  // Small delay to let tab switch render first
-  requestAnimationFrame(() => drawSpotlight(step.highlight));
-
+  if (_tutPrevHighlight) {
+    const p = document.getElementById(_tutPrevHighlight);
+    if (p) p.classList.remove('tutorial-highlight');
+    _tutPrevHighlight = null;
+  }
   if (step.highlight) {
     const el = document.getElementById(step.highlight);
     if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; }
-  } else { _tutPrevHighlight = null; }
-}
-
-function drawSpotlight(targetId) {
-  const canvas = document.getElementById('tutorial-canvas');
-  const app    = document.getElementById('app');
-  if (!canvas || !app) return;
-
-  const appRect = app.getBoundingClientRect();
-  canvas.width  = appRect.width;
-  canvas.height = appRect.height;
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Full dark overlay
-  ctx.fillStyle = 'rgba(20, 10, 15, 0.75)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (!targetId) return;
-  const el = document.getElementById(targetId);
-  if (!el) return;
-
-  const r    = el.getBoundingClientRect();
-  const pad  = 10;
-  const x    = r.left - appRect.left - pad;
-  const y    = r.top  - appRect.top  - pad;
-  const w    = r.width  + pad * 2;
-  const h    = r.height + pad * 2;
-  const rad  = 12;
-
-  // Cut out a rounded rect hole so the element shows through clearly
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.arcTo(x + w, y, x + w, y + rad, rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
-  ctx.lineTo(x + rad, y + h);
-  ctx.arcTo(x, y + h, x, y + h - rad, rad);
-  ctx.lineTo(x, y + rad);
-  ctx.arcTo(x, y, x + rad, y, rad);
-  ctx.closePath();
-  ctx.fill();
-
-  // Soft glow ring around the cutout
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.strokeStyle = 'rgba(201, 105, 122, 0.9)';
-  ctx.lineWidth   = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.arcTo(x + w, y, x + w, y + rad, rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
-  ctx.lineTo(x + rad, y + h);
-  ctx.arcTo(x, y + h, x, y + h - rad, rad);
-  ctx.lineTo(x, y + rad);
-  ctx.arcTo(x, y, x + rad, y, rad);
-  ctx.closePath();
-  ctx.stroke();
+  }
+  drawSpotlight(step.highlight);
 }
 
 function nextTutorialStep() {
   _tutStep++;
   if (_tutStep >= TUTORIAL_STEPS.length) { endTutorial(); return; }
-  renderTutorialStep();
+  _advanceTutorialToStep();
 }
 
 function endTutorial() {
+  _tutActive = false;
   const overlay = document.getElementById('tutorial-overlay');
   if (overlay) { overlay.style.display = 'none'; overlay.classList.remove('active'); }
-  if (_tutPrevHighlight) { const el = document.getElementById(_tutPrevHighlight); if (el) el.classList.remove('tutorial-highlight'); _tutPrevHighlight = null; }
-  try { localStorage.setItem('gra_tutorial_done', '1'); } catch(_) {}
+  const canvas = document.getElementById('tutorial-canvas');
+  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+  if (_tutPrevHighlight) {
+    const el = document.getElementById(_tutPrevHighlight);
+    if (el) el.classList.remove('tutorial-highlight');
+    _tutPrevHighlight = null;
+  }
+  try { localStorage.setItem('gra_tutorial_done', '1'); } catch(e) {}
+  if (STATE.screen !== 'screen-6' && STATE.people.length > 0) {
+    _navHistory = [];
+    navigate('screen-6');
+  }
 }
 
 function maybeShowTutorial() {
-  try { if (!localStorage.getItem('gra_tutorial_done')) setTimeout(startTutorial, 600); } catch(_) {}
+  try { if (!localStorage.getItem('gra_tutorial_done')) setTimeout(startTutorial, 400); } catch(e) {}
+}
+
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3704,8 +3697,13 @@ function init() {
         renderGiftsTab();
         startNudgePoller();
         maybeShowTutorial();
+      } else {
+        // Brand new user on screen-1 — start tutorial here
+        maybeShowTutorial();
       }
-    }).catch(() => {});
+    }).catch(() => {
+      maybeShowTutorial(); // start on screen-1 even if remote fails
+    });
   }
 
   // iOS install hint — show after a short delay on first visit
