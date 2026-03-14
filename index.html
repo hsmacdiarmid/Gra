@@ -792,18 +792,29 @@ a { color: inherit; text-decoration: none; }
 ══════════════════════════════════════ */
 #tutorial-overlay {
   position: absolute; inset: 0; z-index: 700;
-  pointer-events: none;
+  pointer-events: none; /* always pass through — card handles its own events */
 }
-#tutorial-overlay.active { pointer-events: all; }
+#tutorial-overlay.active { pointer-events: none; } /* still pass through */
 
 #tutorial-backdrop {
   position: absolute; inset: 0;
-  /* Canvas handles the dimming + cutout — no CSS blur */
+  /* dim handled by canvas */
 }
 
 #tutorial-canvas {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  pointer-events: none;
+  pointer-events: none; /* canvas is visual only */
+}
+
+#tutorial-card {
+  position: absolute; bottom: calc(var(--nav-h) + 16px + var(--safe-bottom));
+  left: 16px; right: 16px;
+  background: var(--card); border-radius: var(--radius-lg);
+  padding: 20px; box-shadow: var(--shadow-lg);
+  border: 1.5px solid var(--border);
+  animation: fadeIn 0.25s ease;
+  pointer-events: all; /* only the card captures taps */
+  position: absolute;
 }
 
 #tutorial-card {
@@ -3628,8 +3639,6 @@ function endTutorial() {
 
 function maybeShowTutorial() {
   try { if (!localStorage.getItem('gra_tutorial_done')) setTimeout(startTutorial, 400); } catch(e) {}
-}
-
 }
 
 /* ═══════════════════════════════════════════════════════════
