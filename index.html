@@ -919,7 +919,7 @@ a { color: inherit; text-decoration: none; }
         <div class="onb-title">Your relationship<br>with <em id="s15-name">them</em></div>
         <p class="onb-sub">This shapes the tone of message suggestions you'll see.</p>
       </div>
-      <div class="rel-grid" id="rel-grid">
+      <div class="rel-grid" id="rel-cards">
         <div class="rel-card active" data-rel="partner" onclick="selectRel(this)">
           <div class="rel-card-emoji">💑</div>
           <div class="rel-card-name">Partner</div>
@@ -957,6 +957,7 @@ a { color: inherit; text-decoration: none; }
         <p class="onb-sub">Set how many times per week you want to be nudged to text or call.</p>
       </div>
 
+      <div id="freq-section">
       <div class="freq-counter">
         <div class="freq-counter-top">
           <div class="freq-type">
@@ -991,6 +992,7 @@ a { color: inherit; text-decoration: none; }
           </div>
         </div>
         <div class="freq-dots" id="freq-call-dots"></div>
+      </div>
       </div>
 
       <div class="freq-summary" id="freq-summary"></div>
@@ -1064,7 +1066,7 @@ a { color: inherit; text-decoration: none; }
 
       <div class="sched-section">
         <div class="date-chips" id="s35-date-chips"></div>
-        <button class="add-date-btn" onclick="openDateModal('s3')">+ Add a date</button>
+        <button class="add-date-btn" id="s35-add-btn" onclick="openDateModal('s3')">+ Add a date</button>
       </div>
 
       <div style="margin-top:8px; padding: 12px 14px; background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: var(--radius-md);">
@@ -1710,18 +1712,27 @@ async function ensurePushSubscription(reg) {
       });
     }
     window._pushSub = sub;
-    localStorage.setItem(LS.PUSH_SUB, JSON.stringify(sub));
+
+    // Explicitly extract keys — JSON.stringify(sub) omits them on some Android Chrome versions
+    const p256dh = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh'))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const auth   = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth'))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+    const subData = { endpoint: sub.endpoint, keys: { p256dh, auth } };
+    localStorage.setItem(LS.PUSH_SUB, JSON.stringify(subData));
+    window._pushSub = subData; // store plain object with keys guaranteed
+
     const userId = await ensureUser();
     if (userId) {
-      const j = sub.toJSON();
       await sbFetch('push_subscriptions?on_conflict=user_id', {
         method: 'POST',
         headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
-        body: JSON.stringify({ user_id: userId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+        body: JSON.stringify({ user_id: userId, endpoint: sub.endpoint, p256dh, auth }),
       }).catch(() => {});
     }
-    return sub;
-  } catch(e) { return null; }
+    return subData;
+  } catch(e) { console.error('ensurePushSubscription:', e); return null; }
 }
 
 async function requestPushPermission() {
@@ -1740,37 +1751,65 @@ async function sendPush(notification) {
   if (!sub) {
     try { const s = localStorage.getItem(LS.PUSH_SUB); if (s) sub = JSON.parse(s); } catch(_) {}
   }
-  if (!sub) return false;
+  if (!sub) { console.warn('sendPush: no subscription'); return { ok: false, error: 'no-sub' }; }
   try {
-    const j = (typeof sub.toJSON === 'function') ? sub.toJSON() : sub;
+    const endpoint = sub.endpoint;
+    const keys     = sub.keys || (typeof sub.toJSON === 'function' ? sub.toJSON().keys : null);
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      console.warn('sendPush: missing fields', { endpoint, keys });
+      return { ok: false, error: 'missing-fields' };
+    }
     const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify({ subscription: { endpoint: j.endpoint, keys: j.keys }, notification }),
+      body: JSON.stringify({ subscription: { endpoint, keys }, notification }),
     });
-    // 403/410 = subscription is stale (wrong VAPID key or expired) — re-subscribe silently
+    const body = await res.text().catch(() => '');
+    console.log('sendPush response:', res.status, body);
+
     if (res.status === 403 || res.status === 410) {
-      console.warn('Push subscription stale, re-subscribing...');
+      console.warn('Push subscription stale — re-subscribing');
       window._pushSub = null;
       localStorage.removeItem(LS.PUSH_SUB);
       const reg = window._swReg || await navigator.serviceWorker.ready.catch(() => null);
       if (reg) {
-        // Unsubscribe old, then re-subscribe fresh
         const oldSub = await reg.pushManager.getSubscription().catch(() => null);
         if (oldSub) await oldSub.unsubscribe().catch(() => {});
         await ensurePushSubscription(reg);
       }
-      return false;
+      return { ok: false, error: `${res.status}: VAPID key mismatch — try again` };
     }
-    return res.ok;
-  } catch(e) { return false; }
+    return { ok: res.ok, status: res.status, error: res.ok ? null : body };
+  } catch(e) {
+    console.error('sendPush error:', e);
+    return { ok: false, error: String(e) };
+  }
 }
 
 async function sendTestPush() {
+  showToast('Checking notification setup…');
+
+  const reg = window._swReg || await navigator.serviceWorker.ready.catch(() => null);
+  if (!reg) { showToast('Service worker not ready — try reloading'); return; }
+
+  // Force fresh subscription to clear any VAPID key mismatch
+  const existing = await reg.pushManager.getSubscription().catch(() => null);
+  if (existing) await existing.unsubscribe().catch(() => {});
+  window._pushSub = null;
+  localStorage.removeItem(LS.PUSH_SUB);
+
   const ok = await requestPushPermission();
-  if (!ok) { showToast('Notifications blocked — check browser settings'); return; }
-  const sent = await sendPush({ title: 'Grà 💛', body: 'Notifications are working! ♡', tag: 'gra-test' });
-  showToast(sent ? 'Test notification sent! ♡' : 'Could not send — check Supabase logs');
+  if (!ok) { showToast('Notifications blocked — check phone settings'); return; }
+
+  showToast('Sending…');
+  const result = await sendPush({ title: 'Grà 💛', body: 'Notifications are working! ♡', tag: 'gra-test' });
+  if (result.ok) {
+    showToast('✓ Sent! Check your notification shade');
+  } else {
+    const detail = result.error || 'unknown error';
+    showToast('Failed: ' + detail.slice(0, 60));
+    console.error('Test push failed:', detail);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1959,7 +1998,7 @@ async function checkDueNudges() {
 
       // Send push
       const typeLabel = row.nudge_type === 'call' ? 'call 📞' : 'text 💬';
-      await sendPush({
+      const pushResult = await sendPush({
         title:      'Grà 💛',
         body:       `Time to ${typeLabel} ${row.person_name} — a little love goes a long way`,
         tag:        `nudge-${row.nudge_id}`,
@@ -1967,6 +2006,7 @@ async function checkDueNudges() {
         personName: row.person_name,
         nudgeType:  row.nudge_type,
       });
+      if (!pushResult.ok) console.warn('nudge push failed:', pushResult.error);
 
       // Mark fired
       sbFetch(`nudge_schedules?id=eq.${row.id}`, {
@@ -3533,14 +3573,46 @@ function checkIosInstall() {
    TUTORIAL
 ═══════════════════════════════════════════════════════════ */
 const TUTORIAL_STEPS = [
-  { screen:'screen-1',   emoji:'👋', title:'Welcome to Grà',             body:'Grà is Irish for love. Start by typing the name of someone important — a partner, parent, friend, whoever you want to stay closer to.', highlight:'s1-name' },
-  { screen:'screen-1.5', emoji:'💑', title:'Pick the relationship',       body:'This shapes the nudge language and the special dates Grà suggests. You can change it any time from Settings.', highlight:null },
-  { screen:'screen-2',   emoji:'📅', title:'How often to reach out?',     body:'Set how many texts and calls you want reminding about each week. Tap the emoji dots to increase or decrease the count.', highlight:null },
-  { screen:'screen-3',   emoji:'🕐', title:'Your free windows',           body:"Pick days and time slots when you're free. Nudges fire randomly inside these slots so they feel natural, not robotic.", highlight:null },
-  { screen:'screen-3.5', emoji:'⭐',   title:'Special dates',               body:"Add birthdays and anniversaries. Grà reminds you 30 days out, 7 days, 1 day, and on the day itself. You can skip this and add dates later.", highlight:null },
-  { screen:'screen-4',   emoji:'✅',   title:'Activate your nudges',        body:"Check everything looks right then tap Activate. You'll be asked to allow notifications — that's how your nudges arrive.", highlight:'activate-btn' },
-  { screen:'screen-6',   emoji:'🏠', title:'Your dashboard',              body:"One card per person. Tap a card to expand it and see your nudges for the week. Tap Done it once you've reached out.", highlight:'dash-person-cards', tab:'home' },
-  { screen:'screen-6',   emoji:'🔥', title:'Build your streak',           body:'Every week you mark at least one nudge Done it, your streak grows. Check your progress on the Streak tab.', highlight:'nav-streak', tab:'streak' },
+  {
+    screen:'screen-1', emoji:'👋', title:'Welcome to Grà',
+    body:"Type the name of someone you want to stay closer to — a partner, parent, friend, anyone who matters. This is who Grà will remind you about.",
+    highlight:'s1-name',
+  },
+  {
+    screen:'screen-1.5', emoji:'💑', title:'Your relationship with them',
+    body:"Pick how you're connected. This shapes the tone of Grà's reminders and which special dates it suggests for you.",
+    highlight:'rel-cards',
+  },
+  {
+    screen:'screen-2', emoji:'📱', title:'How often to reach out?',
+    body:"Tap the dots to set how many texts and calls per week you want nudging about. More dots = more reminders.",
+    highlight:'freq-section',
+  },
+  {
+    screen:'screen-3', emoji:'🕐', title:'When are you free?',
+    body:"Tap days and time slots to build your windows. Nudges fire randomly inside these slots — so they feel spontaneous, not scheduled.",
+    highlight:'s3-day-row',
+  },
+  {
+    screen:'screen-3.5', emoji:'⭐', title:'Special dates',
+    body:"Add birthdays and anniversaries here. Grà will remind you 30 days before, 7 days, 1 day, and on the day itself. Skip for now and add them later from any person card.",
+    highlight:'s35-add-btn',
+  },
+  {
+    screen:'screen-4', emoji:'✅', title:'Ready to activate',
+    body:"Review your setup here, then tap Activate. You'll be asked to allow notifications — that's how your nudges arrive even when the app is closed.",
+    highlight:'activate-btn',
+  },
+  {
+    screen:'screen-6', tab:'home', emoji:'🏠', title:'Your dashboard',
+    body:"One card per person. Tap a card to expand it and see this week's nudges. When you've reached out, tap Done it — that's what builds your streak.",
+    highlight:'dash-person-cards',
+  },
+  {
+    screen:'screen-6', tab:'streak', emoji:'🔥', title:'Your streak',
+    body:"Every week you respond to at least one nudge, your streak grows. Check the Streak tab to see how you're doing over time.",
+    highlight:'nav-streak',
+  },
 ];
 
 let _tutStep = 0;
@@ -3561,7 +3633,7 @@ function _advanceTutorialToStep() {
   const step = TUTORIAL_STEPS[_tutStep];
   if (!step) { endTutorial(); return; }
 
-  const goRender = () => setTimeout(() => _renderTutCard(step), 100);
+  const goRender = () => setTimeout(() => _renderTutCard(step), 120);
 
   if (step.screen && step.screen !== STATE.screen) {
     if (step.screen === 'screen-6') {
@@ -3599,8 +3671,11 @@ function _renderTutCard(step) {
   const nextBtn = document.getElementById('tutorial-next');
   if (nextBtn) nextBtn.textContent = _tutStep === TUTORIAL_STEPS.length - 1 ? '✓ Done' : 'Next →';
   const dots = document.getElementById('tutorial-step-dots');
-  if (dots) dots.innerHTML = TUTORIAL_STEPS.map(function(_,i){ return '<div class="tut-dot ' + (i===_tutStep?'active':'') + '"></div>'; }).join('');
+  if (dots) dots.innerHTML = TUTORIAL_STEPS.map(function(_,i){
+    return '<div class="tut-dot ' + (i===_tutStep?'active':'') + '"></div>';
+  }).join('');
 
+  // Clear old highlight
   if (_tutPrevHighlight) {
     const p = document.getElementById(_tutPrevHighlight);
     if (p) p.classList.remove('tutorial-highlight');
@@ -3611,6 +3686,69 @@ function _renderTutCard(step) {
     if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; }
   }
   drawSpotlight(step.highlight);
+}
+
+function drawSpotlight(targetId) {
+  const canvas = document.getElementById('tutorial-canvas');
+  const app    = document.getElementById('app');
+  if (!canvas || !app) return;
+
+  const appRect = app.getBoundingClientRect();
+  canvas.width  = appRect.width;
+  canvas.height = appRect.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Dark overlay
+  ctx.fillStyle = 'rgba(15, 8, 12, 0.72)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!targetId) return;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  const r   = el.getBoundingClientRect();
+  const pad = 8;
+  const x   = r.left - appRect.left - pad;
+  const y   = r.top  - appRect.top  - pad;
+  const w   = r.width  + pad * 2;
+  const h   = r.height + pad * 2;
+  const rad = 12;
+
+  // Punch a clear hole through the overlay
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.arcTo(x + w, y,     x + w, y + rad,     rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx.lineTo(x + rad, y + h);
+  ctx.arcTo(x, y + h,     x, y + h - rad,     rad);
+  ctx.lineTo(x, y + rad);
+  ctx.arcTo(x, y,         x + rad, y,          rad);
+  ctx.closePath();
+  ctx.fill();
+
+  // Rose glow ring
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(201, 105, 122, 0.95)';
+  ctx.lineWidth   = 2.5;
+  ctx.shadowColor = 'rgba(201, 105, 122, 0.6)';
+  ctx.shadowBlur  = 10;
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.arcTo(x + w, y,     x + w, y + rad,     rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx.lineTo(x + rad, y + h);
+  ctx.arcTo(x, y + h,     x, y + h - rad,     rad);
+  ctx.lineTo(x, y + rad);
+  ctx.arcTo(x, y,         x + rad, y,          rad);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
 }
 
 function nextTutorialStep() {
