@@ -790,91 +790,7 @@ a { color: inherit; text-decoration: none; }
 /* ══════════════════════════════════════
    TUTORIAL
 ══════════════════════════════════════ */
-#tutorial-overlay {
-  position: absolute; inset: 0; z-index: 700;
-  pointer-events: none; /* always pass through — card handles its own events */
-}
-#tutorial-overlay.active { pointer-events: none; } /* still pass through */
-
-#tutorial-backdrop {
-  position: absolute; inset: 0;
-  /* dim handled by canvas */
-}
-
-#tutorial-canvas {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  pointer-events: none; /* canvas is visual only */
-}
-
-#tutorial-card {
-  position: absolute; bottom: calc(var(--nav-h) + 16px + var(--safe-bottom));
-  left: 16px; right: 16px;
-  background: var(--card); border-radius: var(--radius-lg);
-  padding: 20px; box-shadow: var(--shadow-lg);
-  border: 1.5px solid var(--border);
-  animation: fadeIn 0.25s ease;
-  pointer-events: all; /* only the card captures taps */
-  position: absolute;
-}
-
-#tutorial-card {
-  position: absolute; bottom: calc(var(--nav-h) + 16px + var(--safe-bottom));
-  left: 16px; right: 16px;
-  background: var(--card); border-radius: var(--radius-lg);
-  padding: 20px; box-shadow: var(--shadow-lg);
-  border: 1.5px solid var(--border);
-  animation: fadeIn 0.25s ease;
-}
-
-#tutorial-step-dots {
-  display: flex; gap: 5px; justify-content: center; margin-bottom: 14px;
-}
-.tut-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--border);
-  transition: background 0.2s, transform 0.2s;
-}
-.tut-dot.active { background: var(--rose); transform: scale(1.3); }
-
-#tutorial-emoji { font-size: 2rem; text-align: center; margin-bottom: 8px; }
-#tutorial-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.15rem; font-weight: 600; color: var(--ink);
-  text-align: center; margin-bottom: 7px;
-}
-#tutorial-body {
-  font-size: 0.76rem; color: var(--muted); text-align: center;
-  line-height: 1.65; margin-bottom: 16px;
-}
-
-#tutorial-actions {
-  display: flex; gap: 8px;
-}
-#tutorial-skip {
-  flex: 0 0 auto; padding: 10px 14px;
-  background: var(--cream); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--muted);
-  cursor: pointer;
-}
-#tutorial-next {
-  flex: 1; padding: 10px;
-  background: linear-gradient(135deg, var(--rose), var(--rose-dark));
-  border: none; border-radius: var(--radius-sm);
-  font-size: 0.78rem; font-weight: 600; color: #fff;
-  cursor: pointer; box-shadow: 0 3px 10px rgba(201,105,122,0.3);
-}
-
-#tutorial-progress {
-  display: flex; justify-content: center;
-  font-size: 0.6rem; color: var(--muted); margin-top: 10px;
-}
-
-/* Highlight ring for tutorial */
-.tutorial-highlight {
-  position: relative; z-index: 710;
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 0 3px var(--rose), 0 0 0 6px rgba(201,105,122,0.25);
-  animation: pulse 1.5s ease-in-out infinite;
-}
+#tutorial-overlay { position: absolute; inset: 0; z-index: 700; pointer-events: none; }
 
 /* iOS safe area padding on screens with nav */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -1159,7 +1075,7 @@ a { color: inherit; text-decoration: none; }
           <div class="dash-greeting" id="dash-greeting">Good morning <em>♡</em></div>
           <div class="dash-greeting-sub" id="dash-greeting-sub">Let's spread some love</div>
         </div>
-        <button class="dash-add-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
+        <button class="dash-add-btn" id="dash-add-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
       </div>
       <div id="dash-pause-banner"></div>
       <div id="dash-person-cards"></div>
@@ -1500,19 +1416,20 @@ a { color: inherit; text-decoration: none; }
   </div>
 
   <!-- ════ TUTORIAL OVERLAY ════ -->
-  <div id="tutorial-overlay" style="display:none;">
-    <div id="tutorial-backdrop"></div>
-    <canvas id="tutorial-canvas"></canvas>
-    <div id="tutorial-card">
-      <div id="tutorial-step-dots"></div>
-      <div id="tutorial-emoji"></div>
-      <div id="tutorial-title"></div>
-      <div id="tutorial-body"></div>
-      <div id="tutorial-actions">
-        <button id="tutorial-skip" onclick="endTutorial()">Skip</button>
-        <button id="tutorial-next" onclick="nextTutorialStep()">Next →</button>
+  <div id="tutorial-overlay" style="display:none;position:absolute;inset:0;z-index:700;pointer-events:none;">
+    <div id="tutorial-spotlight" style="position:absolute;background:transparent;border:2.5px solid var(--rose);border-radius:14px;box-shadow:0 0 0 9999px rgba(10,5,15,0.82);transition:all 0.32s cubic-bezier(0.4,0,0.2,1);pointer-events:none;z-index:701;"></div>
+    <div id="tutorial-card" style="position:absolute;left:14px;right:14px;background:#ffffff;border-radius:18px;padding:14px 16px 12px;box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.9);pointer-events:auto;z-index:702;transition:top 0.32s cubic-bezier(0.4,0,0.2,1);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;">
+        <div id="tutorial-step-label" style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);line-height:1.6;"></div>
+        <button onclick="endTutorial()" style="background:none;border:none;font-size:0.72rem;color:#c0a8a0;cursor:pointer;padding:0 0 0 8px;line-height:1.6;">✕ skip</button>
       </div>
-      <div id="tutorial-progress"></div>
+      <div id="tutorial-title" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.3;"></div>
+      <div id="tutorial-body" style="font-size:0.7rem;color:#8a7070;line-height:1.6;margin-bottom:12px;"></div>
+      <div id="tutorial-dots" style="display:flex;gap:4px;align-items:center;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:7px;justify-content:flex-end;">
+        <button id="tutorial-next-btn" onclick="nextTutorialStep()" style="padding:6px 16px;background:linear-gradient(135deg,var(--rose),var(--rose-dark));border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:600;color:white;cursor:pointer;">Next →</button>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -2006,7 +1923,7 @@ async function checkDueNudges() {
         personName: row.person_name,
         nudgeType:  row.nudge_type,
       });
-if (pushResult.ok) {
+      if (pushResult.ok) {
         sbFetch(`nudge_schedules?id=eq.${row.id}`, {
           method: 'PATCH', headers: { 'Prefer': '' },
           body: JSON.stringify({ fired: true }),
@@ -2298,6 +2215,16 @@ function renderDatesScreen() {
 }
 
 function renderScheduleScreen() {
+  // Reset day pills to Mon–Fri default
+  const weekdays = ['Mo','Tu','We','Th','Fr'];
+  document.querySelectorAll('#s3-day-row .day-pill').forEach(pill => {
+    pill.classList.toggle('active', weekdays.includes(pill.dataset.day));
+  });
+  // Reset time slots to 9am–5pm default
+  const workSlots = [9,10,11,12,13,14,15,16];
+  document.querySelectorAll('#s3-time-grid .time-slot').forEach(slot => {
+    slot.classList.toggle('active', workSlots.includes(parseInt(slot.dataset.h)));
+  });
   renderWindowChips('s3-window-chips', onb.windows, (idx) => { onb.windows.splice(idx, 1); renderScheduleScreen(); });
   renderDateChips('s3-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderScheduleScreen(); });
 }
@@ -2338,6 +2265,12 @@ function saveWindowsAndContinue() {
 }
 
 function renderConfirmScreen() {
+  // Reset to confirm state — essential when adding 2nd+ person
+  const cs = document.getElementById('s4-confirm-state');
+  const as = document.getElementById('s4-activated-state');
+  if (cs) cs.style.display = '';
+  if (as) as.style.display = 'none';
+
   const meta = REL_META[onb.rel] || REL_META.partner;
   const av = document.getElementById('confirm-avatar');
   if (av) { av.textContent = meta.emoji; av.style.background = meta.bg; }
@@ -3573,210 +3506,395 @@ function checkIosInstall() {
    TUTORIAL
 ═══════════════════════════════════════════════════════════ */
 const TUTORIAL_STEPS = [
+  // ── Onboarding ──
   {
-    screen:'screen-1', emoji:'👋', title:'Welcome to Grà',
-    body:"Type the name of someone you want to stay closer to — a partner, parent, friend, anyone who matters. This is who Grà will remind you about.",
-    highlight:'s1-name',
+    screen: 'screen-1',
+    spotlight: 's1-name',
+    cardPos: 'above',
+    title: 'Start by naming someone you love',
+    body: 'Type the name of a partner, family member, or friend you want to stay in better touch with. This is just for your reminders — Grà never contacts anyone directly.',
   },
   {
-    screen:'screen-1.5', emoji:'💑', title:'Your relationship with them',
-    body:"Pick how you're connected. This shapes the tone of Grà's reminders and which special dates it suggests for you.",
-    highlight:'rel-cards',
+    screen: 'screen-1.5',
+    spotlight: 'rel-cards',
+    cardPos: 'below',
+    title: 'Choose your relationship',
+    body: 'This shapes the tone of message suggestions you\'ll see when a reminder fires. A nudge to a partner sounds different from one to a parent or a friend — Grà adjusts accordingly.',
   },
   {
-    screen:'screen-2', emoji:'📱', title:'How often to reach out?',
-    body:"Tap the dots to set how many texts and calls per week you want nudging about. More dots = more reminders.",
-    highlight:'freq-section',
+    screen: 'screen-2',
+    spotlight: 'freq-section',
+    cardPos: 'below',
+    title: 'Set how often you want to reach out',
+    body: 'Use the + and − buttons to choose how many text and call reminders per week. You can set as few as one or as many as seven. This can always be changed from Settings.',
   },
   {
-    screen:'screen-3', emoji:'🕐', title:'When are you free?',
-    body:"Tap days and time slots to build your windows. Nudges fire randomly inside these slots — so they feel spontaneous, not scheduled.",
-    highlight:'s3-day-row',
+    screen: 'screen-3',
+    spotlight: 's3-day-row',
+    cardPos: 'below',
+    title: 'Pick your days',
+    body: 'These are the days you\'re typically apart from this person — the days you\'d naturally send a message. Grà will only schedule reminders on the days you select here.',
   },
   {
-    screen:'screen-3.5', emoji:'⭐', title:'Special dates',
-    body:"Add birthdays and anniversaries here. Grà will remind you 30 days before, 7 days, 1 day, and on the day itself. Skip for now and add them later from any person card.",
-    highlight:'s35-add-btn',
+    screen: 'screen-3',
+    spotlight: 's3-time-grid',
+    cardPos: 'below',
+    title: 'Pick your time slots',
+    body: 'Select the hours you\'re free to reach out. Reminders are scattered randomly across these slots each week, so they feel natural rather than like a recurring alarm.',
   },
   {
-    screen:'screen-4', emoji:'✅', title:'Ready to activate',
-    body:"Review your setup here, then tap Activate. You'll be asked to allow notifications — that's how your nudges arrive even when the app is closed.",
-    highlight:'activate-btn',
+    screen: 'screen-3',
+    spotlight: 's3-windows-section',
+    cardPos: 'above',
+    title: 'Your default window is ready',
+    body: 'We\'ve pre-filled Monday to Friday, 9am–5pm as your starting window. You can delete it, adjust it, or tap "+ Add window" to build out evenings, weekends, or anything else that fits your life.',
+    scrollTo: 's3-content',
   },
   {
-    screen:'screen-6', tab:'home', emoji:'🏠', title:'Your dashboard',
-    body:"One card per person. Tap a card to expand it and see this week's nudges. When you've reached out, tap Done it — that's what builds your streak.",
-    highlight:'dash-person-cards',
+    screen: 'screen-3.5',
+    spotlight: 's35-add-btn',
+    cardPos: 'above',
+    title: 'Add special dates 🗓',
+    body: 'Birthdays, anniversaries, big exams — add them here and Grà will remind you a month out, a week out, the day before, and on the day itself. You can skip this for now and add them later.',
+  },
+  // ── Dashboard ──
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-person-cards',
+    cardPos: 'below',
+    title: 'Your nudges for the week',
+    body: 'This is your dashboard. Each card shows someone you\'re nudging and when your reminders are scheduled this week. Tap a card to expand it and see the details.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+    onEnter: () => {
+      // Always show a demo person card so the spotlight has something to frame
+      const container = document.getElementById('dash-person-cards');
+      if (container) {
+        container.innerHTML = `
+          <div id="tutorial-demo-person" class="person-nudge-card">
+            <div class="pnc-header">
+              <div class="pnc-avatar" style="background:#fde8ec;">💑</div>
+              <div class="pnc-info">
+                <div class="pnc-name">Sarah</div>
+                <div class="pnc-next">Tomorrow · 10:00</div>
+              </div>
+              <div class="pnc-badge upcoming">Coming up</div>
+              <div class="pnc-chevron">▾</div>
+            </div>
+          </div>`;
+      }
+    },
   },
   {
-    screen:'screen-6', tab:'streak', emoji:'🔥', title:'Your streak',
-    body:"Every week you respond to at least one nudge, your streak grows. Check the Streak tab to see how you're doing over time.",
-    highlight:'nav-streak',
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-person-cards',
+    cardPos: 'below',
+    title: 'When a reminder fires',
+    body: 'You\'ll get a notification at the right time. Open the app and three options appear — tap "Done it" to log that you reached out, "Didn\'t" to skip, or "Remind me" to snooze it.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+    onEnter: () => {
+      // Show a demo card in the "due now" expanded state
+      const container = document.getElementById('dash-person-cards');
+      if (container) {
+        container.innerHTML = `
+          <div id="tutorial-demo-card" class="person-nudge-card has-due">
+            <div class="pnc-header">
+              <div class="pnc-avatar" style="background:#fde8ec;">💑</div>
+              <div class="pnc-info">
+                <div class="pnc-name">Sarah</div>
+                <div class="pnc-next">Due now — respond below</div>
+              </div>
+              <div class="pnc-badge due">Now!</div>
+              <div class="pnc-chevron open">▾</div>
+            </div>
+            <div class="pnc-body">
+              <div class="nudge-item">
+                <div class="nudge-item-top">
+                  <div class="nudge-item-icon">💬</div>
+                  <div class="nudge-item-info">
+                    <div class="nudge-item-type">Text reminder</div>
+                    <div class="nudge-item-time">Today · 10:00</div>
+                  </div>
+                  <div class="nudge-item-badge due">Now!</div>
+                </div>
+                <div class="nudge-actions">
+                  <button class="nudge-act-btn done">✓ Done it</button>
+                  <button class="nudge-act-btn skip">✗ Didn't</button>
+                  <button class="nudge-act-btn snooze">⏰ Remind me</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+    },
+  },
+  {
+    screen: 'screen-6', tab: 'streak',
+    spotlight: 'streak-content',
+    cardPos: 'below',
+    title: 'Your streak 🔥',
+    body: 'Every week you respond to at least one nudge, your streak grows. Your stats and per-person breakdown live on this tab.',
+  },
+  {
+    screen: 'screen-6', tab: 'gifts',
+    spotlight: 'gift-list',
+    cardPos: 'below',
+    title: 'Want to do something extra? 🎁',
+    body: 'The Gifts tab has curated ideas your loved one will actually appreciate — flowers, chocolates, spa days and more. Everything is hand-picked and available in your region.',
+    onEnter: () => { renderGiftsTab(); },
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'nav',
+    cardPos: 'above',
+    title: 'Getting around',
+    body: 'Home shows your reminders. Streak tracks your consistency. Gifts has ideas. Settings lets you adjust frequency, schedule and manage your people.',
+    onEnter: () => { switchTab('home'); },
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-add-btn',
+    cardPos: 'below',
+    title: 'Add more people',
+    body: 'Tap this + button to set up reminders for someone else — a parent, friend, sibling. Each person gets their own schedule, frequency and message tone.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: null,
+    cardPos: 'center',
+    title: 'You\'re all set ♡',
+    body: 'That\'s everything! Set it up once and Grà will quietly do the remembering for you. The people you love are worth the two seconds it takes to send a message.',
+    onEnter: () => {
+      switchTab('home');
+      // Clean up demo content and show real state
+      const dp = document.getElementById('tutorial-demo-person');
+      if (dp) dp.remove();
+      const dc = document.getElementById('tutorial-demo-card');
+      if (dc) dc.remove();
+      renderDashboard();
+    },
   },
 ];
 
-let _tutStep = 0;
-let _tutPrevHighlight = null;
+let _tutStep   = 0;
 let _tutActive = false;
+// Index of the first dashboard step — used to jump straight there after activation
+const _TUT_DASHBOARD_STEP = TUTORIAL_STEPS.findIndex(s => s.screen === 'screen-6');
 
 function startTutorial() {
   _tutStep   = 0;
   _tutActive = true;
-  const overlay = document.getElementById('tutorial-overlay');
-  if (!overlay) return;
-  overlay.style.display = 'block';
-  overlay.classList.add('active');
-  _advanceTutorialToStep();
+  document.getElementById('tutorial-overlay').style.display = 'block';
+  _applyTutorialStep();
 }
 
-function _advanceTutorialToStep() {
+function _startTutorialAtDashboard() {
+  _tutStep   = _TUT_DASHBOARD_STEP >= 0 ? _TUT_DASHBOARD_STEP : 0;
+  _tutActive = true;
+  document.getElementById('tutorial-overlay').style.display = 'block';
+  _applyTutorialStep();
+}
+
+function _applyTutorialStep() {
   const step = TUTORIAL_STEPS[_tutStep];
   if (!step) { endTutorial(); return; }
 
-  const goRender = () => setTimeout(() => _renderTutCard(step), 120);
+  if (step.onEnter) step.onEnter();
 
-  if (step.screen && step.screen !== STATE.screen) {
-    if (step.screen === 'screen-6') {
-      if (STATE.people.length > 0) {
-        _navHistory = [];
-        document.querySelectorAll('.screen').forEach(s => {
-          s.classList.remove('active', 'leaving');
-          s.style.transition = 'none';
-          s.style.transform  = 'translateX(100%)';
-        });
-        const s6 = document.getElementById('screen-6');
-        if (s6) { s6.style.transform = 'translateX(0)'; s6.classList.add('active'); }
-        STATE.screen = 'screen-6';
-        document.getElementById('nav').classList.add('visible');
-        renderDashboard(); renderStreakTab(); renderGiftsTab();
-      }
-      if (step.tab) switchTab(step.tab);
-      goRender();
-    } else {
-      navigate(step.screen);
-      goRender();
+  const doRender = () => setTimeout(() => _renderTutCard(step), 120);
+
+  if (step.screen === 'screen-6') {
+    // Always switch to screen-6, even mid-onboarding (demo content fills the gap)
+    if (STATE.screen !== 'screen-6') {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active', 'leaving');
+        s.style.transition = 'none';
+        s.style.transform  = 'translateX(100%)';
+      });
+      const s6 = document.getElementById('screen-6');
+      if (s6) { s6.style.transform = 'translateX(0)'; s6.classList.add('active'); }
+      STATE.screen = 'screen-6';
+      document.getElementById('nav').classList.add('visible');
+      renderDashboard(); renderStreakTab(); renderGiftsTab();
     }
-  } else {
     if (step.tab) switchTab(step.tab);
-    goRender();
+    doRender();
+  } else {
+    // Navigate to onboarding screen without pushing to history
+    // (tutorial drives navigation, user uses Next button)
+    if (STATE.screen !== step.screen) {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active', 'leaving');
+        s.style.transition = 'none';
+        s.style.transform  = 'translateX(100%)';
+      });
+      const target = document.getElementById(step.screen);
+      if (target) { target.style.transform = 'translateX(0)'; target.classList.add('active'); }
+      STATE.screen = step.screen;
+      document.getElementById('nav').classList.remove('visible');
+      // Run screen setup
+      if (step.screen === 'screen-1.5') renderRelScreen();
+      if (step.screen === 'screen-2')   renderFreqScreen();
+      if (step.screen === 'screen-3')   renderScheduleScreen();
+      if (step.screen === 'screen-3.5') renderDatesScreen();
+      if (step.screen === 'screen-4')   renderConfirmScreen();
+    }
+    doRender();
   }
 }
 
 function _renderTutCard(step) {
   if (!_tutActive) return;
-  document.getElementById('tutorial-emoji').textContent = step.emoji;
+  const total = TUTORIAL_STEPS.length;
+  document.getElementById('tutorial-step-label').textContent = `${_tutStep + 1} of ${total}`;
   document.getElementById('tutorial-title').textContent = step.title;
   document.getElementById('tutorial-body').textContent  = step.body;
-  document.getElementById('tutorial-progress').textContent = (_tutStep + 1) + ' of ' + TUTORIAL_STEPS.length;
-  const nextBtn = document.getElementById('tutorial-next');
-  if (nextBtn) nextBtn.textContent = _tutStep === TUTORIAL_STEPS.length - 1 ? '✓ Done' : 'Next →';
-  const dots = document.getElementById('tutorial-step-dots');
-  if (dots) dots.innerHTML = TUTORIAL_STEPS.map(function(_,i){
-    return '<div class="tut-dot ' + (i===_tutStep?'active':'') + '"></div>';
-  }).join('');
-
-  // Clear old highlight
-  if (_tutPrevHighlight) {
-    const p = document.getElementById(_tutPrevHighlight);
-    if (p) p.classList.remove('tutorial-highlight');
-    _tutPrevHighlight = null;
-  }
-  if (step.highlight) {
-    const el = document.getElementById(step.highlight);
-    if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; }
-  }
-  drawSpotlight(step.highlight);
+  const nextBtn = document.getElementById('tutorial-next-btn');
+  if (nextBtn) nextBtn.textContent = _tutStep === total - 1 ? 'Done ♡' : 'Next →';
+  document.getElementById('tutorial-dots').innerHTML = TUTORIAL_STEPS.map((_, i) =>
+    `<div style="width:${i === _tutStep ? 14 : 5}px;height:5px;border-radius:3px;background:${i === _tutStep ? 'var(--rose)' : '#e8d8d4'};transition:all 0.2s;flex-shrink:0;"></div>`
+  ).join('');
+  _positionSpotlight(step);
 }
 
-function drawSpotlight(targetId) {
-  const canvas = document.getElementById('tutorial-canvas');
-  const app    = document.getElementById('app');
-  if (!canvas || !app) return;
+function _positionSpotlight(step) {
+  const spotlight = document.getElementById('tutorial-spotlight');
+  const card      = document.getElementById('tutorial-card');
+  const overlay   = document.getElementById('tutorial-overlay');
 
-  const appRect = app.getBoundingClientRect();
-  canvas.width  = appRect.width;
-  canvas.height = appRect.height;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Resolve target — single or multi
+  let targets = [];
+  if (step.spotlightMulti) {
+    targets = step.spotlightMulti.map(id => document.getElementById(id)).filter(el => el && el.offsetHeight > 0);
+  } else if (step.spotlight) {
+    const el = document.getElementById(step.spotlight);
+    if (el && el.offsetHeight > 0) targets = [el];
+  }
 
-  // Dark overlay
-  ctx.fillStyle = 'rgba(15, 8, 12, 0.72)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const doPosition = () => {
+    const oRect  = overlay.getBoundingClientRect();
+    const oH     = oRect.height;
+    const MARGIN = 10;
 
-  if (!targetId) return;
-  const el = document.getElementById(targetId);
-  if (!el) return;
+    card.style.top = '-9999px';
+    const cardH = card.offsetHeight || 190;
 
-  const r   = el.getBoundingClientRect();
-  const pad = 8;
-  const x   = r.left - appRect.left - pad;
-  const y   = r.top  - appRect.top  - pad;
-  const w   = r.width  + pad * 2;
-  const h   = r.height + pad * 2;
-  const rad = 12;
+    if (!targets.length || step.cardPos === 'center') {
+      spotlight.style.opacity = '0'; spotlight.style.width = '0'; spotlight.style.height = '0';
+      card.style.top = Math.max(MARGIN, (oH - cardH) / 2) + 'px';
+      return;
+    }
 
-  // Punch a clear hole through the overlay
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.arcTo(x + w, y,     x + w, y + rad,     rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
-  ctx.lineTo(x + rad, y + h);
-  ctx.arcTo(x, y + h,     x, y + h - rad,     rad);
-  ctx.lineTo(x, y + rad);
-  ctx.arcTo(x, y,         x + rad, y,          rad);
-  ctx.closePath();
-  ctx.fill();
+    // Union bounding rect of all targets
+    let eTop = Infinity, eLeft = Infinity, eRight = -Infinity, eBottom = -Infinity;
+    targets.forEach(el => {
+      const r = el.getBoundingClientRect();
+      eTop    = Math.min(eTop,    r.top    - oRect.top);
+      eLeft   = Math.min(eLeft,   r.left   - oRect.left);
+      eRight  = Math.max(eRight,  r.right  - oRect.left);
+      eBottom = Math.max(eBottom, r.bottom - oRect.top);
+    });
+    const eW  = eRight - eLeft;
+    const eH  = eBottom - eTop;
+    const SPX = 7, SPY = 5;
 
-  // Rose glow ring
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.strokeStyle = 'rgba(201, 105, 122, 0.95)';
-  ctx.lineWidth   = 2.5;
-  ctx.shadowColor = 'rgba(201, 105, 122, 0.6)';
-  ctx.shadowBlur  = 10;
-  ctx.beginPath();
-  ctx.moveTo(x + rad, y);
-  ctx.lineTo(x + w - rad, y);
-  ctx.arcTo(x + w, y,     x + w, y + rad,     rad);
-  ctx.lineTo(x + w, y + h - rad);
-  ctx.arcTo(x + w, y + h, x + w - rad, y + h, rad);
-  ctx.lineTo(x + rad, y + h);
-  ctx.arcTo(x, y + h,     x, y + h - rad,     rad);
-  ctx.lineTo(x, y + rad);
-  ctx.arcTo(x, y,         x + rad, y,          rad);
-  ctx.closePath();
-  ctx.stroke();
-  ctx.shadowBlur = 0;
+    spotlight.style.opacity = '1';
+    spotlight.style.top    = (eTop  - SPY) + 'px';
+    spotlight.style.left   = (eLeft - SPX) + 'px';
+    spotlight.style.width  = (eW + SPX * 2) + 'px';
+    spotlight.style.height = (eH + SPY * 2) + 'px';
+
+    let top;
+    if (step.cardPos === 'below') {
+      top = eBottom + SPY + MARGIN;
+      if (top + cardH > oH - MARGIN) top = eTop - SPY - MARGIN - cardH;
+    } else {
+      top = eTop - SPY - MARGIN - cardH;
+      if (top < MARGIN) top = eBottom + SPY + MARGIN;
+    }
+    card.style.top = Math.max(MARGIN, Math.min(top, oH - cardH - MARGIN)) + 'px';
+  };
+
+  // Scroll if needed
+  const scrollEl = step.scrollTo ? document.getElementById(step.scrollTo) : (targets[0] ? targets[0].closest('.screen-content') : null);
+  if (scrollEl && targets[0]) {
+    if (step.scrollToTop) {
+      scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else if (step.scrollToBottom) {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else {
+      const cRect  = scrollEl.getBoundingClientRect();
+      const eRect  = targets[0].getBoundingClientRect();
+      const offset = eRect.top - cRect.top + scrollEl.scrollTop - scrollEl.clientHeight / 2 + eRect.height / 2;
+      scrollEl.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    }
+  } else {
+    doPosition();
+  }
 }
 
 function nextTutorialStep() {
+  const leaving = TUTORIAL_STEPS[_tutStep];
+  if (leaving?.onLeave) leaving.onLeave();
   _tutStep++;
   if (_tutStep >= TUTORIAL_STEPS.length) { endTutorial(); return; }
-  _advanceTutorialToStep();
+  _applyTutorialStep();
 }
 
 function endTutorial() {
+  // Call onLeave for current step if needed
+  const leaving = TUTORIAL_STEPS[_tutStep];
+  if (_tutActive && leaving?.onLeave) leaving.onLeave();
+
   _tutActive = false;
-  const overlay = document.getElementById('tutorial-overlay');
-  if (overlay) { overlay.style.display = 'none'; overlay.classList.remove('active'); }
-  const canvas = document.getElementById('tutorial-canvas');
-  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
-  if (_tutPrevHighlight) {
-    const el = document.getElementById(_tutPrevHighlight);
-    if (el) el.classList.remove('tutorial-highlight');
-    _tutPrevHighlight = null;
-  }
-  try { localStorage.setItem('gra_tutorial_done', '1'); } catch(e) {}
-  if (STATE.screen !== 'screen-6' && STATE.people.length > 0) {
-    _navHistory = [];
-    navigate('screen-6');
+  const overlay   = document.getElementById('tutorial-overlay');
+  const spotlight = document.getElementById('tutorial-spotlight');
+  if (overlay)   overlay.style.display = 'none';
+  if (spotlight) { spotlight.style.opacity = '0'; spotlight.style.width = '0'; spotlight.style.height = '0'; }
+
+  // Clean up any demo content
+  const dp = document.getElementById('tutorial-demo-person');
+  if (dp) dp.remove();
+  const dc = document.getElementById('tutorial-demo-card');
+  if (dc) dc.remove();
+
+  try { localStorage.setItem('gra_tutorial_done', '1'); } catch(_) {}
+
+  if (STATE.people.length > 0) {
+    // Real people set up — go to / stay on dashboard
+    if (STATE.screen !== 'screen-6') navigate('screen-6');
+    else renderDashboard();
+  } else {
+    // No one set up yet — send them back to start adding a person
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active', 'leaving');
+      s.style.transition = 'none';
+      s.style.transform  = 'translateX(100%)';
+    });
+    const s1 = document.getElementById('screen-1');
+    if (s1) { s1.style.transform = 'translateX(0)'; s1.classList.add('active'); }
+    STATE.screen = 'screen-1';
+    document.getElementById('nav').classList.remove('visible');
   }
 }
 
 function maybeShowTutorial() {
-  try { if (!localStorage.getItem('gra_tutorial_done')) setTimeout(startTutorial, 400); } catch(e) {}
+  try {
+    if (localStorage.getItem('gra_tutorial_done')) return;
+    // If on dashboard (called after activation) — jump to dashboard steps
+    if (STATE.screen === 'screen-6') {
+      setTimeout(_startTutorialAtDashboard, 500);
+    } else {
+      // On screen-1 (brand new user) — start from the beginning
+      setTimeout(startTutorial, 600);
+    }
+  } catch(_) {}
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3794,7 +3912,6 @@ function init() {
     }
   } catch(_) {}
 
- 
   // Apply dark mode before any render
   if (STATE.darkMode) document.documentElement.classList.add('dark-mode');
 
@@ -3811,7 +3928,7 @@ function init() {
       try {
         const swUrl = new URL('sw.js', location.href).href;
         const reg = await navigator.serviceWorker.register(swUrl);
-     window._swReg = reg;
+        window._swReg = reg;
         // Re-subscribe if sub was cleared by VAPID migration
         if (!localStorage.getItem(LS.PUSH_SUB) && Notification.permission === 'granted') {
           await ensurePushSubscription(reg);
