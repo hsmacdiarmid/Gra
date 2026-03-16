@@ -2006,15 +2006,15 @@ async function checkDueNudges() {
         personName: row.person_name,
         nudgeType:  row.nudge_type,
       });
-      if (!pushResult.ok) console.warn('nudge push failed:', pushResult.error);
-
-      // Mark fired
-      sbFetch(`nudge_schedules?id=eq.${row.id}`, {
-        method: 'PATCH', headers: { 'Prefer': '' },
-        body: JSON.stringify({ fired: true }),
-      }).catch(() => {});
-
-      firedSet.add(row.id);
+if (pushResult.ok) {
+        sbFetch(`nudge_schedules?id=eq.${row.id}`, {
+          method: 'PATCH', headers: { 'Prefer': '' },
+          body: JSON.stringify({ fired: true }),
+        }).catch(() => {});
+        firedSet.add(row.id);
+      } else {
+        console.warn('nudge push failed, will retry next poll:', pushResult.error);
+      }
     }
 
     localStorage.setItem(LS.FIRED, JSON.stringify([...firedSet].slice(-200)));
@@ -3785,6 +3785,16 @@ function maybeShowTutorial() {
 function init() {
   loadLocal();
 
+  // One-time migration: clear stale push sub from old VAPID key
+  try {
+    if (!localStorage.getItem('gra_vapid_migrated')) {
+      localStorage.removeItem(LS.PUSH_SUB);
+      window._pushSub = null;
+      localStorage.setItem('gra_vapid_migrated', 'v2');
+    }
+  } catch(_) {}
+
+ 
   // Apply dark mode before any render
   if (STATE.darkMode) document.documentElement.classList.add('dark-mode');
 
@@ -3801,7 +3811,11 @@ function init() {
       try {
         const swUrl = new URL('sw.js', location.href).href;
         const reg = await navigator.serviceWorker.register(swUrl);
-        window._swReg = reg;
+     window._swReg = reg;
+        // Re-subscribe if sub was cleared by VAPID migration
+        if (!localStorage.getItem(LS.PUSH_SUB) && Notification.permission === 'granted') {
+          await ensurePushSubscription(reg);
+        }
         // Listen for messages from SW (notification button actions)
         navigator.serviceWorker.addEventListener('message', event => {
           const data = event.data;
