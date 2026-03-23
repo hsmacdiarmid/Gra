@@ -4,7 +4,7 @@
    host — GitHub Pages, localhost, or a preview environment.
 ═══════════════════════════════════════════════════════════ */
 
-const CACHE   = 'gra-v1.4';
+const CACHE   = 'gra-v1.5';
 const BASE    = self.location.pathname.replace(/sw\.js$/, ''); // e.g. '/Gra/'
 const APP_URL = self.location.origin + BASE;
 
