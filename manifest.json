@@ -2,6 +2,7 @@
   "name": "Grà",
   "short_name": "Grà",
   "description": "Small reminders. Big love.",
+  "id": "/Gra/",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
