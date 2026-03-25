@@ -277,8 +277,8 @@ a { color: inherit; text-decoration: none; }
 .freq-val { font-size: 1.4rem; font-weight: 600; color: var(--ink); min-width: 24px; text-align: center; }
 .freq-dots { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
 .freq-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all 0.15s; cursor: pointer; }
-.freq-dot.active   { background: var(--rose); }
-.freq-dot.inactive { background: var(--border); filter: grayscale(1); opacity: 0.5; }
+.freq-dot.active   { background: var(--rose-light); border: 1.5px solid var(--rose-mid); }
+.freq-dot.inactive { background: var(--border); filter: grayscale(1); opacity: 0.4; }
 .freq-summary { font-size: 0.78rem; color: var(--muted); line-height: 1.6; text-align: center; margin-bottom: 20px; }
 .freq-summary strong { color: var(--rose); }
 
@@ -454,6 +454,20 @@ a { color: inherit; text-decoration: none; }
 .nudge-act-btn.skip   { background: var(--card); color: var(--muted); }
 .nudge-act-btn.snooze { background: var(--card); color: var(--muted); }
 .nudge-act-btn:active { transform: scale(0.96); }
+
+/* Person card quick actions (edit / add date) */
+.pnc-quick-actions {
+  display: flex; gap: 6px; padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+.pnc-quick-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 8px 4px; border-radius: var(--radius-sm);
+  background: var(--cream); border: 1.5px solid var(--border);
+  font-size: 0.7rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+}
+.pnc-quick-btn:hover, .pnc-quick-btn:active { border-color: var(--rose); color: var(--rose); background: var(--rose-light); }
 
 /* Empty / paused state */
 .pnc-all-done { padding: 14px; text-align: center; font-size: 0.72rem; color: var(--muted); }
@@ -683,6 +697,16 @@ a { color: inherit; text-decoration: none; }
 }
 .pause-banner button { margin-left: auto; font-size: 0.68rem; color: var(--rose); font-weight: 600; background: none; border: none; cursor: pointer; }
 
+/* Schedule conflict warning */
+.sched-conflict-warning {
+  display: none; align-items: flex-start; gap: 10px;
+  background: #fff4dc; border: 1.5px solid #f0d890; border-radius: var(--radius-md);
+  padding: 10px 12px; margin-bottom: 12px; font-size: 0.72rem; color: #8c6a20; line-height: 1.5;
+}
+.sched-conflict-warning.visible { display: flex; }
+.sched-conflict-warning .scw-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.sched-conflict-warning .scw-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
 /* ══════════════════════════════════════
    ANIMATIONS
 ══════════════════════════════════════ */
@@ -776,76 +800,7 @@ a { color: inherit; text-decoration: none; }
 /* ══════════════════════════════════════
    TUTORIAL
 ══════════════════════════════════════ */
-#tutorial-overlay {
-  position: absolute; inset: 0; z-index: 700;
-  pointer-events: none;
-}
-#tutorial-overlay.active { pointer-events: all; }
-
-#tutorial-backdrop {
-  position: absolute; inset: 0;
-  background: rgba(20, 10, 15, 0.72);
-  backdrop-filter: blur(2px);
-}
-
-#tutorial-card {
-  position: absolute; bottom: calc(var(--nav-h) + 16px + var(--safe-bottom));
-  left: 16px; right: 16px;
-  background: var(--card); border-radius: var(--radius-lg);
-  padding: 20px; box-shadow: var(--shadow-lg);
-  border: 1.5px solid var(--border);
-  animation: fadeIn 0.25s ease;
-}
-
-#tutorial-step-dots {
-  display: flex; gap: 5px; justify-content: center; margin-bottom: 14px;
-}
-.tut-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--border);
-  transition: background 0.2s, transform 0.2s;
-}
-.tut-dot.active { background: var(--rose); transform: scale(1.3); }
-
-#tutorial-emoji { font-size: 2rem; text-align: center; margin-bottom: 8px; }
-#tutorial-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.15rem; font-weight: 600; color: var(--ink);
-  text-align: center; margin-bottom: 7px;
-}
-#tutorial-body {
-  font-size: 0.76rem; color: var(--muted); text-align: center;
-  line-height: 1.65; margin-bottom: 16px;
-}
-
-#tutorial-actions {
-  display: flex; gap: 8px;
-}
-#tutorial-skip {
-  flex: 0 0 auto; padding: 10px 14px;
-  background: var(--cream); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--muted);
-  cursor: pointer;
-}
-#tutorial-next {
-  flex: 1; padding: 10px;
-  background: linear-gradient(135deg, var(--rose), var(--rose-dark));
-  border: none; border-radius: var(--radius-sm);
-  font-size: 0.78rem; font-weight: 600; color: #fff;
-  cursor: pointer; box-shadow: 0 3px 10px rgba(201,105,122,0.3);
-}
-
-#tutorial-progress {
-  display: flex; justify-content: center;
-  font-size: 0.6rem; color: var(--muted); margin-top: 10px;
-}
-
-/* Highlight ring for tutorial */
-.tutorial-highlight {
-  position: relative; z-index: 710;
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 0 3px var(--rose), 0 0 0 6px rgba(201,105,122,0.25);
-  animation: pulse 1.5s ease-in-out infinite;
-}
+#tutorial-overlay { position: absolute; inset: 0; z-index: 700; pointer-events: none; }
 
 /* iOS safe area padding on screens with nav */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -890,7 +845,7 @@ a { color: inherit; text-decoration: none; }
         <div class="onb-title">Your relationship<br>with <em id="s15-name">them</em></div>
         <p class="onb-sub">This shapes the tone of message suggestions you'll see.</p>
       </div>
-      <div class="rel-grid" id="rel-grid">
+      <div class="rel-grid" id="rel-cards">
         <div class="rel-card active" data-rel="partner" onclick="selectRel(this)">
           <div class="rel-card-emoji">💑</div>
           <div class="rel-card-name">Partner</div>
@@ -928,6 +883,7 @@ a { color: inherit; text-decoration: none; }
         <p class="onb-sub">Set how many times per week you want to be nudged to text or call.</p>
       </div>
 
+      <div id="freq-section">
       <div class="freq-counter">
         <div class="freq-counter-top">
           <div class="freq-type">
@@ -962,6 +918,7 @@ a { color: inherit; text-decoration: none; }
           </div>
         </div>
         <div class="freq-dots" id="freq-call-dots"></div>
+      </div>
       </div>
 
       <div class="freq-summary" id="freq-summary"></div>
@@ -1017,16 +974,36 @@ a { color: inherit; text-decoration: none; }
         <button class="add-window-btn" onclick="addWindowFromS3()">+ Add window</button>
       </div>
 
-      <div class="sched-section" id="s3-dates-section">
-        <div class="sched-label">Special dates <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;font-size:0.68rem;">(optional)</span></div>
-        <p style="font-size:0.68rem;color:var(--muted);line-height:1.6;margin-bottom:8px;">Add birthdays, anniversaries — Grà will remind you 30 days, 7 days, 1 day, and on the day.</p>
-        <div class="date-chips" id="s3-date-chips"></div>
-        <button class="add-date-btn" onclick="openDateModal('s3')">+ Add a date</button>
+      <div style="margin-top:20px;">
+        <button class="cta-btn" onclick="saveWindowsAndContinue()" id="s3-save-btn">Next — Special dates →</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-2')">← Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3.5: SPECIAL DATES ════ -->
+  <div class="screen" id="screen-3.5">
+    <div class="screen-content no-nav">
+      <div class="onb-hero">
+        <div class="onb-emoji">📅</div>
+        <div class="onb-title">Special <em>dates</em></div>
+        <p class="onb-sub">Birthdays, anniversaries, big moments — Grà will remind you 30 days, 7 days, 1 day, and on the day itself.</p>
+      </div>
+
+      <div class="sched-section">
+        <div class="date-chips" id="s35-date-chips"></div>
+        <button class="add-date-btn" id="s35-add-btn" onclick="openDateModal('s3')">+ Add a date</button>
+      </div>
+
+      <div style="margin-top:8px; padding: 12px 14px; background: var(--rose-light); border: 1.5px solid var(--rose-mid); border-radius: var(--radius-md);">
+        <div style="font-size:0.7rem; color: var(--rose-dark); line-height:1.6;">
+          💡 You can always add more dates later from Settings or from any person's card on the dashboard.
+        </div>
       </div>
 
       <div style="margin-top:20px;">
-        <button class="cta-btn" onclick="saveWindowsAndContinue()" id="s3-save-btn">Save windows →</button>
-        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-2')">← Back</button>
+        <button class="cta-btn" onclick="navigate('screen-4')">Next — Review &amp; activate →</button>
+        <button class="cta-btn ghost" style="margin-top:8px;" onclick="navigate('screen-3')">← Back</button>
       </div>
     </div>
   </div>
@@ -1108,7 +1085,7 @@ a { color: inherit; text-decoration: none; }
           <div class="dash-greeting" id="dash-greeting">Good morning <em>♡</em></div>
           <div class="dash-greeting-sub" id="dash-greeting-sub">Let's spread some love</div>
         </div>
-        <button class="dash-add-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
+        <button class="dash-add-btn" id="dash-add-btn" onclick="addAnotherPerson()" title="Add another person">+</button>
       </div>
       <div id="dash-pause-banner"></div>
       <div id="dash-person-cards"></div>
@@ -1123,11 +1100,12 @@ a { color: inherit; text-decoration: none; }
     <!-- GIFTS TAB -->
     <div class="screen-content" id="tab-gifts" style="display:none;">
       <div class="gifts-header">
-        <div class="gifts-title">Gift <em id="gift-name">them</em> something ♡</div>
-        <div class="gifts-sub">Little ideas to show you care</div>
+        <div class="gifts-title">Gift <em>ideas</em> ♡</div>
+        <div class="gifts-sub">Little things to show you care</div>
       </div>
       <button class="gift-region-btn" id="gift-region-btn" onclick="openPanel('region')">🌍 Region: 🇬🇧 UK</button>
       <div id="gift-list"></div>
+      <a href="https://buymeacoffee.com/gracreator" target="_blank" class="coffee-btn" style="margin-top:16px;">☕ &nbsp;If Grà helped, buy the creator a coffee</a>
     </div>
   </div>
 
@@ -1142,7 +1120,7 @@ a { color: inherit; text-decoration: none; }
     <button class="nav-tab" id="nav-gifts" onclick="switchTab('gifts')">
       <span class="nav-icon">🎁</span>Gifts
     </button>
-    <button class="nav-tab" id="nav-settings" onclick="openPanel('settings')">
+    <button class="nav-tab" id="nav-settings" onclick="navigate('screen-settings')">
       <span class="nav-icon">⚙️</span>Settings
     </button>
   </nav>
@@ -1171,89 +1149,78 @@ a { color: inherit; text-decoration: none; }
     </div>
   </div>
 
-  <!-- ════ SETTINGS PANEL ════ -->
-  <div class="panel-overlay" id="settings-overlay" onclick="if(event.target===this)closePanel('settings')">
-    <div class="panel-sheet" style="max-height:92vh;">
-      <div class="panel-drag"></div>
-      <div class="panel-header">
-        <div class="panel-back" onclick="closePanel('settings')">←</div>
+  <!-- ════ SCREEN: SETTINGS ════ -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-content no-nav" style="padding-top:16px;">
+      <div class="panel-header" style="padding:0 0 16px;">
+        <div class="panel-back" onclick="goBack()">←</div>
         <div class="panel-title">Settings</div>
       </div>
-      <div class="panel-body">
-        <div class="settings-section-label">People</div>
-        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('profiles'),300)">
-          <div class="settings-row-icon">👥</div>
-          <div class="settings-row-label">Manage people</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-        <div class="settings-row" onclick="openFreqPanel()">
-          <div class="settings-row-icon">💬</div>
-          <div class="settings-row-label">Frequency</div>
-          <div class="settings-row-value" id="s-freq-val">–</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-        <div class="settings-row" onclick="openSchedulePanelFromSettings()">
-          <div class="settings-row-icon">🗓</div>
-          <div class="settings-row-label">Schedule windows</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
 
-        <div class="settings-section-label">Notifications</div>
-        <div class="settings-row" onclick="sendTestPush()">
-          <div class="settings-row-icon">🔔</div>
-          <div class="settings-row-label">Send test notification</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-
-        <div class="settings-section-label">App</div>
-        <div class="settings-row">
-          <div class="settings-row-icon">🌙</div>
-          <div class="settings-row-label">Dark mode</div>
-          <label class="toggle-switch" onclick="event.stopPropagation()">
-            <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('region'),300)">
-          <div class="settings-row-icon">🌍</div>
-          <div class="settings-row-label">Region</div>
-          <div class="settings-row-value" id="s-region-val">🇬🇧 UK</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>openPanel('about'),300)">
-          <div class="settings-row-icon">💛</div>
-          <div class="settings-row-label">About Grà</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-        <div class="settings-row" onclick="closePanel('settings');setTimeout(()=>startTutorial(),300)">
-          <div class="settings-row-icon">📖</div>
-          <div class="settings-row-label">Show tutorial</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
-
-        <div class="settings-section-label" style="margin-top:20px;"></div>
-        <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
-          <div class="settings-row-icon">🗑</div>
-          <div class="settings-row-label">Reset all data</div>
-          <div class="settings-row-arrow">›</div>
-        </div>
+      <div class="settings-section-label">People</div>
+      <div class="settings-row" onclick="navigate('screen-profiles')">
+        <div class="settings-row-icon">👥</div>
+        <div class="settings-row-label">Manage people</div>
+        <div class="settings-row-arrow">›</div>
       </div>
+      <div class="settings-row" onclick="openFreqPanel()">
+        <div class="settings-row-icon">💬</div>
+        <div class="settings-row-label">Frequency</div>
+        <div class="settings-row-value" id="s-freq-val">–</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+      <div class="settings-row" onclick="openSchedulePanelFromSettings()">
+        <div class="settings-row-icon">🗓</div>
+        <div class="settings-row-label">Schedule windows</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+
+      <div class="settings-section-label">App</div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🌙</div>
+        <div class="settings-row-label">Dark mode</div>
+        <label class="toggle-switch" onclick="event.stopPropagation()">
+          <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row" onclick="openPanel('region')">
+        <div class="settings-row-icon">🌍</div>
+        <div class="settings-row-label">Region</div>
+        <div class="settings-row-value" id="s-region-val">🇬🇧 UK</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+      <div class="settings-row" onclick="navigate('screen-about')">
+        <div class="settings-row-icon">💛</div>
+        <div class="settings-row-label">About Grà</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+      <div class="settings-row" onclick="goBack();setTimeout(()=>startTutorial(),300)">
+        <div class="settings-row-icon">📖</div>
+        <div class="settings-row-label">Show tutorial</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+
+      <div class="settings-section-label" style="margin-top:20px;"></div>
+      <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
+        <div class="settings-row-icon">🗑</div>
+        <div class="settings-row-label">Reset all data</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
+      <a href="https://buymeacoffee.com/gracreator" target="_blank" class="coffee-btn" style="margin-top:16px;display:block;">☕ &nbsp;If Grà helped, buy the creator a coffee</a>
     </div>
   </div>
 
-  <!-- ════ PROFILES PANEL ════ -->
-  <div class="panel-overlay" id="profiles-overlay" onclick="if(event.target===this)closePanel('profiles')">
-    <div class="panel-sheet">
-      <div class="panel-drag"></div>
-      <div class="panel-header">
-        <div class="panel-back" onclick="closePanel('profiles')">←</div>
+  <!-- ════ SCREEN: MANAGE PEOPLE ════ -->
+  <div class="screen" id="screen-profiles">
+    <div class="screen-content no-nav" style="padding-top:16px;">
+      <div class="panel-header" style="padding:0 0 12px;">
+        <div class="panel-back" onclick="goBack()">←</div>
         <div class="panel-title">Your <em>people</em></div>
       </div>
-      <div class="panel-sub">Each person has their own frequency, windows and message tone.</div>
-      <div class="panel-body">
-        <div id="profiles-list"></div>
-        <button class="cta-btn secondary" style="margin-top:8px;" onclick="closePanel('profiles');addAnotherPerson()">+ Add another person</button>
-      </div>
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">Each person has their own frequency, windows and message tone.</p>
+      <div id="profiles-list"></div>
+      <button class="cta-btn secondary" style="margin-top:8px;" onclick="goBack();addAnotherPerson()">+ Add another person</button>
     </div>
   </div>
 
@@ -1296,70 +1263,75 @@ a { color: inherit; text-decoration: none; }
     </div>
   </div>
 
-  <!-- ════ SCHEDULE PANEL ════ -->
-  <div class="panel-overlay" id="schedule-overlay" onclick="if(event.target===this)closePanel('schedule')">
-    <div class="panel-sheet" style="max-height:92vh;">
-      <div class="panel-drag"></div>
-      <div class="panel-header">
-        <div class="panel-back" onclick="closePanel('schedule')">←</div>
+  <!-- ════ SCREEN: SCHEDULE ════ -->
+  <div class="screen" id="screen-schedule">
+    <div class="screen-content no-nav" style="padding-top:16px;">
+      <div class="panel-header" style="padding:0 0 4px;">
+        <div class="panel-back" onclick="goBack()">←</div>
         <div class="panel-title">Schedule</div>
       </div>
-      <div class="panel-sub">When are you free to reach out?</div>
-      <div class="panel-body">
-        <div class="schedule-pips" id="schedule-pips"></div>
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">When are you free to reach out?</p>
 
-        <div class="sched-section">
-          <div class="sched-label">Days</div>
-          <div class="day-row" id="sp-day-row">
-            <div class="day-pill active" data-day="Mo" onclick="toggleDay(this,'sp')">Mo</div>
-            <div class="day-pill active" data-day="Tu" onclick="toggleDay(this,'sp')">Tu</div>
-            <div class="day-pill active" data-day="We" onclick="toggleDay(this,'sp')">We</div>
-            <div class="day-pill active" data-day="Th" onclick="toggleDay(this,'sp')">Th</div>
-            <div class="day-pill active" data-day="Fr" onclick="toggleDay(this,'sp')">Fr</div>
-            <div class="day-pill" data-day="Sa" onclick="toggleDay(this,'sp')">Sa</div>
-            <div class="day-pill" data-day="Su" onclick="toggleDay(this,'sp')">Su</div>
-          </div>
+      <div class="schedule-pips" id="schedule-pips"></div>
+
+      <div class="sched-section">
+        <div class="sched-label">Days</div>
+        <div class="day-row" id="sp-day-row">
+          <div class="day-pill active" data-day="Mo" onclick="toggleDay(this,'sp')">Mo</div>
+          <div class="day-pill active" data-day="Tu" onclick="toggleDay(this,'sp')">Tu</div>
+          <div class="day-pill active" data-day="We" onclick="toggleDay(this,'sp')">We</div>
+          <div class="day-pill active" data-day="Th" onclick="toggleDay(this,'sp')">Th</div>
+          <div class="day-pill active" data-day="Fr" onclick="toggleDay(this,'sp')">Fr</div>
+          <div class="day-pill" data-day="Sa" onclick="toggleDay(this,'sp')">Sa</div>
+          <div class="day-pill" data-day="Su" onclick="toggleDay(this,'sp')">Su</div>
         </div>
-
-        <div class="sched-section">
-          <div class="sched-label">Time slots</div>
-          <div class="time-grid" id="sp-time-grid">
-            <div class="time-slot" data-h="7"  onclick="toggleSlot(this,'sp')">7–8am</div>
-            <div class="time-slot" data-h="8"  onclick="toggleSlot(this,'sp')">8–9am</div>
-            <div class="time-slot active" data-h="9"  onclick="toggleSlot(this,'sp')">9–10am</div>
-            <div class="time-slot active" data-h="10" onclick="toggleSlot(this,'sp')">10–11am</div>
-            <div class="time-slot active" data-h="11" onclick="toggleSlot(this,'sp')">11am–12</div>
-            <div class="time-slot active" data-h="12" onclick="toggleSlot(this,'sp')">12–1pm</div>
-            <div class="time-slot active" data-h="13" onclick="toggleSlot(this,'sp')">1–2pm</div>
-            <div class="time-slot active" data-h="14" onclick="toggleSlot(this,'sp')">2–3pm</div>
-            <div class="time-slot active" data-h="15" onclick="toggleSlot(this,'sp')">3–4pm</div>
-            <div class="time-slot active" data-h="16" onclick="toggleSlot(this,'sp')">4–5pm</div>
-            <div class="time-slot" data-h="17" onclick="toggleSlot(this,'sp')">5–6pm</div>
-            <div class="time-slot" data-h="18" onclick="toggleSlot(this,'sp')">6–7pm</div>
-            <div class="time-slot" data-h="19" onclick="toggleSlot(this,'sp')">7–8pm</div>
-            <div class="time-slot" data-h="20" onclick="toggleSlot(this,'sp')">8–9pm</div>
-          </div>
-        </div>
-
-        <div class="sched-section">
-          <div class="sched-label">Your windows</div>
-          <div class="window-chips" id="sp-window-chips"></div>
-          <button class="add-window-btn" onclick="addWindowFromPanel()">+ Add window</button>
-        </div>
-
-        <div class="sched-section">
-          <div class="sched-label">Special dates</div>
-          <div class="date-chips" id="sp-date-chips"></div>
-          <button class="add-date-btn" onclick="openDateModal('sp')">+ Add a date</button>
-        </div>
-
-        <button class="cta-btn" style="margin-top:8px;" onclick="saveSchedulePanel()">Save schedule →</button>
       </div>
+
+      <div class="sched-section">
+        <div class="sched-label">Time slots</div>
+        <div class="time-grid" id="sp-time-grid">
+          <div class="time-slot" data-h="7"  onclick="toggleSlot(this,'sp')">7–8am</div>
+          <div class="time-slot" data-h="8"  onclick="toggleSlot(this,'sp')">8–9am</div>
+          <div class="time-slot active" data-h="9"  onclick="toggleSlot(this,'sp')">9–10am</div>
+          <div class="time-slot active" data-h="10" onclick="toggleSlot(this,'sp')">10–11am</div>
+          <div class="time-slot active" data-h="11" onclick="toggleSlot(this,'sp')">11am–12</div>
+          <div class="time-slot active" data-h="12" onclick="toggleSlot(this,'sp')">12–1pm</div>
+          <div class="time-slot active" data-h="13" onclick="toggleSlot(this,'sp')">1–2pm</div>
+          <div class="time-slot active" data-h="14" onclick="toggleSlot(this,'sp')">2–3pm</div>
+          <div class="time-slot active" data-h="15" onclick="toggleSlot(this,'sp')">3–4pm</div>
+          <div class="time-slot active" data-h="16" onclick="toggleSlot(this,'sp')">4–5pm</div>
+          <div class="time-slot" data-h="17" onclick="toggleSlot(this,'sp')">5–6pm</div>
+          <div class="time-slot" data-h="18" onclick="toggleSlot(this,'sp')">6–7pm</div>
+          <div class="time-slot" data-h="19" onclick="toggleSlot(this,'sp')">7–8pm</div>
+          <div class="time-slot" data-h="20" onclick="toggleSlot(this,'sp')">8–9pm</div>
+        </div>
+      </div>
+
+      <div class="sched-section">
+        <div class="sched-label">Your windows</div>
+        <div class="window-chips" id="sp-window-chips"></div>
+        <button class="add-window-btn" onclick="addWindowFromPanel()">+ Add window</button>
+      </div>
+
+      <div class="sched-section">
+        <div class="sched-label">Special dates</div>
+        <div class="date-chips" id="sp-date-chips"></div>
+        <button class="add-date-btn" onclick="openDateModal('sp')">+ Add a date</button>
+      </div>
+
+      <div class="sched-conflict-warning" id="sp-conflict-warning">
+        <span class="scw-icon">⚠️</span>
+        <div class="scw-text">
+          <strong>Nudges may overlap</strong>
+          <span id="sp-conflict-msg"></span>
+        </div>
+      </div>
+      <button class="cta-btn" style="margin-top:8px;" onclick="saveSchedulePanel()">Save schedule →</button>
     </div>
   </div>
 
   <!-- ════ DATE MODAL ════ -->
-  <div class="panel-overlay" id="date-modal" onclick="if(event.target===this)closePanel('date-modal')">
+  <div class="panel-overlay" id="date-modal-overlay" onclick="if(event.target===this)closePanel('date-modal')">
     <div class="panel-sheet" style="max-height:80vh;">
       <div class="panel-drag"></div>
       <div class="panel-header">
@@ -1403,34 +1375,29 @@ a { color: inherit; text-decoration: none; }
     </div>
   </div>
 
-  <!-- ════ ABOUT PANEL ════ -->
-  <div class="panel-overlay" id="about-overlay" onclick="if(event.target===this)closePanel('about')">
-    <div class="panel-sheet" style="max-height:92vh;">
-      <div class="panel-drag"></div>
-      <div class="panel-header">
-        <div class="panel-back" onclick="closePanel('about')">←</div>
+  <!-- ════ SCREEN: ABOUT ════ -->
+  <div class="screen" id="screen-about">
+    <div class="screen-content no-nav" style="padding-top:16px;">
+      <div class="panel-header" style="padding:0 0 12px;">
+        <div class="panel-back" onclick="goBack()">←</div>
         <div class="panel-title">About <em>Grà</em></div>
       </div>
-      <div class="panel-body">
-        <div class="about-hero">
-          <div class="about-heart">💛</div>
-          <div class="about-tagline">Small reminders.<br>Big love.</div>
-        </div>
-        <div class="about-story">
-          <div class="about-section-label">Why I built this</div>
-          <p>A while back I realised something uncomfortable: I was genuinely bad at keeping in touch with the people I love most. Not because I didn't care — I thought about my partner, my family, my close friends constantly. But life gets busy, and somehow days would pass without a single message.</p>
-          <p>I noticed that when I did reach out — even just a quick "thinking of you" — it changed everything. The conversation would light up. The relationship felt warmer. And I felt better too.</p>
-          <p>So I started setting phone reminders. Clunky, but it worked. I wanted something more intentional — something that understood <em>who</em> I was nudging and <em>when</em> I was free. <em>Grà</em> is the Scottish Gaelic word for love. This is what I built for myself. I hope it helps you too.</p>
-        </div>
-        <div class="about-section-label">The science bit</div>
-        <div class="science-card">
-          <div class="science-item"><div class="science-icon">🔬</div><div class="science-text"><strong>Micro-moments matter</strong>Psychologist Barbara Fredrickson's research shows that brief positive interactions — even a short text — build lasting emotional bonds over time.</div></div>
-          <div class="science-item"><div class="science-icon">🧠</div><div class="science-text"><strong>Habits need cues</strong>BJ Fogg's Tiny Habits research shows that good intentions alone aren't enough. External prompts are what turn caring feelings into consistent behaviour.</div></div>
-          <div class="science-item"><div class="science-icon">📈</div><div class="science-text"><strong>Consistency compounds</strong>Relationship researcher John Gottman found that couples who maintain small, regular gestures of affection report significantly higher long-term relationship satisfaction.</div></div>
-        </div>
-        <div style="font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:12px;">Grà · From the Scottish Gaelic for love · v2.0</div>
-        <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">☕ &nbsp;If this helped, buy me a coffee</a>
+      <div class="about-hero">
+        <div class="about-heart">💛</div>
+        <div class="about-tagline">Small reminders.<br>Big love.</div>
       </div>
+      <div class="about-story">
+        <div class="about-section-label">Why I built this</div>
+        <p>Grà started as a personal project — a simple way to stop letting the people I love most slip to the bottom of a busy week. If it's helped you stay a little closer to someone who matters, that means everything. Building and maintaining it takes time, and a coffee goes a long way. Thank you for being here. ♡</p>
+      </div>
+      <div class="about-section-label">The science bit</div>
+      <div class="science-card">
+        <div class="science-item"><div class="science-icon">🔬</div><div class="science-text"><strong>Micro-moments matter</strong>Psychologist Barbara Fredrickson's research shows that brief positive interactions — even a short text — build lasting emotional bonds over time.</div></div>
+        <div class="science-item"><div class="science-icon">🧠</div><div class="science-text"><strong>Habits need cues</strong>BJ Fogg's Tiny Habits research shows that good intentions alone aren't enough. External prompts are what turn caring feelings into consistent behaviour.</div></div>
+        <div class="science-item"><div class="science-icon">📈</div><div class="science-text"><strong>Consistency compounds</strong>Relationship researcher John Gottman found that couples who maintain small, regular gestures of affection report significantly higher long-term relationship satisfaction.</div></div>
+      </div>
+      <div style="font-size:0.6rem;color:var(--muted);text-align:center;margin-bottom:12px;">Grà · From the Scottish Gaelic for love · v2.0</div>
+      <a href="https://buymeacoffee.com/gracreator" target="_blank" class="coffee-btn">☕ &nbsp;If this helped, buy me a coffee</a>
     </div>
   </div>
 
@@ -1447,18 +1414,20 @@ a { color: inherit; text-decoration: none; }
   </div>
 
   <!-- ════ TUTORIAL OVERLAY ════ -->
-  <div id="tutorial-overlay" style="display:none;">
-    <div id="tutorial-backdrop"></div>
-    <div id="tutorial-card">
-      <div id="tutorial-step-dots"></div>
-      <div id="tutorial-emoji"></div>
-      <div id="tutorial-title"></div>
-      <div id="tutorial-body"></div>
-      <div id="tutorial-actions">
-        <button id="tutorial-skip" onclick="endTutorial()">Skip</button>
-        <button id="tutorial-next" onclick="nextTutorialStep()">Next →</button>
+  <div id="tutorial-overlay" style="display:none;position:absolute;inset:0;z-index:700;pointer-events:none;">
+    <div id="tutorial-spotlight" style="position:absolute;background:transparent;border:2.5px solid var(--rose);border-radius:14px;box-shadow:0 0 0 9999px rgba(10,5,15,0.82);transition:all 0.32s cubic-bezier(0.4,0,0.2,1);pointer-events:none;z-index:701;"></div>
+    <div id="tutorial-card" style="position:absolute;left:14px;right:14px;background:#ffffff;border-radius:18px;padding:14px 16px 12px;box-shadow:0 12px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.9);pointer-events:auto;z-index:702;transition:top 0.32s cubic-bezier(0.4,0,0.2,1);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;">
+        <div id="tutorial-step-label" style="font-size:0.55rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);line-height:1.6;"></div>
+        <button onclick="endTutorial()" style="background:none;border:none;font-size:0.72rem;color:#c0a8a0;cursor:pointer;padding:0 0 0 8px;line-height:1.6;">✕ skip</button>
       </div>
-      <div id="tutorial-progress"></div>
+      <div id="tutorial-title" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.3;"></div>
+      <div id="tutorial-body" style="font-size:0.7rem;color:#8a7070;line-height:1.6;margin-bottom:12px;"></div>
+      <div id="tutorial-dots" style="display:flex;gap:4px;align-items:center;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:7px;justify-content:flex-end;">
+        <button id="tutorial-next-btn" onclick="nextTutorialStep()" style="padding:6px 16px;background:linear-gradient(135deg,var(--rose),var(--rose-dark));border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:600;color:white;cursor:pointer;">Next →</button>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -1563,7 +1532,7 @@ function getDeviceId() {
 ═══════════════════════════════════════════════════════════ */
 const SUPABASE_URL  = 'https://lnfijupigmsosokpjutj.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxuZmlqdXBpZ21zb3Nva3BqdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwODExNDcsImV4cCI6MjA4NzY1NzE0N30.J7SEAKL1U__mhSAP5fOh8Bw82F9sHELgcJ7qbVRSY1w';
-const VAPID_PUBLIC  = 'BHl_D6UaYgMx6ksa8ydT2Onga4vc8DuL7j98fg7y-58NATf-QPbpxnVbLnHIB1TpMj69OMo8xu67xinzpn0nVBc';
+const VAPID_PUBLIC  = 'BPvo-7TbK1w3ZRHefJYNtEIfC2J0u5b7jrcF499jr5VaCePMmhv2uAibf3Qk4dh8LM9_OJv8cmMY_0PLfPdR5YY';
 
 async function sbFetch(path, opts = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -1658,18 +1627,27 @@ async function ensurePushSubscription(reg) {
       });
     }
     window._pushSub = sub;
-    localStorage.setItem(LS.PUSH_SUB, JSON.stringify(sub));
+
+    // Explicitly extract keys — JSON.stringify(sub) omits them on some Android Chrome versions
+    const p256dh = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh'))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    const auth   = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth'))))
+      .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+    const subData = { endpoint: sub.endpoint, keys: { p256dh, auth } };
+    localStorage.setItem(LS.PUSH_SUB, JSON.stringify(subData));
+    window._pushSub = subData; // store plain object with keys guaranteed
+
     const userId = await ensureUser();
     if (userId) {
-      const j = sub.toJSON();
       await sbFetch('push_subscriptions?on_conflict=user_id', {
         method: 'POST',
         headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
-        body: JSON.stringify({ user_id: userId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+        body: JSON.stringify({ user_id: userId, endpoint: sub.endpoint, p256dh, auth }),
       }).catch(() => {});
     }
-    return sub;
-  } catch(e) { return null; }
+    return subData;
+  } catch(e) { console.error('ensurePushSubscription:', e); return null; }
 }
 
 async function requestPushPermission() {
@@ -1688,28 +1666,129 @@ async function sendPush(notification) {
   if (!sub) {
     try { const s = localStorage.getItem(LS.PUSH_SUB); if (s) sub = JSON.parse(s); } catch(_) {}
   }
-  if (!sub) return false;
+  if (!sub) { console.warn('sendPush: no subscription'); return { ok: false, error: 'no-sub' }; }
   try {
-    const j = (typeof sub.toJSON === 'function') ? sub.toJSON() : sub;
+    const endpoint = sub.endpoint;
+    const keys     = sub.keys || (typeof sub.toJSON === 'function' ? sub.toJSON().keys : null);
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      console.warn('sendPush: missing fields', { endpoint, keys });
+      return { ok: false, error: 'missing-fields' };
+    }
     const res = await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify({ subscription: { endpoint: j.endpoint, keys: j.keys }, notification }),
+      body: JSON.stringify({ subscription: { endpoint, keys }, notification }),
     });
-    return res.ok;
-  } catch(e) { return false; }
+    const body = await res.text().catch(() => '');
+    console.log('sendPush response:', res.status, body);
+
+    if (res.status === 403 || res.status === 410) {
+      console.warn('Push subscription stale — re-subscribing');
+      window._pushSub = null;
+      localStorage.removeItem(LS.PUSH_SUB);
+      const reg = window._swReg || await navigator.serviceWorker.ready.catch(() => null);
+      if (reg) {
+        const oldSub = await reg.pushManager.getSubscription().catch(() => null);
+        if (oldSub) await oldSub.unsubscribe().catch(() => {});
+        await ensurePushSubscription(reg);
+      }
+      return { ok: false, error: `${res.status}: VAPID key mismatch — try again` };
+    }
+    return { ok: res.ok, status: res.status, error: res.ok ? null : body };
+  } catch(e) {
+    console.error('sendPush error:', e);
+    return { ok: false, error: String(e) };
+  }
 }
 
 async function sendTestPush() {
+  showToast('Checking notification setup…');
+
+  const reg = window._swReg || await navigator.serviceWorker.ready.catch(() => null);
+  if (!reg) { showToast('Service worker not ready — try reloading'); return; }
+
+  // Force fresh subscription to clear any VAPID key mismatch
+  const existing = await reg.pushManager.getSubscription().catch(() => null);
+  if (existing) await existing.unsubscribe().catch(() => {});
+  window._pushSub = null;
+  localStorage.removeItem(LS.PUSH_SUB);
+
   const ok = await requestPushPermission();
-  if (!ok) { showToast('Notifications blocked — check browser settings'); return; }
-  const sent = await sendPush({ title: 'Grà 💛', body: 'Notifications are working! ♡', tag: 'gra-test' });
-  showToast(sent ? 'Test notification sent! ♡' : 'Could not send — check Supabase logs');
+  if (!ok) { showToast('Notifications blocked — check phone settings'); return; }
+
+  showToast('Sending…');
+  const result = await sendPush({ title: 'Grà 💛', body: 'Notifications are working! ♡', tag: 'gra-test' });
+  if (result.ok) {
+    showToast('✓ Sent! Check your notification shade');
+  } else {
+    const detail = result.error || 'unknown error';
+    showToast('Failed: ' + detail.slice(0, 60));
+    console.error('Test push failed:', detail);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
    SCHEDULING ENGINE
 ═══════════════════════════════════════════════════════════ */
+/**
+ * Returns a warning string if the person's window is too narrow to spread
+ * their nudges with the required 6-hour minimum gap, or null if everything looks fine.
+ */
+function checkScheduleFeasibility(person) {
+  const windows = person.windows || [];
+  if (!windows.length) return null;
+
+  const totalText = person.freq?.text || 0;
+  const totalCall = person.freq?.call || 0;
+  const total = totalText + totalCall;
+  if (!total) return null;
+
+  // Reuse the same day/hour parsing as buildWeeklyNudgeTimes
+  const parseHour = s => {
+    const m = s.match(/(\d+)(?::(\d+))?\s*(am|pm)/i);
+    if (!m) return null;
+    let h = +m[1];
+    if (/pm/i.test(m[3]) && h !== 12) h += 12;
+    if (/am/i.test(m[3]) && h === 12) h = 0;
+    return h;
+  };
+
+  const ALL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const daySet = new Set();
+  let startHour = 9, endHour = 17;
+
+  windows.forEach((w, wi) => {
+    const daysText = w.days || '';
+    const rangeMatch = daysText.match(/(\w+)\s*[–\-]\s*(\w+)/);
+    if (rangeMatch) {
+      const from = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[1].toLowerCase().slice(0,3)));
+      const to   = ALL_DAYS.findIndex(d => d.toLowerCase().startsWith(rangeMatch[2].toLowerCase().slice(0,3)));
+      if (from !== -1 && to !== -1) for (let i = from; i <= to; i++) daySet.add(i === 6 ? 0 : i + 1);
+    } else {
+      ALL_DAYS.forEach((d, i) => { if (daysText.includes(d)) daySet.add(i === 6 ? 0 : i + 1); });
+    }
+    if (wi === 0) {
+      const parts = (w.time || '').split(/[–\-]/).map(s => s.trim());
+      startHour = parseHour(parts[0]) ?? 9;
+      endHour   = parseHour(parts[1]) ?? 17;
+    }
+  });
+
+  const numDays = daySet.size || 5;
+  const windowHours = endHour - startHour;
+  // Worst-case: nudges pile onto the fewest possible days
+  const maxNudgesPerDay = Math.ceil(total / numDays);
+  const MIN_GAP_HRS = 6;
+
+  if (windowHours < MIN_GAP_HRS * maxNudgesPerDay) {
+    const neededHours = MIN_GAP_HRS * maxNudgesPerDay;
+    return `Your ${windowHours}h window is too short to space ${total} nudge${total !== 1 ? 's' : ''} `
+         + `${MIN_GAP_HRS} hours apart — some may fire at the same time. `
+         + `Widen the window to at least ${neededHours}h, add more days, or reduce frequency.`;
+  }
+  return null;
+}
+
 function buildWeeklyNudgeTimes(person) {
   // Read windows from DATA, never from DOM
   const windows = person.windows || [];
@@ -1804,8 +1883,10 @@ function buildWeeklyNudgeTimes(person) {
         return candidate;
       }
     }
+    // Fallback: extend beyond the window rather than clamp to rangeMinutes-1,
+    // which would cause two nudges to fire at the same time.
     const last = existing.length ? Math.max(...existing) : 0;
-    const fallback = Math.min(last + MIN_GAP_MINS, rangeMinutes - 1);
+    const fallback = last + MIN_GAP_MINS;
     existing.push(fallback);
     return fallback;
   }
@@ -1893,7 +1974,7 @@ async function checkDueNudges() {
 
       // Send push
       const typeLabel = row.nudge_type === 'call' ? 'call 📞' : 'text 💬';
-      await sendPush({
+      const pushResult = await sendPush({
         title:      'Grà 💛',
         body:       `Time to ${typeLabel} ${row.person_name} — a little love goes a long way`,
         tag:        `nudge-${row.nudge_id}`,
@@ -1901,14 +1982,15 @@ async function checkDueNudges() {
         personName: row.person_name,
         nudgeType:  row.nudge_type,
       });
-
-      // Mark fired
-      sbFetch(`nudge_schedules?id=eq.${row.id}`, {
-        method: 'PATCH', headers: { 'Prefer': '' },
-        body: JSON.stringify({ fired: true }),
-      }).catch(() => {});
-
-      firedSet.add(row.id);
+      if (pushResult.ok) {
+        sbFetch(`nudge_schedules?id=eq.${row.id}`, {
+          method: 'PATCH', headers: { 'Prefer': '' },
+          body: JSON.stringify({ fired: true }),
+        }).catch(() => {});
+        firedSet.add(row.id);
+      } else {
+        console.warn('nudge push failed, will retry next poll:', pushResult.error);
+      }
     }
 
     localStorage.setItem(LS.FIRED, JSON.stringify([...firedSet].slice(-200)));
@@ -1979,7 +2061,8 @@ function navigate(screenId, back = false) {
   from.classList.add('leaving');
 
   setTimeout(() => {
-    from.style.transform = '';
+    from.style.transition = 'none';
+    from.style.transform  = 'translateX(100%)'; // explicitly off-screen, prevents CSS re-transition
     from.classList.remove('leaving');
     _transitioning = false;
   }, 360);
@@ -1988,15 +2071,25 @@ function navigate(screenId, back = false) {
   STATE.screen = screenId;
 
   // Show/hide nav
-  const inApp = ['screen-6'].includes(screenId);
+  const inApp = ['screen-6', 'screen-settings', 'screen-profiles', 'screen-schedule', 'screen-about'].includes(screenId);
   document.getElementById('nav').classList.toggle('visible', inApp);
+
+  // Highlight correct nav tab
+  ['home','streak','gifts'].forEach(t => {
+    document.getElementById('nav-' + t)?.classList.toggle('active', false);
+  });
+  document.getElementById('nav-settings')?.classList.toggle('active', screenId === 'screen-settings');
 
   // Screen-specific setup
   if (screenId === 'screen-1.5') renderRelScreen();
   if (screenId === 'screen-2')   renderFreqScreen();
   if (screenId === 'screen-3')   renderScheduleScreen();
+  if (screenId === 'screen-3.5') renderDatesScreen();
   if (screenId === 'screen-4')   renderConfirmScreen();
   if (screenId === 'screen-6')   { renderDashboard(); renderStreakTab(); }
+  if (screenId === 'screen-profiles') renderProfilesPanel();
+  if (screenId === 'screen-schedule') renderSchedulePanel();
+  if (screenId === 'screen-settings') renderSettingsPanel();
 }
 
 function goBack() {
@@ -2009,7 +2102,6 @@ function openPanel(name) {
   closeAllPanels();
 
   // Pre-render panel content
-  if (name === 'profiles')  renderProfilesPanel();
   if (name === 'frequency') renderFreqPanel();
   if (name === 'schedule')  renderSchedulePanel();
   if (name === 'settings')  renderSettingsPanel();
@@ -2060,7 +2152,7 @@ function switchTab(tab) {
     }
     document.getElementById('nav-' + t)?.classList.toggle('active', t === tab);
   });
-  document.getElementById('nav-settings').classList.remove('active');
+  document.getElementById('nav-settings')?.classList.remove('active');
 
   if (tab === 'streak') renderStreakTab();
   if (tab === 'gifts')  renderGiftsTab();
@@ -2113,7 +2205,7 @@ function startOnboarding() {
 }
 
 function addAnotherPerson() {
-  // Reset onboarding object for a fresh person
+  _navHistory = []; // clear history — we're starting a fresh onboarding flow
   const nameEl = document.getElementById('s1-name');
   if (nameEl) nameEl.value = '';
   onb.name = ''; onb.rel = 'partner'; onb.freq = { text: 3, call: 1 };
@@ -2185,7 +2277,21 @@ function renderFreqSummary(elId, name, freq) {
   el.innerHTML = s;
 }
 
+function renderDatesScreen() {
+  renderDateChips('s35-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderDatesScreen(); });
+}
+
 function renderScheduleScreen() {
+  // Reset day pills to Mon–Fri default
+  const weekdays = ['Mo','Tu','We','Th','Fr'];
+  document.querySelectorAll('#s3-day-row .day-pill').forEach(pill => {
+    pill.classList.toggle('active', weekdays.includes(pill.dataset.day));
+  });
+  // Reset time slots to 9am–5pm default
+  const workSlots = [9,10,11,12,13,14,15,16];
+  document.querySelectorAll('#s3-time-grid .time-slot').forEach(slot => {
+    slot.classList.toggle('active', workSlots.includes(parseInt(slot.dataset.h)));
+  });
   renderWindowChips('s3-window-chips', onb.windows, (idx) => { onb.windows.splice(idx, 1); renderScheduleScreen(); });
   renderDateChips('s3-date-chips', onb.dates, (idx) => { onb.dates.splice(idx, 1); renderScheduleScreen(); });
 }
@@ -2222,10 +2328,16 @@ function addWindowFromS3() {
 
 function saveWindowsAndContinue() {
   if (!onb.windows.length) { showToast('Add at least one window first'); return; }
-  navigate('screen-4');
+  navigate('screen-3.5');
 }
 
 function renderConfirmScreen() {
+  // Reset to confirm state — essential when adding 2nd+ person
+  const cs = document.getElementById('s4-confirm-state');
+  const as = document.getElementById('s4-activated-state');
+  if (cs) cs.style.display = '';
+  if (as) as.style.display = 'none';
+
   const meta = REL_META[onb.rel] || REL_META.partner;
   const av = document.getElementById('confirm-avatar');
   if (av) { av.textContent = meta.emoji; av.style.background = meta.bg; }
@@ -2340,8 +2452,48 @@ const LOVE_QUOTES = [
 ];
 let _quoteIdx = Math.floor(Math.random() * LOVE_QUOTES.length);
 
+function renderNotifReprompt() {
+  const el = document.getElementById('notif-reprompt');
+  if (!el) return;
+  // Don't show if already granted or already running as installed PWA
+  if (!('Notification' in window)) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  if (Notification.permission === 'granted') { el.classList.remove('show'); el.innerHTML = ''; return; }
+  if (Notification.permission === 'denied')  { el.classList.remove('show'); el.innerHTML = ''; return; }
+  // Don't nag immediately — wait until they've been in the app a bit (at least one person set up)
+  if (!STATE.people.length) { el.classList.remove('show'); el.innerHTML = ''; return; }
+  try { if (localStorage.getItem('gra_notif_reprompt_dismissed')) { el.classList.remove('show'); el.innerHTML = ''; return; } } catch(_) {}
+  el.innerHTML = `
+    <span class="nr-text">🔔 Turn on notifications to get your nudge reminders</span>
+    <button class="nr-btn" onclick="requestNotifFromBanner()">Enable</button>
+    <span class="nr-close" onclick="dismissNotifReprompt()">✕</span>`;
+  el.classList.add('show');
+}
+
+async function requestNotifFromBanner() {
+  const ok = await requestPushPermission();
+  if (ok) {
+    showToast('Notifications enabled ♡');
+    STATE.people.forEach(p => { if (p && !p.paused) scheduleNudgesForPerson(p).catch(() => {}); });
+  } else {
+    showToast('Could not enable — check your browser settings');
+  }
+  renderNotifReprompt();
+}
+
+function dismissNotifReprompt() {
+  try { localStorage.setItem('gra_notif_reprompt_dismissed', '1'); } catch(_) {}
+  const el = document.getElementById('notif-reprompt');
+  if (el) { el.classList.remove('show'); el.innerHTML = ''; }
+}
+
 function renderDashboard() {
   expireOldNudges();
+
+  // Show install banner if prompt is waiting
+  showInstallBanner();
+
+  // Notification re-prompt for users who skipped it
+  renderNotifReprompt();
 
   // Greeting
   const hour = new Date().getHours();
@@ -2454,11 +2606,17 @@ function renderPersonCard(person, personIdx) {
     .map(n => renderNudgeItem(n, person, personIdx))
     .join('');
 
+  const quickActions = `
+    <div class="pnc-quick-actions">
+      <button class="pnc-quick-btn" onclick="event.stopPropagation();openPersonEdit(${personIdx})">⚙️ Edit settings</button>
+      <button class="pnc-quick-btn" onclick="event.stopPropagation();openPersonDateAdd(${personIdx})">📅 Add date</button>
+    </div>`;
+
   const expandedContent = nudges.length
     ? (allDone
-        ? `<div class="pnc-body"><div class="pnc-all-done"><span class="done-emoji">🎉</span>All nudges complete this week!</div></div>`
-        : `<div class="pnc-body">${expandedRows}</div>`)
-    : '';
+        ? `<div class="pnc-body"><div class="pnc-all-done"><span class="done-emoji">🎉</span>All nudges complete this week!</div>${quickActions}</div>`
+        : `<div class="pnc-body">${expandedRows}${quickActions}</div>`)
+    : `<div class="pnc-body">${quickActions}</div>`;
 
   const isExpanded = isDue; // auto-expand if due
   return `
@@ -2791,9 +2949,10 @@ function checkAutoWeeklyReset() {
     thisMonday.setDate(now.getDate() - daysSinceMon);
     thisMonday.setHours(0, 0, 0, 0);
     const mondayStr = thisMonday.toDateString();
-    if (lastReset === mondayStr) return;
-    const hasActivity = STATE.people.some(p => (p?.stats?.textsSent || 0) + (p?.stats?.callsMade || 0) > 0);
-    if (!hasActivity) return;
+    if (lastReset === mondayStr) return; // already reset this week
+    // Always reset on a new Monday — even if nothing was marked done.
+    // This ensures people added mid-week get fresh schedules rather than
+    // carrying over "next week" nudges indefinitely.
     doWeeklyReset();
   } catch(_) {}
 }
@@ -2837,11 +2996,41 @@ function doWeeklyReset() {
    GIFTS TAB
 ═══════════════════════════════════════════════════════════ */
 const GIFTS = {
-  uk: [{emoji:'💐',name:'Fresh flower delivery',desc:'Bloom & Wild — letterbox bouquets',price:'From £25',url:'https://www.bloomandwild.com'},{emoji:'🍫',name:'Artisan chocolates',desc:'Hotel Chocolat — luxury monthly box',price:'From £22/mo',url:'https://www.hotelchocolat.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Treatwell — book local spas online',price:'From £40',url:'https://www.treatwell.co.uk'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal, beautiful paper',price:'~£18',url:'https://www.amazon.co.uk'},{emoji:'🕯️',name:'Luxury candle set',desc:'Jo Malone style — romantic ambience',price:'~£28',url:'https://www.amazon.co.uk'}],
-  us: [{emoji:'💐',name:'Fresh flower delivery',desc:'1-800-Flowers — same-day delivery',price:'From $35',url:'https://www.1800flowers.com'},{emoji:'🍫',name:'Artisan chocolates',desc:"Compartés — LA chocolatier, ships nationwide",price:'From $28',url:'https://compartes.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Spafinder — 20,000+ US spas',price:'From $50',url:'https://www.spafinder.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & writing prompts',price:'~$24',url:'https://www.amazon.com'},{emoji:'🕯️',name:'Luxury candle set',desc:'Homesick — free shipping over $50',price:'~$34',url:'https://www.homesick.com'}],
-  au: [{emoji:'💐',name:'Fresh flower delivery',desc:'Floraly — same-day Melb/Syd/Bris',price:'From A$55',url:'https://floraly.com.au'},{emoji:'🍫',name:'Artisan chocolates',desc:'Koko Black — Australian bean-to-bar',price:'From A$30',url:'https://kokoblack.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Spahive — find & book spas Australia',price:'From A$60',url:'https://spahive.com.au'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~A$32',url:'https://www.amazon.com.au'},{emoji:'🕯️',name:'Luxury candle set',desc:'Lumira — Australian luxury fragrance',price:'~A$55',url:'https://www.lumira.com'}],
-  eu: [{emoji:'💐',name:'Fresh flower delivery',desc:'Euroflorist — 150+ European countries',price:'From €30',url:'https://www.euroflorist.com'},{emoji:'🍫',name:'Artisan chocolates',desc:'Leonidas Belgian chocolates',price:'From €22',url:'https://www.leonidas.com'},{emoji:'🌿',name:'Spa day voucher',desc:'Smartbox — spa experiences across Europe',price:'From €49',url:'https://www.smartbox.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~€20',url:'https://www.amazon.de'},{emoji:'🕯️',name:'Luxury candle set',desc:'Diptyque — Parisian candles, EU shipping',price:'~€45',url:'https://www.diptyqueparis.com'}],
-  ca: [{emoji:'💐',name:'Fresh flower delivery',desc:'FTD Canada — nationwide delivery',price:'From CA$45',url:'https://www.ftd.com/canada'},{emoji:'🍫',name:'Artisan chocolates',desc:'Bernard Callebaut — Canadian chocolate',price:'From CA$30',url:'https://www.bernardc.com'},{emoji:'🌿',name:'Spa day voucher',desc:'SpaFinder — Canada locations',price:'From CA$60',url:'https://www.spafinder.com'},{emoji:'✍️',name:'Love letter kit',desc:'Wax seal & prompts',price:'~CA$28',url:'https://www.amazon.ca'},{emoji:'🕯️',name:'Luxury candle set',desc:'P.F. Candle Co',price:'~CA$38',url:'https://pfcandleco.com'}],
+  uk: [
+    {emoji:'💐',name:'Fresh flower delivery',desc:'Search on Amazon UK — letterbox bouquets',price:'From £20',url:'https://www.amazon.co.uk/s?k=letterbox+flowers&tag=gracreator-21'},
+    {emoji:'🍫',name:'Luxury chocolates',desc:'Search on Amazon UK — premium gift boxes',price:'From £15',url:'https://www.amazon.co.uk/s?k=luxury+chocolate+gift+box&tag=gracreator-21'},
+    {emoji:'🕯️',name:'Luxury candle set',desc:'Search on Amazon UK — scented gift sets',price:'From £18',url:'https://www.amazon.co.uk/s?k=luxury+candle+gift+set&tag=gracreator-21'},
+    {emoji:'✍️',name:'Love letter kit',desc:'Search on Amazon UK — wax seal & stationery',price:'From £12',url:'https://www.amazon.co.uk/s?k=wax+seal+love+letter+kit&tag=gracreator-21'},
+    {emoji:'🌿',name:'Pamper gift set',desc:'Search on Amazon UK — bath & spa sets',price:'From £20',url:'https://www.amazon.co.uk/s?k=luxury+pamper+gift+set&tag=gracreator-21'},
+  ],
+  us: [
+    {emoji:'💐',name:'Fresh flower delivery',desc:'Search on Amazon US — delivered to their door',price:'From $25',url:'https://www.amazon.com/s?k=fresh+flower+delivery+gift&tag=gracreator08-20'},
+    {emoji:'🍫',name:'Luxury chocolates',desc:'Search on Amazon US — premium gift boxes',price:'From $20',url:'https://www.amazon.com/s?k=luxury+chocolate+gift+box&tag=gracreator08-20'},
+    {emoji:'🕯️',name:'Luxury candle set',desc:'Search on Amazon US — scented gift sets',price:'From $22',url:'https://www.amazon.com/s?k=luxury+candle+gift+set&tag=gracreator08-20'},
+    {emoji:'✍️',name:'Love letter kit',desc:'Search on Amazon US — wax seal & stationery',price:'From $15',url:'https://www.amazon.com/s?k=wax+seal+love+letter+kit&tag=gracreator08-20'},
+    {emoji:'🌿',name:'Pamper gift set',desc:'Search on Amazon US — bath & spa sets',price:'From $25',url:'https://www.amazon.com/s?k=luxury+pamper+gift+set&tag=gracreator08-20'},
+  ],
+  au: [
+    {emoji:'💐',name:'Fresh flower delivery',desc:'Search on Amazon AU — delivered to their door',price:'From A$30',url:'https://www.amazon.com.au/s?k=fresh+flower+gift&tag=gracreator-20'},
+    {emoji:'🍫',name:'Luxury chocolates',desc:'Search on Amazon AU — premium gift boxes',price:'From A$25',url:'https://www.amazon.com.au/s?k=luxury+chocolate+gift+box&tag=gracreator-20'},
+    {emoji:'🕯️',name:'Luxury candle set',desc:'Search on Amazon AU — scented gift sets',price:'From A$28',url:'https://www.amazon.com.au/s?k=luxury+candle+gift+set&tag=gracreator-20'},
+    {emoji:'✍️',name:'Love letter kit',desc:'Search on Amazon AU — wax seal & stationery',price:'From A$18',url:'https://www.amazon.com.au/s?k=wax+seal+stationery+kit&tag=gracreator-20'},
+    {emoji:'🌿',name:'Pamper gift set',desc:'Search on Amazon AU — bath & spa sets',price:'From A$30',url:'https://www.amazon.com.au/s?k=luxury+pamper+gift+set&tag=gracreator-20'},
+  ],
+  eu: [
+    {emoji:'💐',name:'Fresh flower delivery',desc:'Search on Amazon DE — delivered to their door',price:'From €22',url:'https://www.amazon.de/s?k=blumen+geschenk&tag=gracreator-20'},
+    {emoji:'🍫',name:'Luxury chocolates',desc:'Search on Amazon DE — premium gift boxes',price:'From €18',url:'https://www.amazon.de/s?k=schokolade+geschenkbox&tag=gracreator-20'},
+    {emoji:'🕯️',name:'Luxury candle set',desc:'Search on Amazon DE — scented gift sets',price:'From €20',url:'https://www.amazon.de/s?k=luxury+candle+gift+set&tag=gracreator-20'},
+    {emoji:'✍️',name:'Love letter kit',desc:'Search on Amazon DE — wax seal & stationery',price:'From €14',url:'https://www.amazon.de/s?k=wax+seal+stationery&tag=gracreator-20'},
+    {emoji:'🌿',name:'Pamper gift set',desc:'Search on Amazon DE — bath & spa sets',price:'From €22',url:'https://www.amazon.de/s?k=verwohnset+geschenk&tag=gracreator-20'},
+  ],
+  ca: [
+    {emoji:'💐',name:'Fresh flower delivery',desc:'Search on Amazon CA — delivered to their door',price:'From CA$30',url:'https://www.amazon.ca/s?k=fresh+flower+gift+delivery&tag=gracreator-20'},
+    {emoji:'🍫',name:'Luxury chocolates',desc:'Search on Amazon CA — premium gift boxes',price:'From CA$22',url:'https://www.amazon.ca/s?k=luxury+chocolate+gift+box&tag=gracreator-20'},
+    {emoji:'🕯️',name:'Luxury candle set',desc:'Search on Amazon CA — scented gift sets',price:'From CA$25',url:'https://www.amazon.ca/s?k=luxury+candle+gift+set&tag=gracreator-20'},
+    {emoji:'✍️',name:'Love letter kit',desc:'Search on Amazon CA — wax seal & stationery',price:'From CA$16',url:'https://www.amazon.ca/s?k=wax+seal+love+letter+kit&tag=gracreator-20'},
+    {emoji:'🌿',name:'Pamper gift set',desc:'Search on Amazon CA — bath & spa sets',price:'From CA$28',url:'https://www.amazon.ca/s?k=luxury+pamper+gift+set&tag=gracreator-20'},
+  ],
 };
 const REGION_FLAGS = { uk:'🇬🇧', us:'🇺🇸', au:'🇦🇺', eu:'🇪🇺', ca:'🇨🇦' };
 const REGION_NAMES = { uk:'UK', us:'US', au:'AU', eu:'EU', ca:'CA' };
@@ -2930,6 +3119,23 @@ function renderProfilesPanel() {
   }).join('');
 }
 
+function openPersonEdit(personIdx) {
+  STATE.activeIdx = personIdx;
+  STATE.freqPanelIdx = personIdx;
+  saveLocal();
+  navigate('screen-schedule');
+}
+
+function openPersonDateAdd(personIdx) {
+  STATE.activeIdx = personIdx;
+  saveLocal();
+  _dateContext = 'sp';
+  _datePendingType = 'birthday';
+  document.getElementById('date-input-label').value = '';
+  document.getElementById('date-input-date').value  = '';
+  openPanel('date-modal');
+}
+
 function switchActivePerson(idx) {
   STATE.activeIdx = idx;
   saveLocal();
@@ -2966,20 +3172,18 @@ function doRemovePerson(idx) {
     });
   }
   if (!STATE.people.length) { closeAllPanels(); navigate('screen-1'); return; }
-  renderProfilesPanel();
+  if (STATE.screen === 'screen-profiles') renderProfilesPanel();
   renderDashboard();
 }
 
 /* ── Frequency Panel ── */
 function openFreqPanel() {
   STATE.freqPanelIdx = STATE.activeIdx;
-  closePanel('settings');
-  setTimeout(() => openPanel('frequency'), 300);
+  setTimeout(() => openPanel('frequency'), 50);
 }
 
 function openSchedulePanelFromSettings() {
-  closePanel('settings');
-  setTimeout(() => openPanel('schedule'), 300);
+  navigate('screen-schedule');
 }
 
 function renderFreqPanel() {
@@ -3020,7 +3224,12 @@ function saveFreqPanel() {
     saveLocal();
     savePeopleRemote().catch(() => {});
     scheduleNudgesForPerson(person).catch(() => {});
-    showToast('Saved ♡');
+    const warning = checkScheduleFeasibility(person);
+    if (warning) {
+      showToast('⚠️ Saved — but check schedule: window may be too narrow');
+    } else {
+      showToast('Saved ♡');
+    }
   }
   setTimeout(() => { closePanel('frequency'); renderDashboard(); renderSettingsPanel(); }, 600);
 }
@@ -3064,13 +3273,22 @@ function renderSchedulePanel() {
   renderWindowChips('sp-window-chips', person.windows || [], (idx) => {
     person.windows.splice(idx, 1);
     saveLocal();
-    renderWindowChips('sp-window-chips', person.windows || [], () => {});
+    renderSchedulePanel();
   });
   renderDateChips('sp-date-chips', person.dates || [], (idx) => {
     person.dates.splice(idx, 1);
     saveLocal();
     renderSchedulePanel();
   });
+
+  // Feasibility warning
+  const warning = checkScheduleFeasibility(person);
+  const warnEl  = document.getElementById('sp-conflict-warning');
+  const msgEl   = document.getElementById('sp-conflict-msg');
+  if (warnEl && msgEl) {
+    msgEl.textContent = warning || '';
+    warnEl.classList.toggle('visible', !!warning);
+  }
 }
 
 function switchSchedulePerson(idx) {
@@ -3087,18 +3305,29 @@ function addWindowFromPanel() {
   if (!person.windows) person.windows = [];
   person.windows.push(win);
   saveLocal();
-  renderWindowChips('sp-window-chips', person.windows, (idx) => { person.windows.splice(idx, 1); saveLocal(); renderWindowChips('sp-window-chips', person.windows, () => {}); });
+  renderSchedulePanel();
   showToast('Window added ♡');
 }
 
 function saveSchedulePanel() {
   const person = STATE.people[STATE.activeIdx];
   if (!person) return;
+  // Always fully reset and rebuild the schedule when settings change —
+  // regardless of whether push notifications are granted. scheduleNudgesForPerson
+  // clears person.nudges and person._scheduledNudges before rebuilding, so the
+  // dashboard reflects the new schedule immediately.
+  person.nudges           = {};
+  person._scheduledNudges = null;
   saveLocal();
   savePeopleRemote().catch(() => {});
-  if (Notification.permission === 'granted') scheduleNudgesForPerson(person).catch(() => {});
-  showToast('Schedule saved ♡');
-  setTimeout(() => { closePanel('schedule'); renderDashboard(); }, 700);
+  scheduleNudgesForPerson(person).catch(() => {});
+  const warning = checkScheduleFeasibility(person);
+  if (warning) {
+    showToast('⚠️ Saved, but window may be too narrow — nudges could overlap');
+  } else {
+    showToast('Schedule saved ♡');
+  }
+  setTimeout(() => { goBack(); renderDashboard(); }, 700);
 }
 
 /* ── Window chip renderer (shared) ── */
@@ -3162,7 +3391,9 @@ function saveDate() {
 
   if (_dateContext === 's3') {
     onb.dates.push(entry);
-    renderScheduleScreen();
+    // Refresh whichever screen is showing the date chips
+    if (STATE.screen === 'screen-3.5') renderDatesScreen();
+    else renderScheduleScreen();
   } else {
     const person = STATE.people[STATE.activeIdx];
     if (person) {
@@ -3345,12 +3576,24 @@ let _deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstallPrompt = e;
-  const banner = document.getElementById('install-banner');
-  if (banner && STATE.screen === 'screen-6') {
-    banner.innerHTML = `<span class="ib-text">💛 Add Grà to your home screen</span><button class="ib-btn" onclick="installPwa()">Install</button><span class="ib-close" onclick="document.getElementById('install-banner').classList.remove('show')">✕</span>`;
-    banner.classList.add('show');
-  }
+  // Show immediately if already on dashboard, otherwise it'll show on next renderDashboard call
+  showInstallBanner();
 });
+
+function showInstallBanner() {
+  if (!_deferredInstallPrompt) return;
+  try { if (localStorage.getItem('gra_install_dismissed')) return; } catch(_) {}
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  banner.style.flexDirection = '';
+  banner.innerHTML = `<span class="ib-text">💛 Add Grà to your home screen for the best experience</span><button class="ib-btn" onclick="installPwa()">Install</button><span class="ib-close" onclick="dismissInstallBanner()">✕</span>`;
+  banner.classList.add('show');
+}
+
+function dismissInstallBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+  try { localStorage.setItem('gra_install_dismissed', '1'); } catch(_) {}
+}
 
 async function installPwa() {
   if (!_deferredInstallPrompt) return;
@@ -3361,73 +3604,418 @@ async function installPwa() {
 }
 
 function checkIosInstall() {
-  const isIos     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isIos       = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone = window.navigator.standalone;
-  if (isIos && !isStandalone) {
-    const banner = document.getElementById('install-banner');
-    if (banner) {
-      banner.style.flexDirection = 'column';
-      banner.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;width:100%;"><span style="font-weight:600;">💛 Add Grà to your home screen</span><span class="ib-close" onclick="this.closest('#install-banner').classList.remove('show')">✕</span></div><div style="font-size:0.72rem;color:rgba(255,255,255,0.7);line-height:1.5;margin-top:6px;">Tap <strong style="color:#fff;">Share</strong> ⎙ at the bottom of Safari, then <strong style="color:#fff;">Add to Home Screen</strong>.</div>`;
-      banner.classList.add('show');
-    }
-  }
+  if (!isIos || isStandalone) return;
+  try { if (localStorage.getItem('gra_ios_install_shown')) return; } catch(_) {}
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  try { localStorage.setItem('gra_ios_install_shown', '1'); } catch(_) {}
+  banner.style.flexDirection = 'column';
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <span style="font-weight:600;">💛 Add Grà to your home screen</span>
+      <span class="ib-close" onclick="this.closest('#install-banner').classList.remove('show')">✕</span>
+    </div>
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);line-height:1.6;margin-top:6px;">
+      Tap <strong style="color:#fff;">Share</strong> ⎙ at the bottom of Safari,<br>then tap <strong style="color:#fff;">Add to Home Screen</strong>.
+    </div>`;
+  banner.classList.add('show');
 }
 
 /* ═══════════════════════════════════════════════════════════
    TUTORIAL
 ═══════════════════════════════════════════════════════════ */
 const TUTORIAL_STEPS = [
-  { emoji:'🏠', title:'Your people, at a glance', body:'The Home tab shows one card per person. Tap a card to expand it and see all their nudges for the week.', highlight:'tab-home', tab:'home' },
-  { emoji:'💬', title:'When a nudge is due', body:"Three buttons appear right on the card — Done it to log it and grow your streak, Didn't if you missed it, or Remind me for a snooze.", highlight:'dash-person-cards', tab:'home' },
-  { emoji:'🔔', title:'Notifications come to you', body:"On Android the three buttons appear on the notification itself. On iPhone, tap the notification and they appear here on the card. Both paths log to the same streak.", highlight:null, tab:'home' },
-  { emoji:'🔥', title:'Your streak lives here', body:"Every week you mark at least one nudge Done it, your streak grows. Check your progress and see how you're doing per person.", highlight:'nav-streak', tab:'streak' },
-  { emoji:'🎁', title:'Gift ideas when you need them', body:'The Gifts tab has curated ideas based on your region and relationship type — for birthdays, anniversaries, or just-because moments.', highlight:'nav-gifts', tab:null },
-  { emoji:'⚙️', title:'Everything is adjustable', body:'In Settings you can change frequency, schedule windows, add special dates, toggle dark mode, and manage multiple people — each with their own setup.', highlight:'nav-settings', tab:null },
+  // ── Onboarding ──
+  {
+    screen: 'screen-1',
+    spotlight: 's1-name',
+    cardPos: 'above',
+    title: 'Start by naming someone you love',
+    body: 'Type the name of a partner, family member, or friend you want to stay in better touch with. This is just for your reminders — Grà never contacts anyone directly.',
+  },
+  {
+    screen: 'screen-1.5',
+    spotlight: 'rel-cards',
+    cardPos: 'below',
+    title: 'Choose your relationship',
+    body: 'This shapes the tone of message suggestions you\'ll see when a reminder fires. A nudge to a partner sounds different from one to a parent or a friend — Grà adjusts accordingly.',
+  },
+  {
+    screen: 'screen-2',
+    spotlight: 'freq-section',
+    cardPos: 'below',
+    title: 'Set how often you want to reach out',
+    body: 'Use the + and − buttons to choose how many text and call reminders per week. You can set as few as one or as many as seven. This can always be changed from Settings.',
+  },
+  {
+    screen: 'screen-3',
+    spotlight: 's3-day-row',
+    cardPos: 'below',
+    title: 'Pick your days',
+    body: 'These are the days you\'re typically apart from this person — the days you\'d naturally send a message. Grà will only schedule reminders on the days you select here.',
+  },
+  {
+    screen: 'screen-3',
+    spotlight: 's3-time-grid',
+    cardPos: 'below',
+    title: 'Pick your time slots',
+    body: 'Select the hours you\'re free to reach out. Reminders are scattered randomly across these slots each week, so they feel natural rather than like a recurring alarm.',
+  },
+  {
+    screen: 'screen-3',
+    spotlight: 's3-windows-section',
+    cardPos: 'above',
+    title: 'Your default window is ready',
+    body: 'We\'ve pre-filled Monday to Friday, 9am–5pm as your starting window. You can delete it, adjust it, or tap "+ Add window" to build out evenings, weekends, or anything else that fits your life.',
+    scrollTo: 's3-content',
+  },
+  {
+    screen: 'screen-3.5',
+    spotlight: 's35-add-btn',
+    cardPos: 'above',
+    title: 'Add special dates 🗓',
+    body: 'Birthdays, anniversaries, big exams — add them here and Grà will remind you a month out, a week out, the day before, and on the day itself. You can skip this for now and add them later.',
+  },
+  // ── Dashboard ──
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-person-cards',
+    cardPos: 'below',
+    title: 'Your nudges for the week',
+    body: 'This is your dashboard. Each card shows someone you\'re nudging and when your reminders are scheduled this week. Tap a card to expand it and see the details.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+    onEnter: () => {
+      // Always show a demo person card so the spotlight has something to frame
+      const container = document.getElementById('dash-person-cards');
+      if (container) {
+        container.innerHTML = `
+          <div id="tutorial-demo-person" class="person-nudge-card">
+            <div class="pnc-header">
+              <div class="pnc-avatar" style="background:#fde8ec;">💑</div>
+              <div class="pnc-info">
+                <div class="pnc-name">Sarah</div>
+                <div class="pnc-next">Tomorrow · 10:00</div>
+              </div>
+              <div class="pnc-badge upcoming">Coming up</div>
+              <div class="pnc-chevron">▾</div>
+            </div>
+          </div>`;
+      }
+    },
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-person-cards',
+    cardPos: 'below',
+    title: 'When a reminder fires',
+    body: 'You\'ll get a notification at the right time. Open the app and three options appear — tap "Done it" to log that you reached out, "Didn\'t" to skip, or "Remind me" to snooze it.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+    onEnter: () => {
+      // Show a demo card in the "due now" expanded state
+      const container = document.getElementById('dash-person-cards');
+      if (container) {
+        container.innerHTML = `
+          <div id="tutorial-demo-card" class="person-nudge-card has-due">
+            <div class="pnc-header">
+              <div class="pnc-avatar" style="background:#fde8ec;">💑</div>
+              <div class="pnc-info">
+                <div class="pnc-name">Sarah</div>
+                <div class="pnc-next">Due now — respond below</div>
+              </div>
+              <div class="pnc-badge due">Now!</div>
+              <div class="pnc-chevron open">▾</div>
+            </div>
+            <div class="pnc-body">
+              <div class="nudge-item">
+                <div class="nudge-item-top">
+                  <div class="nudge-item-icon">💬</div>
+                  <div class="nudge-item-info">
+                    <div class="nudge-item-type">Text reminder</div>
+                    <div class="nudge-item-time">Today · 10:00</div>
+                  </div>
+                  <div class="nudge-item-badge due">Now!</div>
+                </div>
+                <div class="nudge-actions">
+                  <button class="nudge-act-btn done">✓ Done it</button>
+                  <button class="nudge-act-btn skip">✗ Didn't</button>
+                  <button class="nudge-act-btn snooze">⏰ Remind me</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+    },
+  },
+  {
+    screen: 'screen-6', tab: 'streak',
+    spotlight: 'streak-content',
+    cardPos: 'below',
+    title: 'Your streak 🔥',
+    body: 'Every week you respond to at least one nudge, your streak grows. Your stats and per-person breakdown live on this tab.',
+  },
+  {
+    screen: 'screen-6', tab: 'gifts',
+    spotlight: 'gift-list',
+    cardPos: 'below',
+    title: 'Want to do something extra? 🎁',
+    body: 'The Gifts tab has curated ideas your loved one will actually appreciate — flowers, chocolates, spa days and more. Everything is hand-picked and available in your region.',
+    onEnter: () => { renderGiftsTab(); },
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'nav',
+    cardPos: 'above',
+    title: 'Getting around',
+    body: 'Home shows your reminders. Streak tracks your consistency. Gifts has ideas. Settings lets you adjust frequency, schedule and manage your people.',
+    onEnter: () => { switchTab('home'); },
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: 'dash-add-btn',
+    cardPos: 'below',
+    title: 'Add more people',
+    body: 'Tap this + button to set up reminders for someone else — a parent, friend, sibling. Each person gets their own schedule, frequency and message tone.',
+    scrollTo: 'tab-home',
+    scrollToTop: true,
+  },
+  {
+    screen: 'screen-6', tab: 'home',
+    spotlight: null,
+    cardPos: 'center',
+    title: 'You\'re all set ♡',
+    body: 'That\'s everything! Set it up once and Grà will quietly do the remembering for you. The people you love are worth the two seconds it takes to send a message.',
+    onEnter: () => {
+      switchTab('home');
+      // Clean up demo content and show real state
+      const dp = document.getElementById('tutorial-demo-person');
+      if (dp) dp.remove();
+      const dc = document.getElementById('tutorial-demo-card');
+      if (dc) dc.remove();
+      renderDashboard();
+    },
+  },
 ];
 
-let _tutStep = 0;
-let _tutPrevHighlight = null;
+let _tutStep   = 0;
+let _tutActive = false;
+// Index of the first dashboard step — used to jump straight there after activation
+const _TUT_DASHBOARD_STEP = TUTORIAL_STEPS.findIndex(s => s.screen === 'screen-6');
 
 function startTutorial() {
-  _tutStep = 0;
-  const overlay = document.getElementById('tutorial-overlay');
-  if (!overlay) return;
-  overlay.style.display = 'block';
-  overlay.classList.add('active');
-  renderTutorialStep();
+  _tutStep   = 0;
+  _tutActive = true;
+  document.getElementById('tutorial-overlay').style.display = 'block';
+  _applyTutorialStep();
 }
 
-function renderTutorialStep() {
+function _startTutorialAtDashboard() {
+  _tutStep   = _TUT_DASHBOARD_STEP >= 0 ? _TUT_DASHBOARD_STEP : 0;
+  _tutActive = true;
+  document.getElementById('tutorial-overlay').style.display = 'block';
+  _applyTutorialStep();
+}
+
+function _applyTutorialStep() {
   const step = TUTORIAL_STEPS[_tutStep];
   if (!step) { endTutorial(); return; }
-  if (step.tab) switchTab(step.tab);
-  document.getElementById('tutorial-emoji').textContent = step.emoji;
+
+  if (step.onEnter) step.onEnter();
+
+  const doRender = () => setTimeout(() => _renderTutCard(step), 120);
+
+  if (step.screen === 'screen-6') {
+    // Always switch to screen-6, even mid-onboarding (demo content fills the gap)
+    if (STATE.screen !== 'screen-6') {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active', 'leaving');
+        s.style.transition = 'none';
+        s.style.transform  = 'translateX(100%)';
+      });
+      const s6 = document.getElementById('screen-6');
+      if (s6) { s6.style.transform = 'translateX(0)'; s6.classList.add('active'); }
+      STATE.screen = 'screen-6';
+      document.getElementById('nav').classList.add('visible');
+      renderDashboard(); renderStreakTab(); renderGiftsTab();
+    }
+    if (step.tab) switchTab(step.tab);
+    doRender();
+  } else {
+    // Navigate to onboarding screen without pushing to history
+    // (tutorial drives navigation, user uses Next button)
+    if (STATE.screen !== step.screen) {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active', 'leaving');
+        s.style.transition = 'none';
+        s.style.transform  = 'translateX(100%)';
+      });
+      const target = document.getElementById(step.screen);
+      if (target) { target.style.transform = 'translateX(0)'; target.classList.add('active'); }
+      STATE.screen = step.screen;
+      document.getElementById('nav').classList.remove('visible');
+      // Run screen setup
+      if (step.screen === 'screen-1.5') renderRelScreen();
+      if (step.screen === 'screen-2')   renderFreqScreen();
+      if (step.screen === 'screen-3')   renderScheduleScreen();
+      if (step.screen === 'screen-3.5') renderDatesScreen();
+      if (step.screen === 'screen-4')   renderConfirmScreen();
+    }
+    doRender();
+  }
+}
+
+function _renderTutCard(step) {
+  if (!_tutActive) return;
+  const total = TUTORIAL_STEPS.length;
+  document.getElementById('tutorial-step-label').textContent = `${_tutStep + 1} of ${total}`;
   document.getElementById('tutorial-title').textContent = step.title;
   document.getElementById('tutorial-body').textContent  = step.body;
-  document.getElementById('tutorial-progress').textContent = `${_tutStep + 1} of ${TUTORIAL_STEPS.length}`;
-  const nextBtn = document.getElementById('tutorial-next');
-  if (nextBtn) nextBtn.textContent = _tutStep === TUTORIAL_STEPS.length - 1 ? '✓ Done' : 'Next →';
-  const dots = document.getElementById('tutorial-step-dots');
-  if (dots) dots.innerHTML = TUTORIAL_STEPS.map((_,i) => `<div class="tut-dot ${i===_tutStep?'active':''}"></div>`).join('');
-  if (_tutPrevHighlight) { const p = document.getElementById(_tutPrevHighlight); if (p) p.classList.remove('tutorial-highlight'); }
-  if (step.highlight) { const el = document.getElementById(step.highlight); if (el) { el.classList.add('tutorial-highlight'); _tutPrevHighlight = step.highlight; } } else { _tutPrevHighlight = null; }
+  const nextBtn = document.getElementById('tutorial-next-btn');
+  if (nextBtn) nextBtn.textContent = _tutStep === total - 1 ? 'Done ♡' : 'Next →';
+  document.getElementById('tutorial-dots').innerHTML = TUTORIAL_STEPS.map((_, i) =>
+    `<div style="width:${i === _tutStep ? 14 : 5}px;height:5px;border-radius:3px;background:${i === _tutStep ? 'var(--rose)' : '#e8d8d4'};transition:all 0.2s;flex-shrink:0;"></div>`
+  ).join('');
+  _positionSpotlight(step);
+}
+
+function _positionSpotlight(step) {
+  const spotlight = document.getElementById('tutorial-spotlight');
+  const card      = document.getElementById('tutorial-card');
+  const overlay   = document.getElementById('tutorial-overlay');
+
+  // Resolve target — single or multi
+  let targets = [];
+  if (step.spotlightMulti) {
+    targets = step.spotlightMulti.map(id => document.getElementById(id)).filter(el => el && el.offsetHeight > 0);
+  } else if (step.spotlight) {
+    const el = document.getElementById(step.spotlight);
+    if (el && el.offsetHeight > 0) targets = [el];
+  }
+
+  const doPosition = () => {
+    const oRect  = overlay.getBoundingClientRect();
+    const oH     = oRect.height;
+    const MARGIN = 10;
+
+    card.style.top = '-9999px';
+    const cardH = card.offsetHeight || 190;
+
+    if (!targets.length || step.cardPos === 'center') {
+      spotlight.style.opacity = '0'; spotlight.style.width = '0'; spotlight.style.height = '0';
+      card.style.top = Math.max(MARGIN, (oH - cardH) / 2) + 'px';
+      return;
+    }
+
+    // Union bounding rect of all targets
+    let eTop = Infinity, eLeft = Infinity, eRight = -Infinity, eBottom = -Infinity;
+    targets.forEach(el => {
+      const r = el.getBoundingClientRect();
+      eTop    = Math.min(eTop,    r.top    - oRect.top);
+      eLeft   = Math.min(eLeft,   r.left   - oRect.left);
+      eRight  = Math.max(eRight,  r.right  - oRect.left);
+      eBottom = Math.max(eBottom, r.bottom - oRect.top);
+    });
+    const eW  = eRight - eLeft;
+    const eH  = eBottom - eTop;
+    const SPX = 7, SPY = 5;
+
+    spotlight.style.opacity = '1';
+    spotlight.style.top    = (eTop  - SPY) + 'px';
+    spotlight.style.left   = (eLeft - SPX) + 'px';
+    spotlight.style.width  = (eW + SPX * 2) + 'px';
+    spotlight.style.height = (eH + SPY * 2) + 'px';
+
+    let top;
+    if (step.cardPos === 'below') {
+      top = eBottom + SPY + MARGIN;
+      if (top + cardH > oH - MARGIN) top = eTop - SPY - MARGIN - cardH;
+    } else {
+      top = eTop - SPY - MARGIN - cardH;
+      if (top < MARGIN) top = eBottom + SPY + MARGIN;
+    }
+    card.style.top = Math.max(MARGIN, Math.min(top, oH - cardH - MARGIN)) + 'px';
+  };
+
+  // Scroll if needed
+  const scrollEl = step.scrollTo ? document.getElementById(step.scrollTo) : (targets[0] ? targets[0].closest('.screen-content') : null);
+  if (scrollEl && targets[0]) {
+    if (step.scrollToTop) {
+      scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else if (step.scrollToBottom) {
+      scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    } else {
+      const cRect  = scrollEl.getBoundingClientRect();
+      const eRect  = targets[0].getBoundingClientRect();
+      const offset = eRect.top - cRect.top + scrollEl.scrollTop - scrollEl.clientHeight / 2 + eRect.height / 2;
+      scrollEl.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+      setTimeout(doPosition, 350);
+    }
+  } else {
+    doPosition();
+  }
 }
 
 function nextTutorialStep() {
+  const leaving = TUTORIAL_STEPS[_tutStep];
+  if (leaving?.onLeave) leaving.onLeave();
   _tutStep++;
   if (_tutStep >= TUTORIAL_STEPS.length) { endTutorial(); return; }
-  renderTutorialStep();
+  _applyTutorialStep();
 }
 
 function endTutorial() {
-  const overlay = document.getElementById('tutorial-overlay');
-  if (overlay) { overlay.style.display = 'none'; overlay.classList.remove('active'); }
-  if (_tutPrevHighlight) { const el = document.getElementById(_tutPrevHighlight); if (el) el.classList.remove('tutorial-highlight'); _tutPrevHighlight = null; }
+  // Call onLeave for current step if needed
+  const leaving = TUTORIAL_STEPS[_tutStep];
+  if (_tutActive && leaving?.onLeave) leaving.onLeave();
+
+  _tutActive = false;
+  const overlay   = document.getElementById('tutorial-overlay');
+  const spotlight = document.getElementById('tutorial-spotlight');
+  if (overlay)   overlay.style.display = 'none';
+  if (spotlight) { spotlight.style.opacity = '0'; spotlight.style.width = '0'; spotlight.style.height = '0'; }
+
+  // Clean up any demo content
+  const dp = document.getElementById('tutorial-demo-person');
+  if (dp) dp.remove();
+  const dc = document.getElementById('tutorial-demo-card');
+  if (dc) dc.remove();
+
   try { localStorage.setItem('gra_tutorial_done', '1'); } catch(_) {}
+
+  if (STATE.people.length > 0) {
+    // Real people set up — go to / stay on dashboard
+    if (STATE.screen !== 'screen-6') navigate('screen-6');
+    else renderDashboard();
+  } else {
+    // No one set up yet — send them back to start adding a person
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active', 'leaving');
+      s.style.transition = 'none';
+      s.style.transform  = 'translateX(100%)';
+    });
+    const s1 = document.getElementById('screen-1');
+    if (s1) { s1.style.transform = 'translateX(0)'; s1.classList.add('active'); }
+    STATE.screen = 'screen-1';
+    document.getElementById('nav').classList.remove('visible');
+  }
 }
 
 function maybeShowTutorial() {
-  try { if (!localStorage.getItem('gra_tutorial_done')) setTimeout(startTutorial, 600); } catch(_) {}
+  try {
+    if (localStorage.getItem('gra_tutorial_done')) return;
+    // If on dashboard (called after activation) — jump to dashboard steps
+    if (STATE.screen === 'screen-6') {
+      setTimeout(_startTutorialAtDashboard, 500);
+    } else {
+      // On screen-1 (brand new user) — start from the beginning
+      setTimeout(startTutorial, 600);
+    }
+  } catch(_) {}
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3435,6 +4023,15 @@ function maybeShowTutorial() {
 ═══════════════════════════════════════════════════════════ */
 function init() {
   loadLocal();
+
+  // One-time migration: clear stale push sub from old VAPID key
+  try {
+    if (!localStorage.getItem('gra_vapid_migrated')) {
+      localStorage.removeItem(LS.PUSH_SUB);
+      window._pushSub = null;
+      localStorage.setItem('gra_vapid_migrated', 'v2');
+    }
+  } catch(_) {}
 
   // Apply dark mode before any render
   if (STATE.darkMode) document.documentElement.classList.add('dark-mode');
@@ -3453,6 +4050,10 @@ function init() {
         const swUrl = new URL('sw.js', location.href).href;
         const reg = await navigator.serviceWorker.register(swUrl);
         window._swReg = reg;
+        // Re-subscribe if sub was cleared by VAPID migration
+        if (!localStorage.getItem(LS.PUSH_SUB) && Notification.permission === 'granted') {
+          await ensurePushSubscription(reg);
+        }
         // Listen for messages from SW (notification button actions)
         navigator.serviceWorker.addEventListener('message', event => {
           const data = event.data;
@@ -3495,8 +4096,13 @@ function init() {
         renderGiftsTab();
         startNudgePoller();
         maybeShowTutorial();
+      } else {
+        // Brand new user on screen-1 — start tutorial here
+        maybeShowTutorial();
       }
-    }).catch(() => {});
+    }).catch(() => {
+      maybeShowTutorial(); // start on screen-1 even if remote fails
+    });
   }
 
   // iOS install hint — show after a short delay on first visit
