@@ -1202,6 +1202,11 @@ a { color: inherit; text-decoration: none; }
       </div>
 
       <div class="settings-section-label" style="margin-top:20px;"></div>
+      <div class="settings-row" onclick="shareApp()">
+        <div class="settings-row-icon">💌</div>
+        <div class="settings-row-label">Share Grà with someone</div>
+        <div class="settings-row-arrow">›</div>
+      </div>
       <div class="settings-row" onclick="resetApp()" style="opacity:0.5;">
         <div class="settings-row-icon">🗑</div>
         <div class="settings-row-label">Reset all data</div>
@@ -2070,9 +2075,8 @@ function navigate(screenId, back = false) {
   if (!back) _navHistory.push(STATE.screen);
   STATE.screen = screenId;
 
-  // Show/hide nav
-  const inApp = ['screen-6', 'screen-settings', 'screen-profiles', 'screen-schedule', 'screen-about'].includes(screenId);
-  document.getElementById('nav').classList.toggle('visible', inApp);
+  // Show nav only on the main dashboard screen
+  document.getElementById('nav').classList.toggle('visible', screenId === 'screen-6');
 
   // Highlight correct nav tab
   ['home','streak','gifts'].forEach(t => {
@@ -3078,6 +3082,25 @@ function renderSettingsPanel() {
   if (rv) rv.textContent = `${REGION_FLAGS[STATE.region]} ${REGION_NAMES[STATE.region]}`;
   const toggle = document.getElementById('dark-mode-toggle');
   if (toggle) toggle.checked = STATE.darkMode;
+}
+
+async function shareApp() {
+  const shareData = {
+    title: 'Grà — Relationship Reminders',
+    text: 'I\'ve been using this little app to stay in touch with the people I love — thought you might like it too ♡',
+    url: 'https://hsmacdiarmid.github.io/Gra/'
+  };
+  if (navigator.share) {
+    try { await navigator.share(shareData); } catch(_) {}
+  } else {
+    // Fallback — copy link to clipboard
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      showToast('Link copied to clipboard ♡');
+    } catch(_) {
+      showToast('Share: ' + shareData.url);
+    }
+  }
 }
 
 function renderProfilesPanel() {
