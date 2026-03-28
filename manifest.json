@@ -3,7 +3,7 @@
   "short_name": "Grà",
   "description": "Small reminders. Big love.",
   "id": "/Gra/",
-  "start_url": "./",
+  "start_url": "https://hsmacdiarmid.github.io/",
   "scope": "./",
   "display": "fullscreen",
   "orientation": "portrait",
